@@ -59,7 +59,15 @@ function frameUrl(i: number) {
 /**
  * Vídeo do mobile: recorte 3:4 a partir da fonte. Em retrato o `object-cover`
  * descarta as laterais de um 16:9, então entregar o quadro cheio seria pagar
- * banda por pixel que ninguém vê — o recorte custa metade (3,4 MB contra 6,5).
+ * banda por pixel que ninguém vê — o recorte custa metade.
+ *
+ * É um BOOMERANG: 12s de ida seguidos de 12s de volta, num arquivo só. O corte
+ * seco de volta ao início é justamente o instante em que o olho percebe que é
+ * um loop; indo e voltando, o movimento não tem emenda. Reproduzir ao contrário
+ * por JS (`playbackRate = -1`) não é opção — o iOS não suporta.
+ *
+ * A ida e a volta descartam um quadro cada, senão a virada e o emendo do loop
+ * repetiriam um quadro e dariam um soluço. Ver `scripts/` no CLAUDE.md.
  */
 const MOBILE_VIDEO = "/hero-mobile.mp4";
 /** Quadro parado — o que o reduced-motion mostra no lugar de tudo. */

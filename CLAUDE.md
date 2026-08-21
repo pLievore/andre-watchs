@@ -140,7 +140,13 @@ Ecommerce é fase E.
 - **Scrubbing é só desktop.** No mobile o hero tem UMA tela de altura e toca
   `/public/hero-mobile.mp4` em loop. Scrubbing exige 250vh de hero, e no celular
   isso vira parede: o polegar rola e a página não sai do lugar.
-- O vídeo do mobile é **recorte 3:4** da fonte (810×1080, 3,4 MB). Em retrato o
+- O vídeo do mobile é **boomerang**: 12s de ida + 12s de volta no mesmo arquivo
+  (24s, 6,7 MB). Corte seco de volta ao início denuncia o loop; ida e volta não
+  tem emenda. `playbackRate = -1` não serve — o iOS não suporta. Pipeline:
+  `ffmpeg -i fonte.mp4 -an -filter_complex "[0:v]trim=start_frame=1,setpts=PTS-STARTPTS[fwd];[0:v]reverse,trim=start_frame=1,setpts=PTS-STARTPTS[rev];[fwd][rev]concat=n=2:v=1[out]" -map "[out]" -c:v libx264 -crf 22 -movflags +faststart`
+  (o `trim=start_frame=1` nos dois lados evita quadro repetido na virada e no
+  emendo do loop).
+- É também um **recorte 3:4** da fonte (810×1080). Em retrato o
   `object-cover` descarta as laterais de um 16:9 — entregar o quadro cheio é
   pagar banda por pixel que ninguém vê.
 - **Se trocar o vídeo do mobile, rode `node scripts/build-luminance.mjs`.** A
