@@ -50,15 +50,18 @@ const PAPER = {
 };
 
 /**
- * Fração do hero em que a virada começa. Alto de propósito: o header segura o
- * escuro enquanto há filme atrás dele e só vira papel na chegada da vitrine.
+ * Janela da virada, em fração do hero.
  *
- * Interpolar ao longo do hero inteiro passaria metade do caminho em cinza
- * médio — o pior estado possível pra legibilidade, porque o texto fica nem
- * claro nem escuro sobre imagem de luminância parecida (a footage tem média
- * 126–153). Baixar este valor alonga a virada; 0 a torna contínua do topo ao fim.
+ * A barra é opaca, então o vídeo atrás não interfere — o risco é outro: fundo e
+ * texto interpolam juntos e cruzam o cinza médio no meio do caminho, onde os
+ * dois ficam parecidos. Por isso a virada não cobre o hero inteiro; ela ocupa o
+ * último terço e termina pouco antes da vitrine chegar. Abrir mais a janela
+ * deixa a transição mais visível e mais tempo no cinza; fechar aproxima do
+ * corte seco.
  */
-const FLIP_START = 0.72;
+const FLIP_START = 0.62;
+/** Onde termina — pouco antes do hero sair, para não haver papel sobre o filme. */
+const FLIP_END = 0.98;
 
 export function Header() {
   const { scrollY } = useScroll();
@@ -72,30 +75,36 @@ export function Header() {
       return;
     }
 
-    let start = 0;
-    let range = 1;
-
-    const update = (y: number) => {
-      progress.set(Math.min(1, Math.max(0, (y - start) / range)));
+    /**
+     * Medição AO VIVO, a cada evento de scroll.
+     *
+     * A versão anterior media `offsetTop`/`offsetHeight` uma única vez na
+     * montagem. Se o layout ainda não tivesse assentado nesse instante, o
+     * alcance saía errado — e alcance curto demais faz o progresso pular
+     * direto pra 1, que é o cabeçalho ficando branco de uma vez. Ler o
+     * retângulo a cada scroll custa uma leitura de layout por evento e é
+     * imune a isso, a `offsetParent` aninhado e a mudanças de altura.
+     */
+    const update = () => {
+      const rect = hero.getBoundingClientRect();
+      const consumed = hero.offsetHeight - window.innerHeight;
+      if (consumed <= 0) {
+        progress.set(1);
+        return;
+      }
+      progress.set(Math.min(1, Math.max(0, -rect.top / consumed)));
     };
 
-    const measure = () => {
-      start = hero.offsetTop;
-      // Distância de scroll que o hero realmente consome (o miolo é sticky).
-      range = Math.max(1, hero.offsetHeight - window.innerHeight);
-      update(scrollY.get());
-    };
-
-    measure();
+    update();
     const unsubscribe = scrollY.on("change", update);
-    window.addEventListener("resize", measure);
+    window.addEventListener("resize", update);
     return () => {
       unsubscribe();
-      window.removeEventListener("resize", measure);
+      window.removeEventListener("resize", update);
     };
   }, [progress, scrollY]);
 
-  const range: [number, number] = [FLIP_START, 1];
+  const range: [number, number] = [FLIP_START, FLIP_END];
   const background = useTransform(progress, range, [STAGE.bg, PAPER.bg]);
   const foreground = useTransform(progress, range, [STAGE.fg, PAPER.fg]);
   const muted = useTransform(progress, range, [STAGE.muted, PAPER.muted]);

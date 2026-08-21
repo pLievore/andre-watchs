@@ -54,3 +54,4 @@ next-env.d.ts
 # Os derivados otimizados versionados vivem em /public.
 /*.mp4
 /hero-src/
+.vercel-boot-ecommerce.bak
