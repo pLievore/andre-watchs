@@ -133,7 +133,14 @@ const MOBILE_BREAKPOINT_PX = 768;
  * Por que offline: medir no browser exigiria `getImageData` a cada quadro,
  * que força leitura de volta da GPU e trava o pipeline no meio do scroll.
  */
-const SCRIM_TARGET_LUMA = 42;
+/**
+ * Alvo de luminância sob o texto. Subiu de 42 para 58 quando a frase ganhou
+ * sombra própria (`copyWash` no JSX): com o reforço local, o véu GLOBAL pode
+ * recuar. Média do scrim caiu de 0,58 para 0,44 — quase um quarto menos
+ * sombreamento na tela, com o mesmo contraste na copy. Sombra localizada é
+ * mais barata visualmente do que escurecer a base inteira.
+ */
+const SCRIM_TARGET_LUMA = 58;
 const SCRIM_MIN = 0.12;
 const SCRIM_MAX = 0.88;
 
@@ -597,9 +604,27 @@ export function HeroBand() {
         </div>
 
         {/*
+          Sombra local da copy. Elipse suave atrás da frase, acima do scrim e
+          abaixo do texto. Some junto com a copy — sem isso ficaria uma mancha
+          escura na tela depois que a frase sai.
+
+          É ela que permite o scrim global ser mais leve: em vez de escurecer
+          toda a base pra proteger um bloco de texto, escurece só onde o texto
+          está.
+        */}
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            ...(reduce ? {} : { opacity: copyOpacity }),
+            background:
+              "radial-gradient(75% 58% at 28% 82%, rgba(6,7,8,0.70) 0%, rgba(6,7,8,0.42) 42%, transparent 76%)",
+          }}
+        />
+
+        {/*
           Copy sobre a imagem — é a camada principal agora, não legenda de
-          margem. Ancorada embaixo à esquerda, sobre a parte mais opaca do
-          scrim.
+          margem. Ancorada embaixo à esquerda, sobre a sombra local.
         */}
         <motion.div
           className="pointer-events-none absolute inset-x-0 bottom-0 px-6 pb-14 will-change-transform md:px-16 md:pb-20"
@@ -617,7 +642,7 @@ export function HeroBand() {
                 fontSize: "clamp(2.75rem, 9vw, 8rem)",
                 lineHeight: 0.92,
                 letterSpacing: "-0.03em",
-                textShadow: "0 2px 50px rgba(6,7,8,0.9)",
+                textShadow: "0 1px 28px rgba(6,7,8,0.8)",
               }}
             >
               O tempo tem procedência.
@@ -627,7 +652,7 @@ export function HeroBand() {
               className="pointer-events-auto hidden max-w-md text-base leading-relaxed md:block md:text-lg"
               style={{
                 color: "var(--color-muted)",
-                textShadow: "0 1px 24px rgba(6,7,8,0.9)",
+                textShadow: "0 1px 18px rgba(6,7,8,0.8)",
               }}
             >
               Rolex e outras maisons premium, conferidas peça a peça antes de

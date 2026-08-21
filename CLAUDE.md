@@ -109,8 +109,12 @@ Ecommerce é fase E.
   metade inferior varia de 11 a 208 ao longo da sequência, então scrim de
   opacidade fixa não serve: o que segura o claro afunda o escuro em breu. O
   scrim lê `src/lib/hero-luma.ts` (tabela por quadro, gerada offline por
-  `scripts/build-luminance.mjs`) e ajusta a própria opacidade — 0,12 a 0,80 —
-  pra deixar sempre a mesma base sob o texto.
+  `scripts/build-luminance.mjs`) e ajusta a própria opacidade pra deixar sempre
+  a mesma base sob o texto.
+- **A copy tem sombra própria, e é ela que deixa o scrim global ser leve.** Uma
+  elipse suave atrás da frase escurece só onde o texto está, em vez de rebaixar
+  a base inteira. Foi o que permitiu subir o alvo de luminância de 42 para 58 —
+  média do scrim de 0,58 para 0,44, quase um quarto menos véu na tela.
 - **Nunca medir luminância em runtime.** `getImageData` força leitura de volta
   da GPU e trava o pipeline no meio do scroll. Se trocar a sequência, rode
   `node scripts/build-luminance.mjs` pra regerar a tabela.
