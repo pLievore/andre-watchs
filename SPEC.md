@@ -94,28 +94,28 @@ precisão que o produto vende.
 
 ## 3. Sistema de Design
 
-### 3.1 Paleta — preto + aço/platina frio
-Decisão D2: o acento da marca é **metal frio**, não ouro. Diferencia da concorrência
-(que usa dourado por padrão) e casa com aço 904L, que é o coração do catálogo.
+### 3.1 Paleta — papel claro e tinta
+Decisão D15: **claro editorial**, referência em catálogo de leilão (Phillips,
+A Collected Man), não em vitrine de revenda. A v3.0 era escura com acento de aço
+frio, que lia como tech/hype — e o comprador de alto relógio não é público tech.
+Argumento adicional, não de gosto: boa parte da footage foi filmada em ciclorama
+branco e brigava com uma página preta.
 
 ```css
 @theme {
-  --color-background: #08090a;  /* preto azulado, não puro */
-  --color-foreground: #eef0f2;  /* off-white frio */
-  --color-muted:      #8b9096;  /* cinza-aço */
-  --color-border:     #1b1e21;
-  --color-surface:    #101315;  /* fundo de card */
+  --color-background: #faf8f4; /* papel osso, quente */
+  --color-foreground: #17181a; /* tinta, não preto puro */
+  --color-muted:      #6e6a63; /* cinza quente — 4.7:1, passa AA */
+  --color-border:     #e2ded6; /* fio de cabelo */
+  --color-surface:    #f2efe9; /* card, um tom abaixo do papel */
 
-  --color-accent:      #c9ccd1; /* platina / aço escovado — acento primário */
-  --color-accent-deep: #6e757c; /* aço em sombra, para gradiente metálico */
-  --color-accent-gold: #c2a875; /* ouro champagne — USO RESTRITO: two-tone/ouro */
-
-  --color-success: #5f8f6d;
-  --color-error:   #b5564a;
+  --color-accent:      #17181a; /* o acento é a própria tinta */
+  --color-accent-soft: #8a7758; /* pátina — NÃO-TEXTUAL, não passa AA */
+  --color-accent-gold: #9a7d4a; /* two-tone / ouro */
 }
 ```
 Regra: nunca hex solto em componente. Sempre `var(--color-*)`.
-Modo claro: fora de escopo.
+Modo escuro: fora de escopo.
 
 ### 3.2 Tipografia
 - **Display** (`--font-display`): serif editorial de alto contraste, para hero e títulos
@@ -378,6 +378,8 @@ DB, admin, carrinho, Mercado Pago, frete, NF-e.
 | D8 | Fotos reais do estoque | pendente — catálogo roda com placeholder até lá | pendente |
 | D9 | Marca no material visual | **Exibir Rolex** (peça, mostrador e tipografia). Decisão do dono, tomada após o risco de §1.4/§13 ser levantado. Disclaimer de mercado secundário no rodapé e no `/sobre` permanece obrigatório. | 2026-08-20 |
 | D10 | Material do hero | Vídeo gerado por IA, próprio da casa (`Video Project 10.mp4`). É uma montagem com cortes, então **não** serve pra um plano único — mas serve pra scrubbing como sequência de frames. | 2026-08-20 |
+| D15 | Identidade visual | **Claro editorial** — papel osso, tinta, serifa. Substitui o escuro+aço da v3.0, que carregava os tiques do NEXUS DROP (mono maiúsculo com tracking largo, fundo quase preto, sparkles de fundo). Mecânica de scroll intocada: as barras do hero leem `--color-background`, então viraram cortina de papel sem alterar uma linha de coreografia. | 2026-08-20 |
+| D16 | Vocabulário tipográfico | Mono maiúsculo com tracking 0.3–0.4em some do projeto. Eyebrow vira serifa itálica em caixa de frase; rótulos de UI viram sans discreta; a mono sobrevive só em dado técnico (referência, calibre, ano) e sem tracking. Centralizado nas classes `.eyebrow` / `.label` / `.meta` / `.btn` do `globals.css` — não repetir estilo inline. | 2026-08-20 |
 | D14 | Vídeo de ofício | Segundo material de IA, **retrato 480×854, 31s**, macro de gravação/índices/acabamento. Vai pro `/sobre`, como painel vertical sticky ao lado dos passos de conferência — usa o formato retrato nativamente em vez de recortar, e ilustra literalmente o que o texto descreve. Sem texto por cima (mesma regra do D11). | 2026-08-20 |
 | D13 | Fluidez acima de peso | Hero em **30fps nativo** (361 frames, 16,5 MB) — todos os quadros da fonte, teto de fluidez. Decisão explícita do dono: "aumente a qualidade, compensamos o desempenho no restante do site". Mitigado por carga em densidade progressiva e por cortar o vídeo do mobile de 8 MB para 1,5 MB. | 2026-08-20 |
 | D12 | Inércia do scroll | O scroll não dirige a coreografia direto. Lenis com `lerp: 0.085` (era 0.18) dá deslize à página, e o hero soma uma mola **superamortecida** (ζ ≈ 1.41, acomoda em ~0,4s) entre o scroll e frames/faixa/texto. Soltar desacelera; não congela. Nunca reduzir o `damping` abaixo de ~14 — vira overshoot e quebra o "relógio não quica". | 2026-08-20 |

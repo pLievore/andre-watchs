@@ -97,7 +97,7 @@ export function AmbientVideo({
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(110% 90% at 50% 45%, transparent 55%, rgba(8,9,10,0.7) 100%)",
+            "radial-gradient(115% 95% at 50% 45%, transparent 68%, rgba(23,24,26,0.18) 100%)",
         }}
       />
     </div>

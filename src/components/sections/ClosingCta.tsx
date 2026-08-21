@@ -81,8 +81,7 @@ export function ClosingCta() {
         {/* Texto + CTA */}
         <div className="flex flex-col items-start gap-8 md:flex-1">
           <p
-            className="text-xs uppercase tracking-[0.35em]"
-            style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)" }}
+            className="label"
           >
             Compra · Venda · Troca · Consignação
           </p>
@@ -106,13 +105,7 @@ export function ClosingCta() {
             />
             <Link
               href="/colecao"
-              className="group inline-flex items-center gap-3 border px-8 py-4 text-xs uppercase tracking-[0.3em] transition-colors"
-              style={{
-                fontFamily: "var(--font-mono)",
-                borderColor: "var(--color-border)",
-                color: "var(--color-foreground)",
-                transitionTimingFunction: "var(--ease-editorial)",
-              }}
+              className="btn btn-ghost group"
             >
               Ver o acervo
               <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
@@ -147,7 +140,7 @@ export function ClosingCta() {
                 }}
               >
                 <motion.div
-                  className="relative flex h-full w-full items-center justify-center overflow-hidden border shadow-[0_24px_60px_-20px_rgba(0,0,0,0.8)] will-change-transform"
+                  className="relative flex h-full w-full items-center justify-center overflow-hidden border shadow-[0_18px_40px_-24px_rgba(23,24,26,0.28)] will-change-transform"
                   style={{
                     rotate: negAngle,
                     borderColor: "var(--color-border)",

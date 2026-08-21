@@ -33,8 +33,7 @@ export function Header() {
         >
           <Monogram />
           <span
-            className="text-sm uppercase tracking-[0.38em]"
-            style={{ fontFamily: "var(--font-mono)" }}
+            className="label"
           >
             Andre<span style={{ color: "var(--color-accent)" }}> · </span>Watches
           </span>
@@ -48,8 +47,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-xs uppercase tracking-[0.3em] underline-offset-8 hover:underline"
-              style={{ fontFamily: "var(--font-mono)" }}
+              className="label underline-offset-8 hover:underline"
             >
               {link.label}
             </Link>

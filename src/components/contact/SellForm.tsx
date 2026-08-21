@@ -87,11 +87,7 @@ export function SellForm() {
     >
       <fieldset className="flex flex-col gap-4">
         <legend
-          className="text-[10px] uppercase tracking-[0.3em]"
-          style={{
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-muted)",
-          }}
+          className="label"
         >
           O que você quer fazer
         </legend>
@@ -104,9 +100,8 @@ export function SellForm() {
                 type="button"
                 onClick={() => setIntent(option.id)}
                 aria-pressed={active}
-                className="border px-6 py-3 text-[10px] uppercase tracking-[0.3em] transition-colors duration-300"
+                className="border px-6 py-3 label transition-colors duration-300"
                 style={{
-                  fontFamily: "var(--font-mono)",
                   borderColor: active
                     ? "var(--color-accent)"
                     : "var(--color-border)",
@@ -160,11 +155,7 @@ export function SellForm() {
       <div className="flex flex-col gap-2">
         <label
           htmlFor="completeness"
-          className="text-[10px] uppercase tracking-[0.3em]"
-          style={{
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-muted)",
-          }}
+          className="label"
         >
           O que acompanha
         </label>
@@ -193,11 +184,7 @@ export function SellForm() {
       <div className="flex flex-col gap-2">
         <label
           htmlFor="notes"
-          className="text-[10px] uppercase tracking-[0.3em]"
-          style={{
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-muted)",
-          }}
+          className="label"
         >
           Observações
         </label>
@@ -219,13 +206,7 @@ export function SellForm() {
         <button
           type="submit"
           disabled={!canSubmit}
-          className="inline-flex items-center justify-center gap-3 px-8 py-4 text-xs uppercase tracking-[0.3em] transition-transform duration-300 enabled:hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-40"
-          style={{
-            fontFamily: "var(--font-mono)",
-            background: "var(--color-accent)",
-            color: "var(--color-background)",
-            transitionTimingFunction: "var(--ease-editorial)",
-          }}
+          className="btn btn-primary justify-center"
         >
           Abrir conversa com a casa
           <span aria-hidden>→</span>
@@ -251,11 +232,7 @@ function Field({
     <div className="flex flex-col gap-2">
       <label
         htmlFor={id}
-        className="text-[10px] uppercase tracking-[0.3em]"
-        style={{
-          fontFamily: "var(--font-mono)",
-          color: "var(--color-muted)",
-        }}
+        className="label"
       >
         {label}
       </label>

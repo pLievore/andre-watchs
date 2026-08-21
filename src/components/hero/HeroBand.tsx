@@ -352,7 +352,7 @@ export function HeroBand() {
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(120% 100% at 50% 50%, transparent 50%, rgba(8,9,10,0.6) 100%)",
+                "radial-gradient(125% 105% at 50% 48%, transparent 62%, rgba(23,24,26,0.22) 100%)",
             }}
           />
         </div>
@@ -409,13 +409,7 @@ export function HeroBand() {
             <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center">
               <Link
                 href="/colecao"
-                className="group inline-flex items-center gap-3 px-8 py-4 text-xs uppercase tracking-[0.3em] transition-transform duration-300 hover:-translate-y-0.5"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  background: "var(--color-accent)",
-                  color: "var(--color-background)",
-                  transitionTimingFunction: "var(--ease-editorial)",
-                }}
+                className="btn btn-primary group"
               >
                 Ver acervo
                 <span

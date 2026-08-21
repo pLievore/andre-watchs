@@ -42,13 +42,21 @@ Ecommerce é fase E.
    `overflow-hidden` na seção quando houver translate negativo. Animar só
    `transform` e `opacity`.
 
-## Tokens (SPEC §3)
+## Tokens e vocabulário visual (SPEC §3)
 
-- Cores via CSS vars: `--color-background/foreground/muted/border/surface/accent`.
-  O acento é **metal frio** (`--color-accent`, platina). `--color-accent-gold` é
-  **uso restrito** a peças two-tone/ouro. Nunca hex solto em componente.
-- Tipografia: `--font-display` (hero/títulos), `--font-sans` (corpo), `--font-mono`
-  (eyebrows/referência/ano). Escala fluida com `clamp()`.
+- **Identidade é claro editorial**: papel osso (`#faf8f4`), tinta (`#17181a`),
+  serifa. Referência é catálogo de leilão, não vitrine de revenda.
+- Cores sempre via `var(--color-*)`. **Nunca hex solto em componente.** O acento
+  é a própria tinta; `--color-accent-soft` é pátina e **não serve para texto**
+  (não passa AA); `--color-accent-gold` é restrito a peças two-tone/ouro.
+- **Proibido**: mono maiúsculo com tracking largo (era o tique do NEXUS DROP),
+  fundo escuro, glow, sombra preta densa, efeitos de partícula.
+- **Use as classes de `globals.css`, não estilo inline**: `.eyebrow` (serifa
+  itálica), `.label` (rótulo de UI), `.meta` (dado técnico em mono, sem
+  tracking), `.prose-editorial`, `.display`, `.btn` + `.btn-primary`/`.btn-ghost`,
+  `.link-quiet`. Se falta um vocábulo, adicione a classe — não repita inline.
+- Sombra no claro é curta e de tinta (`rgba(23,24,26,0.3)` no máximo). Sombra
+  preta densa suja o papel.
 
 ## Regras de conteúdo (não são estilo — são risco)
 

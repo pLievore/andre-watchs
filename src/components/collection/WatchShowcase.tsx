@@ -97,8 +97,7 @@ export function WatchShowcase({
       style={{ borderColor: "var(--color-border)" }}
     >
       <span
-        className="text-xs uppercase tracking-[0.35em]"
-        style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)" }}
+        className="label"
       >
         Acervo completo
       </span>
@@ -122,8 +121,7 @@ export function WatchShowcase({
         <div className="mb-8 px-6 flex items-end justify-between gap-4">
           <div>
             <p
-              className="text-xs uppercase tracking-[0.35em]"
-              style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)" }}
+              className="label"
             >
               {eyebrow}
             </p>
@@ -141,8 +139,7 @@ export function WatchShowcase({
           </div>
           <Link
             href={viewAllHref}
-            className="shrink-0 text-xs uppercase tracking-[0.25em] flex items-center gap-2"
-            style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)" }}
+            className="shrink-0 label flex items-center gap-2"
           >
             Ver tudo
             <span aria-hidden style={{ color: "var(--color-accent)" }}>→</span>
@@ -180,8 +177,7 @@ export function WatchShowcase({
             <div className="mb-10 flex items-end justify-between gap-6">
               <div>
                 <p
-                  className="text-xs uppercase tracking-[0.35em]"
-                  style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)" }}
+                  className="label"
                 >
                   {eyebrow}
                 </p>
@@ -200,8 +196,7 @@ export function WatchShowcase({
               </div>
               <Link
                 href={viewAllHref}
-                className="group hidden shrink-0 items-center gap-2 whitespace-nowrap text-xs uppercase tracking-[0.25em] md:inline-flex"
-                style={{ fontFamily: "var(--font-mono)", color: "var(--color-foreground)" }}
+                className="group hidden shrink-0 items-center gap-2 whitespace-nowrap label md:inline-flex"
               >
                 <span className="underline-offset-8 group-hover:underline">{viewAllLabel}</span>
                 <span

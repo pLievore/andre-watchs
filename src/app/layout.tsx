@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 
-import { BackgroundSparkles } from "@/components/effects/BackgroundSparkles";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
@@ -23,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#08090a",
+  themeColor: "#faf8f4",
   width: "device-width",
   initialScale: 1,
 };
@@ -38,11 +37,10 @@ export default function RootLayout({
       <body>
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-[var(--color-accent)] focus:text-[var(--color-background)] focus:px-4 focus:py-2"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:bg-[var(--color-foreground)] focus:text-[var(--color-background)] focus:px-4 focus:py-2"
         >
           Pular para o conteúdo
         </a>
-        <BackgroundSparkles />
         <SmoothScroll>
           <Header />
           <div className="relative z-10">

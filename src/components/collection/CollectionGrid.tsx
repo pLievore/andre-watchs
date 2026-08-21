@@ -90,8 +90,7 @@ export function CollectionGrid({ watches }: CollectionGridProps) {
       </div>
 
       <p
-        className="mt-6 text-[10px] uppercase tracking-[0.3em]"
-        style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)" }}
+        className="mt-6 label"
         aria-live="polite"
       >
         {filtered.length} {filtered.length === 1 ? "peça" : "peças"}
@@ -139,9 +138,8 @@ function FilterButton({
       type="button"
       onClick={onSelect}
       aria-pressed={active}
-      className="text-[10px] uppercase tracking-[0.3em] underline-offset-8 transition-colors duration-300 hover:underline"
+      className="label underline-offset-8 transition-colors duration-300 hover:underline"
       style={{
-        fontFamily: "var(--font-mono)",
         color: active ? "var(--color-accent)" : "var(--color-muted)",
         transitionTimingFunction: "var(--ease-editorial)",
       }}

@@ -75,7 +75,7 @@ function SlideContent({ pillar }: { pillar: Pillar }) {
       </div>
       <div className="flex flex-col gap-5">
         <span
-          className="text-xs tracking-[0.35em]"
+          className="meta"
           style={{ fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}
         >
           {pillar.n} / {String(PILLARS.length).padStart(2, "0")}

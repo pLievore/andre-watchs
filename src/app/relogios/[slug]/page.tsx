@@ -99,11 +99,7 @@ export default async function WatchPage({
         <nav aria-label="Você está em" className="mb-10">
           <Link
             href="/colecao"
-            className="text-[10px] uppercase tracking-[0.3em] underline-offset-8 hover:underline"
-            style={{
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-muted)",
-            }}
+            className="label underline-offset-8 hover:underline"
           >
             ← Acervo
           </Link>
@@ -128,11 +124,7 @@ export default async function WatchPage({
                 {watch.model}
               </h1>
               <p
-                className="text-[11px] uppercase tracking-[0.25em]"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  color: "var(--color-muted)",
-                }}
+                className="meta"
               >
                 Ref. {specValue(watch.specs.reference)} ·{" "}
                 {formatCondition(watch.condition)} ·{" "}
@@ -169,11 +161,7 @@ export default async function WatchPage({
                 style={{ borderColor: "var(--color-border)" }}
               >
                 <p
-                  className="text-[10px] uppercase tracking-[0.3em]"
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    color: "var(--color-muted)",
-                  }}
+                  className="label"
                 >
                   Peça vendida
                 </p>
@@ -216,11 +204,7 @@ export default async function WatchPage({
                       className="flex items-baseline justify-between gap-6"
                     >
                       <dt
-                        className="text-[10px] uppercase tracking-[0.25em]"
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          color: "var(--color-muted)",
-                        }}
+                        className="meta"
                       >
                         {s.label}
                       </dt>
@@ -279,8 +263,7 @@ function Block({
   return (
     <details open className="group py-6">
       <summary
-        className="flex cursor-pointer items-center justify-between text-[10px] uppercase tracking-[0.3em] marker:content-none"
-        style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)" }}
+        className="flex cursor-pointer items-center justify-between label marker:content-none"
       >
         {title}
         <span

@@ -46,7 +46,7 @@ export function WatchCard({ watch }: WatchCardProps) {
       style={{ transitionTimingFunction: "var(--ease-editorial)" }}
     >
       <div
-        className="relative aspect-[4/5] w-full overflow-hidden border transition-all duration-500 group-hover:shadow-[0_28px_80px_-24px_rgba(0,0,0,0.8)]"
+        className="relative aspect-[4/5] w-full overflow-hidden border transition-all duration-500 group-hover:shadow-[0_22px_50px_-26px_rgba(23,24,26,0.3)]"
         style={{
           background: "var(--color-surface)",
           borderColor: "var(--color-border)",
@@ -96,11 +96,7 @@ export function WatchCard({ watch }: WatchCardProps) {
           <div className="pointer-events-none absolute inset-0 flex flex-col justify-end p-6">
             <WatchGlyph accent={accent} />
             <span
-              className="mt-auto text-[10px] uppercase tracking-[0.35em]"
-              style={{
-                fontFamily: "var(--font-mono)",
-                color: "var(--color-muted)",
-              }}
+              className="mt-auto label"
             >
               {watch.brand}
             </span>
@@ -129,14 +125,15 @@ export function WatchCard({ watch }: WatchCardProps) {
         {sold && (
           <div
             className="absolute inset-0 z-10 flex items-center justify-center"
-            style={{ background: "rgba(8,9,10,0.68)" }}
+            style={{ background: "rgba(250,248,244,0.78)" }}
           >
             <span
-              className="border px-4 py-2 text-[10px] uppercase tracking-[0.4em]"
+              className="border px-5 py-2 text-sm"
               style={{
-                fontFamily: "var(--font-mono)",
+                fontFamily: "var(--font-serif)",
+                fontStyle: "italic",
                 color: "var(--color-foreground)",
-                borderColor: "var(--color-border)",
+                borderColor: "var(--color-foreground)",
               }}
             >
               Vendido
@@ -148,11 +145,7 @@ export function WatchCard({ watch }: WatchCardProps) {
       <div className="mt-5 flex items-start justify-between gap-6">
         <div className="flex min-w-0 flex-col gap-1.5">
           <span
-            className="text-[10px] uppercase tracking-[0.3em]"
-            style={{
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-muted)",
-            }}
+            className="label"
           >
             {watch.brand}
           </span>
@@ -166,11 +159,7 @@ export function WatchCard({ watch }: WatchCardProps) {
             {watch.model}
           </h3>
           <span
-            className="text-[10px] uppercase tracking-[0.2em]"
-            style={{
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-muted)",
-            }}
+            className="meta"
           >
             {formatReferenceLine(watch)}
           </span>
@@ -186,11 +175,7 @@ export function WatchCard({ watch }: WatchCardProps) {
             {formatPrice(watch.priceCents)}
           </span>
           <span
-            className="whitespace-nowrap text-[10px] uppercase tracking-[0.2em]"
-            style={{
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-muted)",
-            }}
+            className="whitespace-nowrap meta"
           >
             {formatCondition(watch.condition)} ·{" "}
             {formatCompleteness(watch.completeness)}

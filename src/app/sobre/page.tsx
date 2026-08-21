@@ -108,11 +108,7 @@ export default function AboutPage() {
                 label="Detalhes em macro de uma peça aberta na bancada: gravação do fecho, índices aplicados e acabamento da caixa"
               />
               <p
-                className="mt-4 text-[10px] uppercase tracking-[0.3em]"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  color: "var(--color-muted)",
-                }}
+                className="mt-4 label"
               >
                 Na bancada
               </p>
@@ -128,9 +124,8 @@ export default function AboutPage() {
                 className="grid gap-4 py-8 md:grid-cols-[auto_1fr] md:gap-8"
               >
                 <span
-                  className="text-xs tracking-[0.35em]"
+                  className="meta"
                   style={{
-                    fontFamily: "var(--font-mono)",
                     color: "var(--color-accent)",
                   }}
                 >
@@ -165,11 +160,7 @@ export default function AboutPage() {
         >
           <h2
             id="disclaimer-title"
-            className="text-[10px] uppercase tracking-[0.3em]"
-            style={{
-              fontFamily: "var(--font-mono)",
-              color: "var(--color-muted)",
-            }}
+            className="label"
           >
             Mercado secundário
           </h2>

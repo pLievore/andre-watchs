@@ -40,11 +40,9 @@ export function contactHref(context?: string): string {
 export const CONTACT_CHANNEL = WHATSAPP_NUMBER ? "WhatsApp" : "Instagram";
 
 const VARIANT_CLASS: Record<WhatsappCtaVariant, string> = {
-  primary:
-    "inline-flex items-center gap-3 px-8 py-4 text-xs uppercase tracking-[0.3em] transition-transform duration-300 hover:-translate-y-0.5",
-  secondary:
-    "inline-flex items-center gap-3 border px-8 py-4 text-xs uppercase tracking-[0.3em] transition-colors duration-300",
-  link: "inline-flex items-center gap-2 text-xs uppercase tracking-[0.3em] underline-offset-8 hover:underline",
+  primary: "btn btn-primary",
+  secondary: "btn btn-ghost",
+  link: "label link-quiet inline-flex items-center gap-2",
 };
 
 export function WhatsappCta({
@@ -55,33 +53,12 @@ export function WhatsappCta({
 }: WhatsappCtaProps) {
   const href = contactHref(context);
 
-  const style: React.CSSProperties =
-    variant === "primary"
-      ? {
-          fontFamily: "var(--font-mono)",
-          background: "var(--color-accent)",
-          color: "var(--color-background)",
-          transitionTimingFunction: "var(--ease-editorial)",
-        }
-      : variant === "secondary"
-        ? {
-            fontFamily: "var(--font-mono)",
-            borderColor: "var(--color-border)",
-            color: "var(--color-foreground)",
-            transitionTimingFunction: "var(--ease-editorial)",
-          }
-        : {
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-foreground)",
-          };
-
   return (
     <Link
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       className={`${VARIANT_CLASS[variant]} ${className}`}
-      style={style}
     >
       {label}
       <span aria-hidden>→</span>

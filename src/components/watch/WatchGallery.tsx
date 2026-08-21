@@ -51,11 +51,7 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
           ))}
         </ul>
         <p
-          className="text-[10px] uppercase tracking-[0.25em]"
-          style={{
-            fontFamily: "var(--font-mono)",
-            color: "var(--color-muted)",
-          }}
+          className="meta"
         >
           Fotos desta peça em produção
         </p>
@@ -135,8 +131,7 @@ function PlaceholderPlate({
       }}
     >
       <span
-        className="p-4 text-[9px] uppercase tracking-[0.3em]"
-        style={{ fontFamily: "var(--font-mono)", color: "var(--color-muted)" }}
+        className="p-4 meta"
       >
         {label}
       </span>

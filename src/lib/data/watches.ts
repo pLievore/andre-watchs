@@ -15,7 +15,7 @@
 import type { Watch } from "@/lib/types";
 
 export interface MockWatch extends Watch {
-  /** Fallback visual enquanto não há foto real (SPEC §14 D8). */
+  /** Lavagem clara de placeholder enquanto não há foto real (SPEC §14 D8). */
   placeholderGradient?: readonly [string, string];
 }
 
@@ -48,7 +48,7 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
         alt: "Rolex Submariner Date ref. 126610LV, mostrador preto e bezel verde, vista frontal",
       },
     },
-    placeholderGradient: ["#12261a", "#0a0f0c"],
+    placeholderGradient: ["#e6ece4", "#f5f3ee"],
   },
   {
     slug: "rolex-gmt-master-ii-126710blnr",
@@ -76,7 +76,7 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
         alt: "Rolex GMT-Master II ref. 126710BLNR, bezel azul e preto, pulseira Jubilee",
       },
     },
-    placeholderGradient: ["#101a2b", "#08090d"],
+    placeholderGradient: ["#e4e9f0", "#f4f2ee"],
   },
   {
     slug: "rolex-submariner-date-126613lb",
@@ -106,7 +106,7 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
         alt: "Rolex Submariner Date ref. 126613LB two-tone, mostrador azul royal",
       },
     },
-    placeholderGradient: ["#1a2440", "#0b0d14"],
+    placeholderGradient: ["#e5e9f2", "#f5f3ee"],
   },
   {
     slug: "rolex-datejust-41-126334",
@@ -133,7 +133,7 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
         alt: "Rolex Datejust 41 ref. 126334, mostrador verde-oliva sunburst, bezel canelado",
       },
     },
-    placeholderGradient: ["#1c2118", "#0a0b09"],
+    placeholderGradient: ["#e9ece2", "#f5f4ee"],
   },
   {
     slug: "rolex-daytona-116500ln",
@@ -160,7 +160,7 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
         alt: "Rolex Cosmograph Daytona ref. 116500LN, mostrador branco panda, bezel Cerachrom preto",
       },
     },
-    placeholderGradient: ["#20232a", "#0c0d10"],
+    placeholderGradient: ["#eaeaee", "#f5f3ee"],
   },
   {
     slug: "cartier-panthere-medium-two-tone",
@@ -186,7 +186,7 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
         alt: "Cartier Panthère Medium two-tone, mostrador prateado com algarismos romanos",
       },
     },
-    placeholderGradient: ["#2b2418", "#0e0c08"],
+    placeholderGradient: ["#f0e8d9", "#f7f4ec"],
   },
   {
     slug: "audemars-piguet-royal-oak-15500st",
@@ -216,7 +216,7 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
         alt: "Audemars Piguet Royal Oak ref. 15500ST, mostrador azul Grande Tapisserie",
       },
     },
-    placeholderGradient: ["#151d2e", "#08090e"],
+    placeholderGradient: ["#e4e8f1", "#f4f2ee"],
   },
   {
     slug: "omega-speedmaster-professional-31030",
@@ -243,7 +243,7 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
         alt: "Omega Speedmaster Professional Moonwatch ref. 310.30.42.50.01.002, mostrador preto",
       },
     },
-    placeholderGradient: ["#191b1e", "#08090a"],
+    placeholderGradient: ["#eae9e8", "#f5f3ef"],
   },
 ];
 

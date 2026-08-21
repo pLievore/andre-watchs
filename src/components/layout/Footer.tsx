@@ -48,7 +48,6 @@ export function Footer() {
       className="border-t"
       style={{
         borderColor: "var(--color-border)",
-        color: "var(--color-muted)",
       }}
     >
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-16 md:py-20">
@@ -56,11 +55,7 @@ export function Footer() {
           <div className="flex flex-col gap-4">
             <Link
               href="/"
-              className="text-sm uppercase tracking-[0.4em]"
-              style={{
-                fontFamily: "var(--font-mono)",
-                color: "var(--color-foreground)",
-              }}
+              className="label"
             >
               Andre<span style={{ color: "var(--color-accent)" }}> · </span>Watches
             </Link>
@@ -92,11 +87,7 @@ export function Footer() {
             {FOOTER_NAV.map((col) => (
               <div key={col.title} className="flex flex-col gap-3">
                 <h3
-                  className="text-[10px] uppercase tracking-[0.3em]"
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    color: "var(--color-foreground)",
-                  }}
+                  className="label"
                 >
                   {col.title}
                 </h3>
@@ -131,12 +122,11 @@ export function Footer() {
 
         <div className="mt-8 flex flex-col gap-3 text-xs md:flex-row md:items-center md:justify-between">
           <span
-            style={{ fontFamily: "var(--font-mono)" }}
-            className="uppercase tracking-[0.25em]"
+            className="meta"
           >
             © {year} Andre Watches
           </span>
-          <span className="uppercase tracking-[0.25em]">
+          <span className="meta">
             Atendimento por {CONTACT_CHANNEL} · envio segurado para todo o Brasil
           </span>
         </div>
