@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+/* SPEC §3.1 — paleta ANDRE WATCHES: preto + aço/platina frio */
+@theme {
+  --color-background: #08090a;
+  --color-foreground: #eef0f2;
+  --color-muted: #8b9096;
+  --color-border: #1b1e21;
+  --color-surface: #101315;
+
+  /* Acento é METAL FRIO, não ouro (D2). */
+  --color-accent: #c9ccd1;
+  --color-accent-deep: #6e757c;
+  /* Uso restrito: peças two-tone / ouro do catálogo. */
+  --color-accent-gold: #c2a875;
+
+  --color-success: #5f8f6d;
+  --color-error: #b5564a;
+
+  /* SPEC §3.4 — easing editorial */
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* SPEC §3.2 — stacks tipográficos */
+  --font-display: "PP Editorial New", "Canela", ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: "Geist Sans", "Söhne Buch", "Satoshi", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-background);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /*
+   * Superfície metálica (SPEC §3.1). Gradiente de platina com variação de
+   * luminância baixa — metal reage à luz, mas não vira "shiny gamer".
+   */
+  .surface-steel {
+    background-image: linear-gradient(
+      135deg,
+      var(--color-accent-deep) 0%,
+      var(--color-accent) 45%,
+      var(--color-accent-deep) 100%
+    );
+  }
+
+  /* Texto com acabamento de aço escovado — só em números/eyebrow curtos. */
+  .text-steel {
+    background-image: linear-gradient(
+      100deg,
+      var(--color-accent-deep) 0%,
+      var(--color-accent) 50%,
+      var(--color-accent-deep) 100%
+    );
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Eyebrow padrão: mono, uppercase, tracking largo (SPEC §3.2). */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.35em;
+    color: var(--color-muted);
+  }
+}
+
+/* Hero scroll indicator (§4) — pulse vertical da barra */
+@keyframes hero-scroll-pulse {
+  0%,
+  100% {
+    transform: scaleY(0.4);
+    transform-origin: top;
+    opacity: 0.4;
+  }
+  50% {
+    transform: scaleY(1);
+    transform-origin: top;
+    opacity: 1;
+  }
+}
+
+.animate-hero-scroll-pulse {
+  animation: hero-scroll-pulse 1.8s var(--ease-editorial) infinite;
+}
+
+/*
+ * Ponteiro de segundos do marcador do hero (§3.5): rotação contínua e linear,
+ * 60s por volta. `linear` é permitido aqui por ser loop contínuo, não reveal.
+ */
+@keyframes seconds-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-seconds-sweep {
+  animation: seconds-sweep 60s linear infinite;
+}
+
+/* SPEC §3.4 / §9 — respeitar prefers-reduced-motion globalmente */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

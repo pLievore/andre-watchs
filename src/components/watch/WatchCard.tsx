@@ -1,0 +1,254 @@
+/**
+ * SPEC §5.2 — card de peça.
+ *
+ *  - Imagem 4:5
+ *  - Marca em mono/tracking largo, modelo em display, referência em mono muted
+ *  - Preço em sans regular — nunca bold (§1.3: luxo é discreto)
+ *  - Hover desktop: lift 8px + borda ganha gradiente de platina + crossfade
+ *  - Peça vendida: card dimmed com selo VENDIDO (prova social, não erro)
+ *
+ * Proibido no card: badge de promoção, frete grátis, countdown.
+ */
+
+import Link from "next/link";
+
+import type { MockWatch } from "@/lib/data/watches";
+import {
+  formatCompleteness,
+  formatCondition,
+  formatPrice,
+  formatReferenceLine,
+} from "@/lib/format";
+import { type Watch, isGoldPiece, watchFullName, watchHref } from "@/lib/types";
+
+type CardWatch = Watch & { placeholderGradient?: readonly [string, string] };
+
+interface WatchCardProps {
+  watch: CardWatch | MockWatch;
+}
+
+export function WatchCard({ watch }: WatchCardProps) {
+  const fullName = watchFullName(watch);
+  const hasPrimaryImage = watch.images.primary.url !== "";
+  const hasSecondaryImage = !!watch.images.secondary?.url;
+  const gradient = watch.placeholderGradient;
+  const sold = !watch.available;
+
+  // Peças two-tone/ouro liberam o acento dourado; o resto usa platina (§3.1).
+  const accent = isGoldPiece(watch)
+    ? "var(--color-accent-gold)"
+    : "var(--color-accent)";
+
+  return (
+    <Link
+      href={watchHref(watch)}
+      className="group block w-[18rem] shrink-0 transition-transform duration-300 will-change-transform hover:-translate-y-2 md:w-[23rem]"
+      style={{ transitionTimingFunction: "var(--ease-editorial)" }}
+    >
+      <div
+        className="relative aspect-[4/5] w-full overflow-hidden border transition-all duration-500 group-hover:shadow-[0_28px_80px_-24px_rgba(0,0,0,0.8)]"
+        style={{
+          background: "var(--color-surface)",
+          borderColor: "var(--color-border)",
+          transitionTimingFunction: "var(--ease-editorial)",
+        }}
+      >
+        {!hasPrimaryImage && gradient && (
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              background: `radial-gradient(120% 90% at 50% 25%, ${gradient[0]} 0%, ${gradient[1]} 100%)`,
+            }}
+          />
+        )}
+
+        {hasPrimaryImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={watch.images.primary.url}
+            alt={watch.images.primary.alt}
+            loading="lazy"
+            decoding="async"
+            className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ${
+              hasSecondaryImage
+                ? "group-hover:opacity-0"
+                : "group-hover:scale-[1.04]"
+            }`}
+            style={{ transitionTimingFunction: "var(--ease-editorial)" }}
+          />
+        )}
+
+        {hasSecondaryImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={watch.images.secondary!.url}
+            alt={watch.images.secondary!.alt}
+            loading="lazy"
+            decoding="async"
+            className="absolute inset-0 h-full w-full object-cover opacity-0 transition-all duration-700 group-hover:scale-[1.04] group-hover:opacity-100"
+            style={{ transitionTimingFunction: "var(--ease-editorial)" }}
+          />
+        )}
+
+        {/* Placeholder tipográfico enquanto não há foto do estoque (§14 D8). */}
+        {!hasPrimaryImage && (
+          <div className="pointer-events-none absolute inset-0 flex flex-col justify-end p-6">
+            <WatchGlyph accent={accent} />
+            <span
+              className="mt-auto text-[10px] uppercase tracking-[0.35em]"
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-muted)",
+              }}
+            >
+              {watch.brand}
+            </span>
+            <span
+              className="mt-1 text-2xl leading-tight"
+              style={{
+                fontFamily: "var(--font-display)",
+                color: "var(--color-foreground)",
+              }}
+            >
+              {watch.model}
+            </span>
+          </div>
+        )}
+
+        {/* Linha de acento que acende no hover — metal reagindo à luz (§3.1). */}
+        <span
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 transition-transform duration-700 group-hover:scale-x-100"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${accent}, transparent)`,
+            transitionTimingFunction: "var(--ease-editorial)",
+          }}
+        />
+
+        {sold && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center"
+            style={{ background: "rgba(8,9,10,0.68)" }}
+          >
+            <span
+              className="border px-4 py-2 text-[10px] uppercase tracking-[0.4em]"
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-foreground)",
+                borderColor: "var(--color-border)",
+              }}
+            >
+              Vendido
+            </span>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-5 flex items-start justify-between gap-6">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span
+            className="text-[10px] uppercase tracking-[0.3em]"
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-muted)",
+            }}
+          >
+            {watch.brand}
+          </span>
+          <h3
+            className="truncate text-lg leading-tight md:text-xl"
+            style={{
+              fontFamily: "var(--font-display)",
+              letterSpacing: "-0.01em",
+            }}
+          >
+            {watch.model}
+          </h3>
+          <span
+            className="text-[10px] uppercase tracking-[0.2em]"
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-muted)",
+            }}
+          >
+            {formatReferenceLine(watch)}
+          </span>
+        </div>
+
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <span
+            className="whitespace-nowrap text-sm md:text-base"
+            style={{
+              color: sold ? "var(--color-muted)" : "var(--color-foreground)",
+            }}
+          >
+            {formatPrice(watch.priceCents)}
+          </span>
+          <span
+            className="whitespace-nowrap text-[10px] uppercase tracking-[0.2em]"
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-muted)",
+            }}
+          >
+            {formatCondition(watch.condition)} ·{" "}
+            {formatCompleteness(watch.completeness)}
+          </span>
+        </div>
+      </div>
+
+      <span className="sr-only">{fullName}</span>
+    </Link>
+  );
+}
+
+/**
+ * Marcador de relógio desenhado em SVG — placeholder honesto enquanto não há
+ * foto real. Índices às 12/3/6/9 e ponteiros parados às 10h10 (a pose de
+ * catálogo), sem imitar nenhuma marca específica.
+ */
+function WatchGlyph({ accent }: { accent: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 100 100"
+      className="mx-auto w-[42%] opacity-30"
+      fill="none"
+    >
+      <circle cx="50" cy="50" r="38" stroke={accent} strokeWidth="0.8" />
+      <circle cx="50" cy="50" r="32" stroke={accent} strokeWidth="0.4" />
+      {[0, 90, 180, 270].map((deg) => (
+        <line
+          key={deg}
+          x1="50"
+          y1="15"
+          x2="50"
+          y2="21"
+          stroke={accent}
+          strokeWidth="1.4"
+          transform={`rotate(${deg} 50 50)`}
+        />
+      ))}
+      <line
+        x1="50"
+        y1="50"
+        x2="50"
+        y2="28"
+        stroke={accent}
+        strokeWidth="1.6"
+        transform="rotate(-60 50 50)"
+      />
+      <line
+        x1="50"
+        y1="50"
+        x2="50"
+        y2="34"
+        stroke={accent}
+        strokeWidth="1.6"
+        transform="rotate(50 50 50)"
+      />
+      <circle cx="50" cy="50" r="1.6" fill={accent} />
+    </svg>
+  );
+}

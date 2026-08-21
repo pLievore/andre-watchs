@@ -1,0 +1,112 @@
+# CLAUDE.md — ANDRE WATCHES
+
+Fonte da verdade do produto/escopo é o **SPEC.md**. Este arquivo cobre só as
+**regras de execução** que não devem ser adivinhadas.
+
+Especialistas invocáveis vivem em `.claude/agents/` (ver o README de lá).
+
+## Escopo atual
+
+**Front-end apenas** (SPEC §14 D5). Sem DB, sem gateway, sem checkout.
+Conversão = preço visível + CTA de WhatsApp, centralizado em
+`src/components/contact/WhatsappCta.tsx` — **ponto único de verdade** do canal.
+Ecommerce é fase E.
+
+## Stack (travada — ver SPEC §2.1)
+
+- **Next.js 15** (App Router, RSC) + **TypeScript strict** + **Tailwind v4** (CSS vars)
+- **Animação/movimento: Motion (motion.dev)** — `motion/react`. NÃO usar GSAP nem
+  Framer Motion legado. NÃO instalar ScrollTrigger.
+- **Scroll suave: Lenis** (`lenis/react`, via `SmoothScroll` no layout). Lenis dirige
+  o scroll real, então `useScroll`/`useTransform` do Motion funcionam sem fiação extra.
+- Imagens: `next/image` (locais em `/public`). Vídeo: `<video>` nativo.
+
+## Regras de animação (cinematográfico com intenção)
+
+1. **Movimento = Motion.** Scroll-driven via `useScroll` + `useTransform`. Reveal
+   pontual via `whileInView` (`viewport={{ once: true }}`).
+2. **Scroll = Lenis.** Já montado globalmente. Não reinventar smooth-scroll.
+3. **Duração de entrada/saída ≥ 0.6s** (alvo 0.8–1.0s pra reveals grandes). Micro-hover
+   (200–300ms) é exceção (SPEC §3.4).
+4. **Easing = editorial.** Use a var `--ease-editorial` (`cubic-bezier(0.22,1,0.36,1)`)
+   em CSS, ou o tuple `[0.22, 1, 0.36, 1]` no Motion. Não usar `ease: "linear"` em
+   reveals (só em loops contínuos, ex.: orbital do CTA de fechamento).
+5. **Stagger ~0.1–0.2s** entre itens de uma sequência.
+6. **Zero bounce.** Relógio não quica — nada de spring elástico ou overshoot.
+   Springs são permitidos e desejáveis para dar inércia (ver `COAST` no
+   `HeroBand`), mas sempre **superamortecidos** (ζ = damping / (2·√(stiffness·mass)) > 1).
+7. **Scroll tem inércia.** Coreografia scroll-driven passa por mola antes de
+   virar transform — parar de rolar desacelera, não congela (SPEC §14 D12).
+8. **TODA animação respeita `prefers-reduced-motion`** (SPEC §3.4/§9).
+9. **Performance**: `will-change-transform` em elementos animados por scroll;
+   `overflow-hidden` na seção quando houver translate negativo. Animar só
+   `transform` e `opacity`.
+
+## Tokens (SPEC §3)
+
+- Cores via CSS vars: `--color-background/foreground/muted/border/surface/accent`.
+  O acento é **metal frio** (`--color-accent`, platina). `--color-accent-gold` é
+  **uso restrito** a peças two-tone/ouro. Nunca hex solto em componente.
+- Tipografia: `--font-display` (hero/títulos), `--font-sans` (corpo), `--font-mono`
+  (eyebrows/referência/ano). Escala fluida com `clamp()`.
+
+## Regras de conteúdo (não são estilo — são risco)
+
+- **Nunca** escrever ou sugerir que a casa é revendedora autorizada de qualquer
+  maison. O disclaimer do rodapé é obrigatório em toda página (SPEC §1.4).
+- **Nunca** inventar referência, calibre, ano ou procedência. Sem dado confirmado,
+  a UI mostra `—` (helper `specValue` em `src/lib/types.ts`).
+- **Nunca** apresentar render de IA como peça real à venda (SPEC §4.3).
+- Proibido badge de promoção, countdown, "últimas unidades". Escassez é fato:
+  "1 unidade" é informação, urgência fabricada não.
+
+## Comandos
+
+- Dev: `npm run dev` · Typecheck: `npx tsc --noEmit`
+- ⚠️ `next build` **falha localmente no Node 25** (`/_not-found` prerender). A Vercel
+  builda no Node 22 e passa. Use `npx tsc --noEmit` pra validar localmente.
+- Deploy: `npx vercel --prod` (projeto já linkado).
+
+## Vídeo ambiente
+
+- `src/components/media/AmbientVideo.tsx` é o componente único para loop
+  decorativo (`preload="none"` + IntersectionObserver + fallback de poster no
+  reduced-motion). Não criar variações — estender esse.
+- **Nunca colocar texto por cima de vídeo** neste projeto. Material de macro tem
+  luminância imprevisível e a copy some em metade da duração (SPEC §14 D11).
+- Em uso: `/public/oficio.mp4` (retrato, painel do `/sobre`).
+
+## Hero (SPEC §4)
+
+- **`src/components/hero/HeroBand.tsx` é o hero em produção.** Faixa cinemascope
+  que abre até sangria total com o scroll, texto nas margens pretas, e 120
+  frames WebP dirigidos pelo scroll via canvas 2D.
+- **Texto nunca sobre o vídeo.** Não é estética: a luminância do material
+  alterna entre setups claros e escuros (77% de pixels claros aos 1s, 12% aos
+  5s), então copy sobreposta fica ilegível em metade da duração (SPEC §14 D11).
+- **Toda a coreografia lê a mola `progress`, nunca o `scrollYProgress` cru.**
+  É o que dá a inércia (D12). Ligar um transform direto no scroll faz aquele
+  elemento congelar enquanto o resto desliza.
+- Frames em `/public/hero-sequence/aw-hero-NNN.webp` (361 arquivos, 1440px, 16,5 MB — 30fps, todos os quadros da fonte). Pipeline:
+  `ffmpeg -i fonte.mp4 -vf "fps=30,scale=1440:-2" -c:v libwebp -quality 82 -f image2 out/f_%03d.webp`
+  (o `-f image2` é obrigatório — sem ele o ffmpeg gera um WebP animado único).
+- Mobile: `<video>` nativo em loop (`/public/hero-mobile.mp4`, 900px, 1,5 MB),
+  sem scrubbing. Nunca aponte o mobile pro asset de desktop.
+- **Carga em densidade progressiva** (`DENSITY_PASSES` no HeroBand): arranque
+  denso, depois um esqueleto ralo cobrindo a sequência INTEIRA, depois passadas
+  que dobram a densidade. Carregar em ordem sequencial deixa a segunda metade
+  do scroll vazia por dezenas de segundos — não faça isso.
+- Frames passam por `await img.decode()` antes de entrar em memória. Com só
+  `onload`, a decodificação cai dentro do primeiro `drawImage`, na main thread,
+  durante o scroll — é a causa do engasgo tipo "lag de jogo".
+- Cada lote de download é reordenado pela distância ao frame ATUAL: o download
+  persegue o usuário em vez de seguir a ordem dos arquivos. Sem isso, quem rola
+  até o fim espera o carregamento chegar lá.
+- **A faixa abre por `translateY` de duas barras sólidas, não por `clip-path`.**
+  `inset()` animado repinta a camada recortada a cada quadro, e isso rodava
+  exatamente no trecho 0–45% do scroll — era a causa do travamento no início.
+- `src/components/hero/HeroSequence.tsx` segue no repo, sem uso, para quando
+  existir uma sequência de **take único com câmera travada** (rotação ou
+  desmontagem). Nesse caso é ele que entra, não o HeroBand.
+- `scripts/scan-angle-match.mjs` acha trechos de jitter numa sequência de take
+  único; excise via a prop `skipFrames` do HeroSequence.
