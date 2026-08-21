@@ -210,38 +210,80 @@ export function HeroBand() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let lastIndex = -1;
-    let rafId = 0;
-
-    // `alpha: false` deixa o compositor pular a mistura: o frame é opaco e
-    // cobre o canvas inteiro. Contexto cacheado — pegar a cada quadro é
-    // trabalho jogado fora.
+    // `alpha: false` deixa o compositor pular a mistura com o fundo: o frame é
+    // opaco e cobre o canvas inteiro. Contexto cacheado — pegar a cada quadro
+    // é trabalho jogado fora.
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
-    const paint = (force: boolean) => {
+    let lastKey = -1;
+    let rafId = 0;
 
-      const idx = Math.min(
-        FRAME_COUNT - 1,
-        Math.max(0, Math.round(progress.get() * (FRAME_COUNT - 1))),
-      );
-      // A mola emite muito mais tiques do que existem frames: sem esta guarda,
-      // vários deles redesenhavam a tela inteira com a MESMA imagem.
-      if (idx === lastIndex && !force) return;
+    /**
+     * Sub-passos de mistura por frame. O hero consome ~1620px de scroll para
+     * 361 frames, ou seja ~4,5px por frame: rolando devagar, o índice fica
+     * parado por vários pixels e depois salta. Arredondar o índice transforma
+     * movimento contínuo em degraus, e degrau lento lê como travamento.
+     *
+     * Com 8 sub-passos existem ~2900 estados visuais em vez de 361.
+     */
+    const BLEND_STEPS = 8;
 
-      // Se o frame exato ainda não chegou, segura o anterior mais próximo —
-      // melhor do que piscar preto.
-      let img = imagesRef.current[idx];
-      for (let k = idx; k >= 0 && !img; k--) img = imagesRef.current[k];
-      if (!img) return;
+    /**
+     * Acima desta velocidade não vale dissolver: o movimento já borra sozinho e
+     * o segundo `drawImage` seria trabalho puro. Em progresso normalizado por
+     * segundo — 0.12 equivale a atravessar o hero em ~8s.
+     */
+    const BLEND_SPEED_LIMIT = 0.12;
 
+    /** Busca o frame carregado mais próximo, olhando pros dois lados. */
+    const nearest = (i: number) => {
+      const imgs = imagesRef.current;
+      if (imgs[i]) return imgs[i];
+      for (let d = 1; d < FRAME_COUNT; d++) {
+        if (imgs[i - d]) return imgs[i - d];
+        if (imgs[i + d]) return imgs[i + d];
+      }
+      return undefined;
+    };
+
+    const cover = (img: HTMLImageElement) => {
       const cw = canvas.width;
       const ch = canvas.height;
       const scale = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
       const dw = img.naturalWidth * scale;
       const dh = img.naturalHeight * scale;
       ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
-      lastIndex = idx;
+    };
+
+    const paint = (force: boolean) => {
+      // Índice FRACIONÁRIO: é o que permite dissolver entre vizinhos.
+      const f = Math.min(
+        FRAME_COUNT - 1,
+        Math.max(0, progress.get() * (FRAME_COUNT - 1)),
+      );
+      const key = Math.round(f * BLEND_STEPS);
+      if (key === lastKey && !force) return;
+
+      const i0 = Math.floor(f);
+      const t = f - i0;
+      const a = nearest(i0);
+      if (!a) return;
+
+      cover(a);
+
+      // Dissolve com o próximo só quando estamos entre frames E devagar.
+      const slow = Math.abs(progress.getVelocity()) < BLEND_SPEED_LIMIT;
+      if (slow && t > 0.02 && i0 + 1 < FRAME_COUNT) {
+        const b = imagesRef.current[i0 + 1];
+        if (b) {
+          ctx.globalAlpha = t;
+          cover(b);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      lastKey = key;
     };
 
     // Um draw por quadro de tela, no máximo. Sem isso, uma rajada de tiques da

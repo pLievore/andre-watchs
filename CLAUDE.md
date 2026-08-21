@@ -118,6 +118,12 @@ Ecommerce é fase E.
 - Cada lote de download é reordenado pela distância ao frame ATUAL: o download
   persegue o usuário em vez de seguir a ordem dos arquivos. Sem isso, quem rola
   até o fim espera o carregamento chegar lá.
+- **O canvas dissolve entre frames vizinhos, não escolha um.** O hero consome
+  ~1620px de scroll para 361 frames: ~4,5px por frame. Arredondar o índice faz
+  o scroll lento atravessar vários pixels sem mudar nada e depois saltar — o
+  degrau lê como travamento. O `paint` usa índice fracionário e mistura o
+  vizinho com `globalAlpha`, só quando está entre frames E devagar
+  (`BLEND_SPEED_LIMIT`); em scroll rápido o segundo `drawImage` seria desperdício.
 - **A faixa abre por `translateY` de duas barras sólidas, não por `clip-path`.**
   `inset()` animado repinta a camada recortada a cada quadro, e isso rodava
   exatamente no trecho 0–45% do scroll — era a causa do travamento no início.
