@@ -18,8 +18,9 @@
  * Desktop: canvas 2D + sequência de WebP. Canvas é confiável; seek de `<video>`
  * por scroll engasga, principalmente no iOS.
  *
- * Mobile: `<video>` nativo em loop, sem scrubbing — o custo de baixar 120
- * frames não se paga em tela pequena.
+ * Mobile: `<video>` nativo em loop, sem scrubbing — 361 frames a 1920px não se
+ * pagam em tela pequena, e 361 bitmaps decodificados estouram a memória de um
+ * telefone. Uma sequência própria de mobile é possível; ver notas no SPEC.
  *
  * Reduced-motion (§3.4/§9): poster estático, faixa já aberta, texto parado.
  */
@@ -39,7 +40,8 @@ import { WhatsappCta } from "@/components/contact/WhatsappCta";
 /**
  * 361 frames = os 12s da fonte a 30fps, ou seja, TODOS os quadros do original.
  * É o teto de fluidez possível — não existe quadro intermediário pra buscar.
- * Custo: 16,5 MB na sequência completa, mitigado pela carga progressiva abaixo.
+ * Custo: 17,2 MB na sequência completa (1920px, resolução nativa da fonte),
+ * mitigado pela carga em densidade progressiva abaixo.
  */
 const FRAME_COUNT = 361;
 const FRAME_BASE = "/hero-sequence";
