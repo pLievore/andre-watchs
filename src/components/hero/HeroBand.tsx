@@ -46,6 +46,8 @@ const FRAME_COUNT = 361;
 const FRAME_BASE = "/hero-sequence";
 const FRAME_PREFIX = "aw-hero";
 const POSTER = "/hero-poster.jpg";
+/** Largura real dos frames. O canvas nunca aloca mais pixels do que isto. */
+const SOURCE_WIDTH = 1920;
 const MOBILE_VIDEO = "/hero-mobile.mp4";
 /** Poster leve, dimensionado pro mobile — o de desktop tem 1440px. */
 const POSTER_MOBILE = "/hero-poster-mobile.jpg";
@@ -332,13 +334,21 @@ export function HeroBand() {
     };
 
     const resize = () => {
-      // DPR capado em 1.5: o material tem 1440px de largura, então backing
-      // store em 2x só faz o browser escalar mais pixels do que existem na
-      // fonte. 1.5 mantém a nitidez e corta ~44% da área de desenho.
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      /**
+       * Regra: usar toda a resolução da fonte, e nem um pixel além.
+       *
+       * Um cap fixo de DPR erra dos dois lados — desperdiça em tela grande
+       * (ampliando o que não existe na fonte) e desperdiça nitidez em tela
+       * pequena de DPR alto, onde caberia a fonte inteira. Aqui o alvo é o
+       * menor entre "o que a tela pede" e "o que o frame tem".
+       */
       const { width, height } = canvas.getBoundingClientRect();
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
+      if (!width || !height) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const targetWidth = Math.min(width * dpr, SOURCE_WIDTH);
+      const k = targetWidth / width;
+      canvas.width = Math.round(width * k);
+      canvas.height = Math.round(height * k);
       paint(true, true);
     };
 

@@ -37,6 +37,12 @@
   --color-stage-foreground: #f2f0ea;
   --color-stage-muted: #9b978f;
   --color-stage-border: #2a2c2e;
+  /**
+   * Ouro do palco — mais claro que o `--color-accent-gold` do papel porque
+   * precisa de contraste contra o escuro: 8.4:1, folgado em AA. Uso reservado
+   * ao eyebrow do hero, onde ecoa os índices e ponteiros dourados da peça.
+   */
+  --color-stage-gold: #c2a875;
 
   /* SPEC §3.4 — easing editorial */
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
@@ -130,6 +136,15 @@
    * `.btn-ghost` — se inverte sozinho. Não criar variantes "-invert" de
    * componente: basta envolver no `.on-stage`.
    */
+  /**
+   * No palco, o eyebrow herda o ouro. É o ÚNICO texto dourado do site: em
+   * display o ouro lê como joalheria de esquina, e sobre papel ele marca
+   * 3.66:1 — reprova AA. Aqui, pequeno e sobre escuro, ele funciona.
+   */
+  .on-stage .eyebrow {
+    color: var(--color-stage-gold);
+  }
+
   .on-stage {
     --color-background: var(--color-stage);
     --color-foreground: var(--color-stage-foreground);

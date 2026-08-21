@@ -49,6 +49,10 @@ Ecommerce é fase E.
 - Cores sempre via `var(--color-*)`. **Nunca hex solto em componente.** O acento
   é a própria tinta; `--color-accent-soft` é pátina e **não serve para texto**
   (não passa AA); `--color-accent-gold` é restrito a peças two-tone/ouro.
+- **Ouro é o único texto colorido do site, e só no palco** (`.on-stage .eyebrow`,
+  8.4:1). Sobre papel o ouro marca 3.66:1 e reprova AA; em tamanho display ele
+  lê como joalheria de esquina. Título do hero é off-white, títulos de papel são
+  tinta.
 - **Proibido**: mono maiúsculo com tracking largo (era o tique do NEXUS DROP),
   fundo escuro, glow, sombra preta densa, efeitos de partícula.
 - **Use as classes de `globals.css`, não estilo inline**: `.eyebrow` (serifa
@@ -107,8 +111,15 @@ Ecommerce é fase E.
 - **Toda a coreografia lê a mola `progress`, nunca o `scrollYProgress` cru.**
   É o que dá a inércia (D12). Ligar um transform direto no scroll faz aquele
   elemento congelar enquanto o resto desliza.
-- Frames em `/public/hero-sequence/aw-hero-NNN.webp` (361 arquivos, 1440px, 16,5 MB — 30fps, todos os quadros da fonte). Pipeline:
-  `ffmpeg -i fonte.mp4 -vf "fps=30,scale=1440:-2" -c:v libwebp -quality 82 -f image2 out/f_%03d.webp`
+- Frames em `/public/hero-sequence/aw-hero-NNN.webp` (361 arquivos, **1920px**,
+  17,2 MB — 30fps, resolução nativa da fonte). Pipeline:
+  `ffmpeg -i fonte.mp4 -vf "fps=30,scale=1920:-2" -c:v libwebp -quality 68 -f image2 out/f_%03d.webp`
+- **Extraia sempre na resolução da fonte.** Medido: 1920 q68 e 1440 q82 pesam o
+  mesmo, e o 1920 é visivelmente mais nítido — nitidez vem mais de pixel do que
+  de bitrate. Escalar a fonte para baixo e compensar com qualidade é troca ruim.
+- O canvas nunca aloca mais pixels do que a fonte tem (`SOURCE_WIDTH`). Cap fixo
+  de DPR erra dos dois lados: desperdiça em tela grande e perde nitidez em tela
+  pequena de DPR alto.
   (o `-f image2` é obrigatório — sem ele o ffmpeg gera um WebP animado único).
 - Mobile: `<video>` nativo em loop (`/public/hero-mobile.mp4`, 900px, 1,5 MB),
   sem scrubbing. Nunca aponte o mobile pro asset de desktop.

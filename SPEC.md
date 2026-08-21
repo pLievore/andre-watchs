@@ -358,7 +358,7 @@ de ícone · skip link · headings sem pulo ·
 - [x] Fallback de reduced-motion: poster estático, faixa aberta
 - [ ] Avaliar se os cortes da montagem incomodam no scrub — se sim, gerar um
       take único com câmera travada e trocar a sequência (o componente não muda)
-- [ ] Peso: 16,5 MB de frames é uma aposta deliberada em fluidez (D13). Reavaliar em device real no 4G — o dial é `fps` na extração.
+- [ ] Peso: 17,2 MB de frames (1920px nativo, 30fps) é aposta deliberada em qualidade e fluidez (D13). Reavaliar em device real no 4G — o dial é `fps` na extração.
 
 ### Fase D — Polish
 - [ ] Auditoria a11y + performance
