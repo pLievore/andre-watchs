@@ -379,6 +379,7 @@ DB, admin, carrinho, Mercado Pago, frete, NF-e.
 | Dado horológico errado no catálogo | Alta | Alto | Sem dado → `—`; conferir com o dono do estoque antes de publicar |
 | Ticket alto não converte por formulário | Certa | Baixo | Por isso a conversão é WhatsApp nesta fase (§7) |
 | Fotos de estoque inconsistentes (fundo, luz) | Alta | Médio | Agente `asset-pipeline` normaliza; 4:5 e fundo padrão |
+| **Demo ir ao ar com foto que não é da peça** | Média | **Alto** | `/public/pecas/` é Unsplash, marcado no topo de `watches.ts`. Bloqueio de publicação até D8 fechar |
 | Peso da sequência do hero estourar budget mobile | Média | Médio | 48 frames mobile, fallback de conexão lenta |
 
 ---
@@ -394,7 +395,7 @@ DB, admin, carrinho, Mercado Pago, frete, NF-e.
 | D5 | Escopo | Front-end apenas; ecommerce é fase E | 2026-08-20 |
 | D6 | Domínio | Validar `andrewatches.com.br` | pendente |
 | D7 | Número de WhatsApp | pendente — bloqueia `WhatsappCta` real | pendente |
-| D8 | Fotos reais do estoque | pendente — catálogo roda com placeholder até lá | pendente |
+| D8 | Fotos do estoque | **pendente e BLOQUEANTE.** O catálogo hoje roda com fotos do Unsplash em `/public/pecas/` — material de demonstração para o cliente ver o comportamento da vitrine, do card e da PDP. **Nenhuma delas é peça da casa.** Substituir tudo antes de publicar. | pendente |
 | D9 | Marca no material visual | **Exibir Rolex** (peça, mostrador e tipografia). Decisão do dono, tomada após o risco de §1.4/§13 ser levantado. Disclaimer de mercado secundário no rodapé e no `/sobre` permanece obrigatório. | 2026-08-20 |
 | D10 | Material do hero | Vídeo gerado por IA, próprio da casa (`Video Project 10.mp4`). É uma montagem com cortes, então **não** serve pra um plano único — mas serve pra scrubbing como sequência de frames. | 2026-08-20 |
 | D15 | Identidade visual | **Claro editorial** — papel osso, tinta, serifa. Substitui o escuro+aço da v3.0, que carregava os tiques do NEXUS DROP (mono maiúsculo com tracking largo, fundo quase preto, sparkles de fundo). Mecânica de scroll intocada: as barras do hero leem `--color-background`, então viraram cortina de papel sem alterar uma linha de coreografia. | 2026-08-20 |

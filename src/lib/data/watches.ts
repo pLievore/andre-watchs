@@ -1,88 +1,38 @@
 /**
- * ⚠️ CATÁLOGO MOCK — dados de vitrine, não estoque real.
+ * ⚠️ CATÁLOGO DE DEMONSTRAÇÃO — não é o estoque da casa.
  *
- * Referências, calibres e materiais são corretos para os modelos citados, mas
- * **preços, anos de cartão e disponibilidade são placeholder** até a casa
- * entregar o estoque real (SPEC §14 D8). Nada aqui vai ao ar sem conferência.
+ * **As fotos NÃO são das peças da casa.** São imagens do Unsplash (licença de
+ * uso comercial), escolhidas para mostrar ao cliente como a vitrine, o card e a
+ * PDP se comportam com material real. Preços, anos de cartão e disponibilidade
+ * são placeholder.
  *
- * Fotos: ainda não há imagens do estoque, então cada peça renderiza com o
- * `placeholderGradient` do card. Regra do SPEC §13: nunca usar press kit de
- * maison nem render de IA como se fosse peça da casa.
+ * Isso viola de propósito o SPEC §13 ("nunca usar foto que não é da peça") e só
+ * pode existir enquanto o site for demonstração. **Antes de qualquer publicação,
+ * todas as imagens de `/public/pecas/` precisam ser substituídas pelas fotos do
+ * estoque real** (SPEC §14 D8).
  *
- * Migra pro Drizzle (SPEC §2.2) mantendo o mesmo tipo `Watch` — componente não muda.
+ * O que É verdadeiro aqui: marca, modelo, referência, calibre, material e
+ * pulseira correspondem ao que cada foto realmente mostra. O catálogo foi
+ * montado a partir das imagens, e não o contrário — card com foto de outra peça
+ * seria o primeiro erro que um comprador notaria. Onde a foto não permite
+ * afirmar a referência com segurança, o campo fica ausente e a UI mostra `—`.
+ *
+ * Migra pro Drizzle (SPEC §2.2) mantendo o mesmo tipo `Watch`.
  */
 
 import type { Watch } from "@/lib/types";
 
 export interface MockWatch extends Watch {
-  /** Lavagem clara de placeholder enquanto não há foto real (SPEC §14 D8). */
+  /** Lavagem clara de placeholder para peça sem foto (SPEC §14 D8). */
   placeholderGradient?: readonly [string, string];
 }
 
 export const MOCK_WATCHES: readonly MockWatch[] = [
   {
-    slug: "rolex-submariner-date-126610lv",
-    brand: "Rolex",
-    model: "Submariner Date",
-    condition: "seminovo",
-    completeness: "full-set",
-    consigned: false,
-    specs: {
-      reference: "126610LV",
-      caliber: "3235",
-      caseDiameterMm: 41,
-      caseMaterial: "aco-904l",
-      bracelet: "oyster",
-      dial: "preto com bezel verde",
-      warrantyYear: 2023,
-    },
-    priceCents: 21500000,
-    available: true,
-    story:
-      "O Starbucks de 41 mm, com o calibre 3235 e a Glidelock do fecho. Peça de dono único, adquirida diretamente e conferida na bancada antes de entrar na vitrine.",
-    conditionNotes:
-      "Marcas leves de uso nos elos centrais, visíveis apenas sob luz direta. Caixa e bezel sem amassados.",
-    images: {
-      primary: {
-        url: "",
-        alt: "Rolex Submariner Date ref. 126610LV, mostrador preto e bezel verde, vista frontal",
-      },
-    },
-    placeholderGradient: ["#e6ece4", "#f5f3ee"],
-  },
-  {
-    slug: "rolex-gmt-master-ii-126710blnr",
-    brand: "Rolex",
-    model: "GMT-Master II Batman",
-    condition: "seminovo",
-    completeness: "caixa-e-papeis",
-    specs: {
-      reference: "126710BLNR",
-      caliber: "3285",
-      caseDiameterMm: 40,
-      caseMaterial: "aco-904l",
-      bracelet: "jubilee",
-      dial: "preto",
-      warrantyYear: 2022,
-    },
-    priceCents: 19800000,
-    available: true,
-    story:
-      "Bezel Cerachrom azul e preto em pulseira Jubilee. Segundo fuso funcionando, revisado e regulado dentro do padrão de fábrica.",
-    conditionNotes: "Sem marcas relevantes. Pulseira com folga mínima nos elos.",
-    images: {
-      primary: {
-        url: "",
-        alt: "Rolex GMT-Master II ref. 126710BLNR, bezel azul e preto, pulseira Jubilee",
-      },
-    },
-    placeholderGradient: ["#e4e9f0", "#f4f2ee"],
-  },
-  {
     slug: "rolex-submariner-date-126613lb",
     brand: "Rolex",
     model: "Submariner Date Bluesy",
-    condition: "pre-owned",
+    condition: "seminovo",
     completeness: "full-set",
     consigned: true,
     specs: {
@@ -91,159 +41,300 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
       caseDiameterMm: 41,
       caseMaterial: "two-tone",
       bracelet: "oyster",
-      dial: "azul royal",
-      warrantyYear: 2021,
+      dial: "azul royal com bezel Cerachrom azul",
+      warrantyYear: 2022,
     },
     priceCents: 24900000,
     available: true,
     story:
-      "Rolesor amarelo com mostrador azul royal — o Bluesy que fez a comparação de 40 mm contra 41 mm virar assunto recorrente na casa. Peça em consignação.",
+      "Rolesor amarelo com mostrador azul royal — o Bluesy que faz a comparação entre 40 e 41 mm virar assunto recorrente na casa. Peça em consignação de cliente antigo.",
     conditionNotes:
-      "Ouro do bezel preservado, sem perda de brilho. Micro-riscos no fecho, coerentes com o uso.",
+      "Ouro do bezel preservado, sem perda de brilho. Micro-riscos no fecho, coerentes com o uso declarado.",
     images: {
       primary: {
-        url: "",
-        alt: "Rolex Submariner Date ref. 126613LB two-tone, mostrador azul royal",
+        url: "/pecas/sub-bluesy-1.webp",
+        alt: "Rolex Submariner Date ref. 126613LB two-tone, mostrador e bezel azuis, vista de perfil",
       },
+      secondary: {
+        url: "/pecas/sub-bluesy-2.webp",
+        alt: "Macro do mostrador de um Rolex Submariner Date, com a impressão SUBMARINER e a lupa Cyclops sobre a data",
+      },
+      gallery: [
+        {
+          url: "/pecas/sub-bluesy-2.webp",
+          alt: "Macro do mostrador do Rolex Submariner Date ref. 126613LB",
+        },
+      ],
     },
-    placeholderGradient: ["#e5e9f2", "#f5f3ee"],
   },
   {
-    slug: "rolex-datejust-41-126334",
+    slug: "rolex-submariner-date-126613ln",
+    brand: "Rolex",
+    model: "Submariner Date",
+    condition: "seminovo",
+    completeness: "caixa-e-papeis",
+    specs: {
+      reference: "126613LN",
+      caliber: "3235",
+      caseDiameterMm: 41,
+      caseMaterial: "two-tone",
+      bracelet: "oyster",
+      dial: "preto com bezel Cerachrom preto",
+      warrantyYear: 2021,
+    },
+    priceCents: 22400000,
+    available: true,
+    story:
+      "Rolesor amarelo com mostrador preto — a leitura mais discreta do Submariner two-tone. Coroa Triplock e fecho Glidelock funcionando dentro do padrão.",
+    conditionNotes: "Sem amassados na caixa. Elos centrais com brilho de uso.",
+    images: {
+      primary: {
+        url: "/pecas/sub-twotone-1.webp",
+        alt: "Rolex Submariner Date ref. 126613LN two-tone, mostrador e bezel pretos, vista frontal",
+      },
+      secondary: {
+        url: "/pecas/sub-twotone-2.webp",
+        alt: "Detalhe do bezel Cerachrom e dos índices aplicados de um Rolex Submariner Date",
+      },
+      gallery: [
+        {
+          url: "/pecas/sub-twotone-2.webp",
+          alt: "Detalhe do bezel e dos índices do Rolex Submariner Date ref. 126613LN",
+        },
+      ],
+    },
+  },
+  {
+    slug: "rolex-submariner-date-126610ln",
+    brand: "Rolex",
+    model: "Submariner Date",
+    condition: "seminovo",
+    completeness: "full-set",
+    specs: {
+      reference: "126610LN",
+      caliber: "3235",
+      caseDiameterMm: 41,
+      caseMaterial: "aco-904l",
+      bracelet: "oyster",
+      dial: "preto",
+      warrantyYear: 2023,
+    },
+    priceCents: 19800000,
+    available: true,
+    story:
+      "O Submariner de 41 mm em Oystersteel, calibre 3235 e Glidelock no fecho. Peça de dono único, conferida na bancada antes de entrar na vitrine.",
+    conditionNotes:
+      "Marcas leves de uso nos elos centrais, visíveis apenas sob luz direta.",
+    images: {
+      primary: {
+        url: "/pecas/sub-aco-1.webp",
+        alt: "Rolex Submariner Date ref. 126610LN em aço Oystersteel, mostrador preto, sobre superfície branca",
+      },
+      secondary: {
+        url: "/pecas/sub-aco-2.webp",
+        alt: "Rolex Submariner Date ref. 126610LN em luz baixa, mostrando o perfil da caixa e a pulseira Oyster",
+      },
+      gallery: [
+        {
+          url: "/pecas/sub-aco-2.webp",
+          alt: "Perfil da caixa e pulseira Oyster do Rolex Submariner Date ref. 126610LN",
+        },
+      ],
+    },
+  },
+  {
+    slug: "rolex-datejust-41-126300-azul",
     brand: "Rolex",
     model: "Datejust 41",
     condition: "seminovo",
     completeness: "caixa-e-papeis",
     specs: {
-      reference: "126334",
+      reference: "126300",
       caliber: "3235",
       caseDiameterMm: 41,
       caseMaterial: "aco",
       bracelet: "oyster",
-      dial: "verde-oliva sunburst",
+      dial: "azul sunburst",
       warrantyYear: 2024,
     },
-    priceCents: 15900000,
+    priceCents: 14900000,
     available: true,
     story:
-      "Bezel canelado em ouro branco e mostrador sunburst. O relógio de todo dia que atravessa qualquer década sem envelhecer.",
+      "Bezel liso e mostrador azul sunburst em pulseira Oyster. O relógio de todo dia que atravessa qualquer década sem envelhecer.",
     images: {
       primary: {
-        url: "",
-        alt: "Rolex Datejust 41 ref. 126334, mostrador verde-oliva sunburst, bezel canelado",
+        url: "/pecas/datejust-azul-1.webp",
+        alt: "Rolex Datejust 41 ref. 126300 em aço, mostrador azul sunburst e bezel liso, vista frontal",
       },
+      secondary: {
+        url: "/pecas/datejust-azul-2.webp",
+        alt: "Macro dos elos e do acabamento polido da pulseira Oyster do Rolex Datejust 41",
+      },
+      gallery: [
+        {
+          url: "/pecas/datejust-azul-2.webp",
+          alt: "Macro da pulseira Oyster do Rolex Datejust 41 ref. 126300",
+        },
+      ],
     },
-    placeholderGradient: ["#e9ece2", "#f5f4ee"],
   },
   {
-    slug: "rolex-daytona-116500ln",
+    slug: "rolex-datejust-36-126233-chocolate",
+    brand: "Rolex",
+    model: "Datejust 36",
+    condition: "seminovo",
+    completeness: "full-set",
+    specs: {
+      reference: "126233",
+      caliber: "3235",
+      caseDiameterMm: 36,
+      caseMaterial: "two-tone",
+      bracelet: "jubilee",
+      dial: "chocolate com índices de diamante",
+      warrantyYear: 2023,
+    },
+    priceCents: 13600000,
+    available: true,
+    story:
+      "Rolesor amarelo com bezel canelado e mostrador chocolate de índices em diamante, na Jubilee. Os 36 mm que voltaram a ser a medida mais pedida da casa.",
+    conditionNotes: "Diamantes completos e firmes. Ouro do bezel sem desgaste.",
+    images: {
+      primary: {
+        url: "/pecas/datejust-choco-1.webp",
+        alt: "Rolex Datejust 36 ref. 126233 two-tone, mostrador chocolate com índices de diamante e pulseira Jubilee",
+      },
+    },
+  },
+  {
+    slug: "rolex-datejust-16233-champanhe",
+    brand: "Rolex",
+    model: "Datejust 36",
+    condition: "pre-owned",
+    completeness: "somente-relogio",
+    specs: {
+      reference: "16233",
+      caliber: "3135",
+      caseDiameterMm: 36,
+      caseMaterial: "two-tone",
+      bracelet: "jubilee",
+      dial: "champanhe",
+    },
+    priceCents: 6900000,
+    available: true,
+    story:
+      "O Datejust two-tone de mostrador champanhe, calibre 3135 — a geração que sustentou a reputação de robustez da referência. Sem caixa e sem cartão.",
+    conditionNotes:
+      "Marcas de uso visíveis nos elos e no fecho. Vidro sem trincas. Ano de fabricação a confirmar pelo número de série.",
+    images: {
+      primary: {
+        url: "/pecas/datejust-choco-2.webp",
+        alt: "Rolex Datejust 36 ref. 16233 two-tone, mostrador champanhe, sobre superfície escura",
+      },
+    },
+  },
+  {
+    slug: "rolex-cosmograph-daytona-116508",
     brand: "Rolex",
     model: "Cosmograph Daytona",
     condition: "pre-owned",
     completeness: "full-set",
     specs: {
-      reference: "116500LN",
+      reference: "116508",
       caliber: "4130",
       caseDiameterMm: 40,
-      caseMaterial: "aco-904l",
+      caseMaterial: "ouro-amarelo",
       bracelet: "oyster",
-      dial: "branco panda",
-      warrantyYear: 2019,
+      dial: "preto com contadores dourados",
+      warrantyYear: 2020,
     },
-    priceCents: 32500000,
+    priceCents: 42500000,
     available: false,
     story:
-      "Panda de bezel Cerachrom, calibre 4130. Saiu da vitrine em menos de uma semana — fica aqui como registro do que passa pela casa.",
+      "Daytona em ouro amarelo 18k, calibre 4130. Saiu da vitrine em menos de uma semana — fica aqui como registro do que passa pela casa.",
     images: {
       primary: {
-        url: "",
-        alt: "Rolex Cosmograph Daytona ref. 116500LN, mostrador branco panda, bezel Cerachrom preto",
+        url: "/pecas/daytona-1.webp",
+        alt: "Rolex Cosmograph Daytona ref. 116508 em ouro amarelo, mostrador preto com contadores dourados",
       },
     },
-    placeholderGradient: ["#eaeaee", "#f5f3ee"],
   },
   {
-    slug: "cartier-panthere-medium-two-tone",
-    brand: "Cartier",
-    model: "Panthère Medium",
+    slug: "omega-seamaster-planet-ocean-chronograph",
+    brand: "Omega",
+    model: "Seamaster Planet Ocean Chronograph",
     condition: "seminovo",
     completeness: "caixa-e-papeis",
     specs: {
-      caseDiameterMm: 27,
-      caseMaterial: "two-tone",
-      bracelet: "integrada",
-      dial: "prateado com algarismos romanos",
-      warrantyYear: 2022,
-    },
-    priceCents: 6900000,
-    available: true,
-    story:
-      "Aço e ouro amarelo, pulseira integrada com o caimento que fez o Panthère voltar ao topo da lista. Coroa com safira azul intacta.",
-    conditionNotes: "Elos sem folga. Vidro sem riscos.",
-    images: {
-      primary: {
-        url: "",
-        alt: "Cartier Panthère Medium two-tone, mostrador prateado com algarismos romanos",
-      },
-    },
-    placeholderGradient: ["#f0e8d9", "#f7f4ec"],
-  },
-  {
-    slug: "audemars-piguet-royal-oak-15500st",
-    brand: "Audemars Piguet",
-    model: "Royal Oak Selfwinding",
-    condition: "pre-owned",
-    completeness: "full-set",
-    consigned: true,
-    specs: {
-      reference: "15500ST",
-      caliber: "4302",
-      caseDiameterMm: 41,
-      caseMaterial: "aco",
-      bracelet: "integrada",
-      dial: "azul Grande Tapisserie",
-      warrantyYear: 2021,
-    },
-    priceCents: 38500000,
-    available: true,
-    story:
-      "Grande Tapisserie azul, caixa e pulseira integradas com o acabamento alternado polido e acetinado original de fábrica. Consignação de cliente antigo da casa.",
-    conditionNotes:
-      "Acabamento de fábrica preservado — nunca polida. Marcas de uso normais no fundo da caixa.",
-    images: {
-      primary: {
-        url: "",
-        alt: "Audemars Piguet Royal Oak ref. 15500ST, mostrador azul Grande Tapisserie",
-      },
-    },
-    placeholderGradient: ["#e4e8f1", "#f4f2ee"],
-  },
-  {
-    slug: "omega-speedmaster-professional-31030",
-    brand: "Omega",
-    model: "Speedmaster Professional",
-    condition: "novo",
-    completeness: "full-set",
-    specs: {
-      reference: "310.30.42.50.01.002",
-      caliber: "3861",
-      caseDiameterMm: 42,
+      reference: "215.30.46.51.03.001",
+      caliber: "9900",
+      caseDiameterMm: 45,
       caseMaterial: "aco",
       bracelet: "oyster",
-      dial: "preto",
-      warrantyYear: 2025,
+      dial: "azul com bezel de cerâmica",
+      warrantyYear: 2022,
     },
-    priceCents: 7400000,
+    priceCents: 5400000,
     available: true,
     story:
-      "Moonwatch de calibre 3861 com certificação Master Chronometer. Lacrado, com garantia internacional em aberto.",
+      "Planet Ocean cronógrafo com calibre coaxial Master Chronometer e válvula de hélio. O mergulhador de uso pesado que aceita terno sem constrangimento.",
     images: {
       primary: {
-        url: "",
-        alt: "Omega Speedmaster Professional Moonwatch ref. 310.30.42.50.01.002, mostrador preto",
+        url: "/pecas/seamaster-1.webp",
+        alt: "Omega Seamaster Planet Ocean Chronograph em aço, mostrador azul e bezel de cerâmica preta",
       },
     },
-    placeholderGradient: ["#eae9e8", "#f5f3ef"],
+  },
+  {
+    slug: "breitling-superocean-automatic-44",
+    brand: "Breitling",
+    model: "Superocean Automatic 44",
+    condition: "seminovo",
+    completeness: "caixa-e-papeis",
+    specs: {
+      // Referência não confirmada pela peça — a UI mostra `—` (SPEC §1.3).
+      caseDiameterMm: 44,
+      caseMaterial: "aco",
+      bracelet: "borracha",
+      dial: "preto com bezel bronze",
+      warrantyYear: 2021,
+    },
+    priceCents: 3200000,
+    available: true,
+    story:
+      "Superocean de bezel bronze e mostrador preto, com indicação de dia e data. Cronômetro certificado, feito para uso e não para vitrine.",
+    conditionNotes:
+      "Referência exata ainda não conferida com o cartão — será confirmada antes do fechamento.",
+    images: {
+      primary: {
+        url: "/pecas/superocean-1.webp",
+        alt: "Breitling Superocean Automatic 44, mostrador preto com bezel em bronze e indicação de dia e data",
+      },
+    },
+  },
+  {
+    slug: "rolex-oyster-perpetual-date-vintage",
+    brand: "Rolex",
+    model: "Oyster Perpetual Date",
+    condition: "pre-owned",
+    completeness: "somente-relogio",
+    specs: {
+      caseDiameterMm: 34,
+      caseMaterial: "aco",
+      bracelet: "oyster",
+      dial: "cinza-tropical",
+    },
+    priceCents: 4700000,
+    available: true,
+    story:
+      "Oyster Perpetual Date de caixa pequena e mostrador com pátina tropical — o tipo de peça que a casa compra pelo mostrador, não pela referência.",
+    conditionNotes:
+      "Pátina natural preservada; caixa nunca polida. Referência e ano a confirmar pelo número de série entre as alças.",
+    images: {
+      primary: {
+        url: "/pecas/oyster-vintage-1.webp",
+        alt: "Rolex Oyster Perpetual Date vintage em aço, mostrador cinza com pátina, sobre superfície vermelha",
+      },
+    },
   },
 ];
 
