@@ -55,6 +55,11 @@ Ecommerce é fase E.
   itálica), `.label` (rótulo de UI), `.meta` (dado técnico em mono, sem
   tracking), `.prose-editorial`, `.display`, `.btn` + `.btn-primary`/`.btn-ghost`,
   `.link-quiet`. Se falta um vocábulo, adicione a classe — não repita inline.
+- **Onde houver footage, use `.on-stage`.** O site é papel, mas vídeo pede fundo
+  escuro: a footage tem luminância ~145 contra 248 do papel, e encostar as duas
+  cria emenda dura que lê como retângulo colado. `.on-stage` redefine os tokens
+  no escopo, então `.eyebrow`, `.label`, `.btn-primary` etc. se invertem
+  sozinhos. **Nunca criar variantes `-invert` de componente.**
 - Sombra no claro é curta e de tinta (`rgba(23,24,26,0.3)` no máximo). Sombra
   preta densa suja o papel.
 

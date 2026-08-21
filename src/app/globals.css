@@ -25,6 +25,19 @@
   --color-success: #4a6b52;
   --color-error: #9c4a3c;
 
+  /**
+   * Palco escuro — usado SÓ onde há footage (hero). Não é um segundo tema:
+   * é o fundo do filme dentro de uma publicação impressa.
+   *
+   * Por que existe: a footage tem luminância média de ~126–153 contra 248 do
+   * papel. Encostar as duas cria uma emenda dura que lê como retângulo colado.
+   * No escuro a mesma imagem lê como luz emergindo, sem costura visível.
+   */
+  --color-stage: #0d0e0f;
+  --color-stage-foreground: #f2f0ea;
+  --color-stage-muted: #9b978f;
+  --color-stage-border: #2a2c2e;
+
   /* SPEC §3.4 — easing editorial */
   --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -109,6 +122,22 @@
     line-height: 1;
     letter-spacing: -0.02em;
     color: var(--color-foreground);
+  }
+
+  /**
+   * Escopo de palco. Redefine os tokens localmente, então TUDO que já lê
+   * `var(--color-*)` — `.eyebrow`, `.label`, `.meta`, `.btn-primary`,
+   * `.btn-ghost` — se inverte sozinho. Não criar variantes "-invert" de
+   * componente: basta envolver no `.on-stage`.
+   */
+  .on-stage {
+    --color-background: var(--color-stage);
+    --color-foreground: var(--color-stage-foreground);
+    --color-muted: var(--color-stage-muted);
+    --color-border: var(--color-stage-border);
+    --color-surface: #141617;
+    background: var(--color-stage);
+    color: var(--color-stage-foreground);
   }
 
   /* ── Ações ─────────────────────────────────────────────────────────────── */

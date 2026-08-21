@@ -305,7 +305,7 @@ export function HeroBand() {
       className="relative"
       style={{ height: reduce ? "100vh" : "250vh" }}
     >
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+      <div className="on-stage sticky top-0 h-screen w-full overflow-hidden">
         {/* Faixa: cresce do cinemascope até a sangria total */}
         <div className="absolute inset-0">
           {reduce || isMobile ? (
@@ -352,7 +352,7 @@ export function HeroBand() {
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(125% 105% at 50% 48%, transparent 62%, rgba(23,24,26,0.22) 100%)",
+                "radial-gradient(120% 100% at 50% 50%, transparent 52%, rgba(6,7,8,0.55) 100%)",
             }}
           />
         </div>

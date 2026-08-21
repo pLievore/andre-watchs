@@ -114,8 +114,27 @@ branco e brigava com uma página preta.
   --color-accent-gold: #9a7d4a; /* two-tone / ouro */
 }
 ```
+#### Palco escuro (D17)
+O site é papel, **mas o hero é escuro**. Não é um segundo tema: é o fundo do
+filme dentro de uma publicação impressa.
+
+Motivo medido: a footage tem luminância média de 126–153 contra 248 do papel.
+Encostar as duas cria duas emendas horizontais duras e a faixa lê como
+retângulo colado. No escuro a mesma imagem lê como luz emergindo, sem costura.
+
+```css
+--color-stage: #0d0e0f;
+--color-stage-foreground: #f2f0ea;
+--color-stage-muted: #9b978f;
+--color-stage-border: #2a2c2e;
+```
+
+Implementação: a classe `.on-stage` **redefine os tokens no escopo**, então tudo
+que já lê `var(--color-*)` se inverte sozinho. **Não criar variantes `-invert` de
+componente** — basta envolver no `.on-stage`.
+
 Regra: nunca hex solto em componente. Sempre `var(--color-*)`.
-Modo escuro: fora de escopo.
+Modo escuro global: fora de escopo.
 
 ### 3.2 Tipografia
 - **Display** (`--font-display`): serif editorial de alto contraste, para hero e títulos
@@ -379,6 +398,7 @@ DB, admin, carrinho, Mercado Pago, frete, NF-e.
 | D9 | Marca no material visual | **Exibir Rolex** (peça, mostrador e tipografia). Decisão do dono, tomada após o risco de §1.4/§13 ser levantado. Disclaimer de mercado secundário no rodapé e no `/sobre` permanece obrigatório. | 2026-08-20 |
 | D10 | Material do hero | Vídeo gerado por IA, próprio da casa (`Video Project 10.mp4`). É uma montagem com cortes, então **não** serve pra um plano único — mas serve pra scrubbing como sequência de frames. | 2026-08-20 |
 | D15 | Identidade visual | **Claro editorial** — papel osso, tinta, serifa. Substitui o escuro+aço da v3.0, que carregava os tiques do NEXUS DROP (mono maiúsculo com tracking largo, fundo quase preto, sparkles de fundo). Mecânica de scroll intocada: as barras do hero leem `--color-background`, então viraram cortina de papel sem alterar uma linha de coreografia. | 2026-08-20 |
+| D17 | Palco escuro no hero | O site é papel, o hero é escuro. A tentativa de claro em toda a página quebrou onde há footage: degrau de luminância de 248 para ~145 com duas emendas duras, lendo como retângulo colado. Resolvido com o escopo `.on-stage`, que redefine os tokens localmente — nenhuma variante de componente foi criada e a coreografia não mudou. | 2026-08-20 |
 | D16 | Vocabulário tipográfico | Mono maiúsculo com tracking 0.3–0.4em some do projeto. Eyebrow vira serifa itálica em caixa de frase; rótulos de UI viram sans discreta; a mono sobrevive só em dado técnico (referência, calibre, ano) e sem tracking. Centralizado nas classes `.eyebrow` / `.label` / `.meta` / `.btn` do `globals.css` — não repetir estilo inline. | 2026-08-20 |
 | D14 | Vídeo de ofício | Segundo material de IA, **retrato 480×854, 31s**, macro de gravação/índices/acabamento. Vai pro `/sobre`, como painel vertical sticky ao lado dos passos de conferência — usa o formato retrato nativamente em vez de recortar, e ilustra literalmente o que o texto descreve. Sem texto por cima (mesma regra do D11). | 2026-08-20 |
 | D13 | Fluidez acima de peso | Hero em **30fps nativo** (361 frames, 16,5 MB) — todos os quadros da fonte, teto de fluidez. Decisão explícita do dono: "aumente a qualidade, compensamos o desempenho no restante do site". Mitigado por carga em densidade progressiva e por cortar o vídeo do mobile de 8 MB para 1,5 MB. | 2026-08-20 |
