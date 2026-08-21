@@ -38,20 +38,53 @@ import { useEffect, useRef, useState } from "react";
 import { WhatsappCta } from "@/components/contact/WhatsappCta";
 
 /**
- * 361 frames = os 12s da fonte a 30fps, ou seja, TODOS os quadros do original.
- * É o teto de fluidez possível — não existe quadro intermediário pra buscar.
- * Custo: 17,2 MB na sequência completa (1920px, resolução nativa da fonte),
- * mitigado pela carga em densidade progressiva abaixo.
+ * Duas sequências: a mesma coreografia, fontes diferentes.
+ *
+ * O desktop roda os 12s da fonte a 30fps — todos os quadros do original, teto
+ * de fluidez. O telefone roda 15fps a 900px, porque o limite lá não é banda, é
+ * MEMÓRIA: cada bitmap decodificado ocupa largura × altura × 4 bytes, e 361
+ * quadros a 1920px passariam de 3 GB. A 900px, num aparelho de 390pt com DPR
+ * capado em 2, o canvas pede 780px — a fonte cobre com folga e 1080px só
+ * gastaria memória em pixels que a tela não mostra.
  */
-const FRAME_COUNT = 361;
-const FRAME_BASE = "/hero-sequence";
-const FRAME_PREFIX = "aw-hero";
+const SOURCES = {
+  desktop: {
+    count: 361,
+    width: 1920,
+    dir: "/hero-sequence",
+    prefix: "aw-hero",
+  },
+  mobile: {
+    count: 181,
+    width: 900,
+    dir: "/hero-sequence-mobile",
+    prefix: "aw-m",
+  },
+} as const;
+
+type Source = (typeof SOURCES)[keyof typeof SOURCES];
+
+/** Primeiro quadro estático — é o que o reduced-motion mostra no lugar da sequência. */
 const POSTER = "/hero-poster.jpg";
-/** Largura real dos frames. O canvas nunca aloca mais pixels do que isto. */
-const SOURCE_WIDTH = 1920;
-const MOBILE_VIDEO = "/hero-mobile.mp4";
-/** Poster leve, dimensionado pro mobile — o de desktop tem 1440px. */
 const POSTER_MOBILE = "/hero-poster-mobile.jpg";
+
+function frameUrl(source: Source, i: number) {
+  return `${source.dir}/${source.prefix}-${String(i + 1).padStart(3, "0")}.webp`;
+}
+
+/**
+ * Janela deslizante do mobile: quantos quadros ficam em memória à frente e
+ * atrás do atual. É a peça que torna o scrubbing viável no telefone — sem ela,
+ * 181 bitmaps a 900px somam 330 MB e o iOS Safari mata a aba. Com a janela, o
+ * teto é fixo em ~54 MB por mais longa que a sequência seja.
+ *
+ * Assimétrica porque o scroll costuma seguir adiante: vale mais ter quadro
+ * pronto na direção do movimento do que atrás.
+ */
+const WINDOW_AHEAD = 20;
+const WINDOW_BEHIND = 11;
+/** Folga antes de descartar, pra vaivém curto não provocar recarga. */
+const WINDOW_SLACK = 8;
 
 /**
  * Frames do arranque, carregados em densidade total antes de qualquer outra
@@ -117,10 +150,6 @@ const COAST = {
   restDelta: 0.0002,
 } as const;
 
-function frameUrl(i: number) {
-  return `${FRAME_BASE}/${FRAME_PREFIX}-${String(i + 1).padStart(3, "0")}.webp`;
-}
-
 export function HeroBand() {
   const reduce = useReducedMotion();
   const containerRef = useRef<HTMLElement>(null);
@@ -128,6 +157,7 @@ export function HeroBand() {
   const imagesRef = useRef<(HTMLImageElement | undefined)[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [ready, setReady] = useState(false);
+  const source: Source = isMobile ? SOURCES.mobile : SOURCES.desktop;
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -146,12 +176,12 @@ export function HeroBand() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ── Carregamento dos frames (desktop, sem reduced-motion) ────────────────
+  // ── Carregamento dos frames ──────────────────────────────────────────────
   useEffect(() => {
-    if (isMobile || reduce) return;
+    if (reduce) return;
 
     let cancelled = false;
-    const images: (HTMLImageElement | undefined)[] = new Array(FRAME_COUNT);
+    const images: (HTMLImageElement | undefined)[] = new Array(source.count);
     imagesRef.current = images;
 
     /**
@@ -163,12 +193,12 @@ export function HeroBand() {
     const load = async (i: number) => {
       const img = new Image();
       img.decoding = "async";
-      img.src = frameUrl(i);
+      img.src = frameUrl(source, i);
       try {
         await img.decode();
       } catch {
-        // decode() rejeita em formato não suportado ou erro de rede; cai pro
-        // onload pra não travar a fila.
+        // decode() rejeita em erro de rede ou formato; cai pro onload pra não
+        // travar a fila.
         await new Promise<void>((resolve) => {
           img.onload = () => resolve();
           img.onerror = () => resolve();
@@ -179,20 +209,19 @@ export function HeroBand() {
 
     /** Índice do frame que o scroll está mostrando agora. */
     const currentIndex = () =>
-      Math.round(progress.get() * (FRAME_COUNT - 1));
+      Math.round(progress.get() * (source.count - 1));
 
     /**
      * Carrega uma lista de índices em lotes, pulando o que já está em memória.
      *
      * A ordem é recalculada a cada lote pela distância ao frame ATUAL. Sem
      * isso, quem rola até o fim fica esperando o carregamento chegar lá pela
-     * ordem — que era a causa do travamento no fim da sequência. Agora o
-     * download persegue o usuário.
+     * ordem dos arquivos. Assim o download persegue o usuário.
      */
-    const loadBatch = async (indices: number[]) => {
+    const loadBatch = async (indices: number[], token?: () => boolean) => {
       const pending = new Set(indices.filter((i) => !images[i]));
       while (pending.size > 0) {
-        if (cancelled) return;
+        if (cancelled || (token && !token())) return;
         const here = currentIndex();
         const next = [...pending]
           .sort((a, b) => Math.abs(a - here) - Math.abs(b - here))
@@ -202,6 +231,54 @@ export function HeroBand() {
       }
     };
 
+    if (isMobile) {
+      /**
+       * MOBILE — janela deslizante.
+       *
+       * Segurar a sequência inteira decodificada estoura a memória do telefone
+       * e o iOS mata a aba. Aqui só vive o que está perto do frame atual: o que
+       * sai da janela é descartado, e o browser recupera o bitmap. Recarregar
+       * depois é barato porque o arquivo continua no cache de HTTP — o custo é
+       * só decodificar de novo.
+       */
+      let generation = 0;
+      let lastCenter = Number.NEGATIVE_INFINITY;
+
+      const reconcile = () => {
+        const center = currentIndex();
+        // Só reage a movimento real, senão reconciliaria a cada tique da mola.
+        if (Math.abs(center - lastCenter) < 4) return;
+        lastCenter = center;
+
+        const mine = ++generation;
+        const alive = (i: number) =>
+          i >= center - WINDOW_BEHIND - WINDOW_SLACK &&
+          i <= center + WINDOW_AHEAD + WINDOW_SLACK;
+
+        for (let i = 0; i < source.count; i++) {
+          if (images[i] && !alive(i)) images[i] = undefined;
+        }
+
+        const want: number[] = [];
+        for (let d = 0; d <= WINDOW_AHEAD; d++) {
+          if (center + d < source.count) want.push(center + d);
+          if (d > 0 && d <= WINDOW_BEHIND && center - d >= 0)
+            want.push(center - d);
+        }
+        void loadBatch(want, () => mine === generation).then(() => {
+          if (!cancelled) setReady(true);
+        });
+      };
+
+      reconcile();
+      const unsubscribe = progress.on("change", reconcile);
+      return () => {
+        cancelled = true;
+        unsubscribe();
+      };
+    }
+
+    // DESKTOP — densidade progressiva sobre a sequência inteira.
     (async () => {
       // 1. Arranque: densidade total no trecho que o usuário vê primeiro.
       await loadBatch(Array.from({ length: EAGER_COUNT }, (_, i) => i));
@@ -213,7 +290,7 @@ export function HeroBand() {
       for (const step of DENSITY_PASSES) {
         if (cancelled) return;
         const indices: number[] = [];
-        for (let i = 0; i < FRAME_COUNT; i += step) indices.push(i);
+        for (let i = 0; i < source.count; i += step) indices.push(i);
         await loadBatch(indices);
       }
     })();
@@ -221,11 +298,11 @@ export function HeroBand() {
     return () => {
       cancelled = true;
     };
-  }, [isMobile, reduce]);
+  }, [isMobile, reduce, source, progress]);
 
   // ── Canvas: dimensiona e desenha o frame do scroll atual ─────────────────
   useEffect(() => {
-    if (isMobile || reduce) return;
+    if (reduce) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -261,7 +338,7 @@ export function HeroBand() {
     const nearest = (i: number) => {
       const imgs = imagesRef.current;
       if (imgs[i]) return imgs[i];
-      for (let d = 1; d < FRAME_COUNT; d++) {
+      for (let d = 1; d < source.count; d++) {
         if (imgs[i - d]) return imgs[i - d];
         if (imgs[i + d]) return imgs[i + d];
       }
@@ -287,8 +364,8 @@ export function HeroBand() {
     const paint = (snap: boolean, force = false) => {
       // Índice FRACIONÁRIO: é o que permite dissolver entre vizinhos.
       const f = Math.min(
-        FRAME_COUNT - 1,
-        Math.max(0, progress.get() * (FRAME_COUNT - 1)),
+        source.count - 1,
+        Math.max(0, progress.get() * (source.count - 1)),
       );
       // Em repouso a chave é o frame inteiro; em movimento, o sub-passo.
       const key = snap ? Math.round(f) * BLEND_STEPS : Math.round(f * BLEND_STEPS);
@@ -311,7 +388,7 @@ export function HeroBand() {
 
       // Dissolve com o próximo só quando estamos entre frames E devagar.
       const slow = Math.abs(progress.getVelocity()) < BLEND_SPEED_LIMIT;
-      if (slow && t > 0.02 && i0 + 1 < FRAME_COUNT) {
+      if (slow && t > 0.02 && i0 + 1 < source.count) {
         const b = imagesRef.current[i0 + 1];
         if (b) {
           ctx.globalAlpha = t;
@@ -357,7 +434,7 @@ export function HeroBand() {
       const { width, height } = canvas.getBoundingClientRect();
       if (!width || !height) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const targetWidth = Math.min(width * dpr, SOURCE_WIDTH);
+      const targetWidth = Math.min(width * dpr, source.width);
       const k = targetWidth / width;
       canvas.width = Math.round(width * k);
       canvas.height = Math.round(height * k);
@@ -372,7 +449,7 @@ export function HeroBand() {
       if (rafId) cancelAnimationFrame(rafId);
       unsub();
     };
-  }, [isMobile, reduce, progress, ready]);
+  }, [reduce, source, progress, ready]);
 
   // ── Coreografia ──────────────────────────────────────────────────────────
   /**
@@ -409,27 +486,14 @@ export function HeroBand() {
       <div className="on-stage sticky top-0 h-screen w-full overflow-hidden">
         {/* Faixa: cresce do cinemascope até a sangria total */}
         <div className="absolute inset-0">
-          {reduce || isMobile ? (
-            isMobile && !reduce ? (
-              <video
-                className="h-full w-full object-cover"
-                poster={POSTER_MOBILE}
-                src={MOBILE_VIDEO}
-                autoPlay
-                loop
-                muted
-                playsInline
-                preload="metadata"
-                aria-hidden="true"
-              />
-            ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={POSTER}
-                alt="Relógio de luxo em detalhe macro"
-                className="h-full w-full object-cover"
-              />
-            )
+          {reduce ? (
+            // Sem movimento: um quadro parado, sem baixar sequência nenhuma.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={isMobile ? POSTER_MOBILE : POSTER}
+              alt="Relógio de luxo em detalhe macro"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <>
               <canvas
@@ -438,10 +502,14 @@ export function HeroBand() {
                 aria-hidden="true"
               />
               {!ready && (
-                <div
-                  aria-hidden
-                  className="absolute inset-0 animate-pulse"
-                  style={{ background: "var(--color-surface)" }}
+                // Poster enquanto os primeiros quadros não chegam — no telefone
+                // é o que evita a faixa abrir sobre um retângulo vazio.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={isMobile ? POSTER_MOBILE : POSTER}
+                  alt=""
+                  aria-hidden="true"
+                  className="absolute inset-0 h-full w-full object-cover"
                 />
               )}
             </>

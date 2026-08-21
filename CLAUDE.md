@@ -121,8 +121,14 @@ Ecommerce é fase E.
   de DPR erra dos dois lados: desperdiça em tela grande e perde nitidez em tela
   pequena de DPR alto.
   (o `-f image2` é obrigatório — sem ele o ffmpeg gera um WebP animado único).
-- Mobile: `<video>` nativo em loop (`/public/hero-mobile.mp4`, 900px, 1,5 MB),
-  sem scrubbing. Nunca aponte o mobile pro asset de desktop.
+- **Mobile também é scrubbing**, com sequência própria: 181 frames a 900px em
+  `/public/hero-sequence-mobile/aw-m-NNN.webp` (3,6 MB, 15fps). Nunca aponte o
+  mobile pro asset de desktop — 361 bitmaps a 1920px passam de 3 GB decodificados.
+- **A janela deslizante do mobile não é otimização, é o que viabiliza.** Só
+  ficam em memória ~31 quadros em volta do atual; o resto é descartado e
+  recarregado do cache de HTTP quando volta. Teto fixo em ~54 MB, contra os
+  330 MB que a sequência inteira ocuparia — acima do que o iOS Safari tolera
+  antes de matar a aba. Ver `WINDOW_AHEAD`/`WINDOW_BEHIND` no HeroBand.
 - **Carga em densidade progressiva** (`DENSITY_PASSES` no HeroBand): arranque
   denso, depois um esqueleto ralo cobrindo a sequência INTEIRA, depois passadas
   que dobram a densidade. Carregar em ordem sequencial deixa a segunda metade
