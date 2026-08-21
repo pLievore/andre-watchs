@@ -105,9 +105,15 @@ Ecommerce é fase E.
 - **`src/components/hero/HeroBand.tsx` é o hero em produção.** Faixa cinemascope
   que abre até sangria total com o scroll, texto nas margens pretas, e 120
   frames WebP dirigidos pelo scroll via canvas 2D.
-- **Texto nunca sobre o vídeo.** Não é estética: a luminância do material
-  alterna entre setups claros e escuros (77% de pixels claros aos 1s, 12% aos
-  5s), então copy sobreposta fica ilegível em metade da duração (SPEC §14 D11).
+- **Texto SOBRE o vídeo, protegido por scrim adaptativo.** A luminância da
+  metade inferior varia de 11 a 208 ao longo da sequência, então scrim de
+  opacidade fixa não serve: o que segura o claro afunda o escuro em breu. O
+  scrim lê `src/lib/hero-luma.ts` (tabela por quadro, gerada offline por
+  `scripts/build-luminance.mjs`) e ajusta a própria opacidade — 0,12 a 0,80 —
+  pra deixar sempre a mesma base sob o texto.
+- **Nunca medir luminância em runtime.** `getImageData` força leitura de volta
+  da GPU e trava o pipeline no meio do scroll. Se trocar a sequência, rode
+  `node scripts/build-luminance.mjs` pra regerar a tabela.
 - **Toda a coreografia lê a mola `progress`, nunca o `scrollYProgress` cru.**
   É o que dá a inércia (D12). Ligar um transform direto no scroll faz aquele
   elemento congelar enquanto o resto desliza.

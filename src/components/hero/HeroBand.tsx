@@ -36,6 +36,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { WhatsappCta } from "@/components/contact/WhatsappCta";
+import { LUMA_DESKTOP, LUMA_MOBILE } from "@/lib/hero-luma";
 
 /**
  * Duas sequências: a mesma coreografia, fontes diferentes.
@@ -118,20 +119,41 @@ const LOAD_CONCURRENCY = 6;
 const MOBILE_BREAKPOINT_PX = 768;
 
 /**
- * Altura das margens de palco (classes literais logo abaixo, no JSX).
+ * SCRIM ADAPTATIVO.
  *
- * Bem menores no mobile: em tela de 667px de altura, 31% de cada lado deixavam
- * pouco mais de um terço para a peça — o filme virava tarja. Com 20% e 24%
- * sobra 56% de vídeo, e cabe porque o subtexto sai do mobile (abaixo).
+ * O sombreamento não tem opacidade fixa: ele lê a luminância da metade
+ * inferior do quadro atual (tabela em `src/lib/hero-luma.ts`, calculada
+ * offline) e se ajusta para deixar SEMPRE a mesma luminância sob o texto.
  *
- *   topo  → h-[20%] md:h-[31%]
- *   baixo → h-[24%] md:h-[31%]
+ * Por que não fixo: a área da copy varia de 11 a 208 ao longo da sequência.
+ * O valor que segura o contraste no quadro claro afunda o quadro escuro em
+ * breu, e o valor que preserva o escuro não segura o claro. Só medindo dá
+ * pra ter as duas coisas.
  *
- * Precisam ser literais: o Tailwind varre o código como texto e não gera classe
- * montada em template literal.
+ * Por que offline: medir no browser exigiria `getImageData` a cada quadro,
+ * que força leitura de volta da GPU e trava o pipeline no meio do scroll.
  */
-/** Fração do scroll em que a faixa termina de abrir. */
-const BAND_OPEN_AT = 0.45;
+const SCRIM_TARGET_LUMA = 42;
+const SCRIM_MIN = 0.12;
+const SCRIM_MAX = 0.88;
+
+/** Opacidade que leva um quadro de luminância `l` até o alvo. */
+function scrimFor(l: number) {
+  if (l <= SCRIM_TARGET_LUMA) return SCRIM_MIN;
+  return Math.min(SCRIM_MAX, Math.max(SCRIM_MIN, 1 - SCRIM_TARGET_LUMA / l));
+}
+
+/**
+ * Mola do scrim. Nos cortes da montagem a luminância salta de uma vez (11 →
+ * 208), e sem amortecimento o sombreamento piscaria junto. Curta de propósito:
+ * ~0,25s, o bastante pra suavizar o corte sem deixar o texto desprotegido.
+ */
+const SCRIM_COAST = {
+  stiffness: 120,
+  damping: 26,
+  mass: 1,
+  restDelta: 0.001,
+} as const;
 
 /**
  * Inércia da coreografia (D12). O scroll não dirige os frames direto: passa por
@@ -472,16 +494,27 @@ export function HeroBand() {
    * pra fora, dão o mesmo resultado visual usando só `translateY`: composição
    * pura na GPU, sem repaint do canvas.
    */
-  const barOut: [number, number] = [0, BAND_OPEN_AT];
-  const topBarY = useTransform(progress, barOut, ["0%", "-100%"], { clamp: true });
-  const bottomBarY = useTransform(progress, barOut, ["0%", "100%"], { clamp: true });
+  /**
+   * Opacidade do scrim, derivada do quadro atual pela tabela de luminância.
+   * Passa por mola curta para os cortes da montagem não fazerem o
+   * sombreamento piscar.
+   */
+  const luma = isMobile ? LUMA_MOBILE : LUMA_DESKTOP;
+  const scrimRaw = useTransform(progress, (p) => {
+    const i = Math.min(
+      luma.length - 1,
+      Math.max(0, Math.round(p * (luma.length - 1))),
+    );
+    return scrimFor(luma[i] ?? 128);
+  });
+  const scrim = useSpring(scrimRaw, SCRIM_COAST);
 
-  // Texto sai um pouco à frente da barra — dá profundidade e some antes de a
-  // borda da barra passar por cima dele.
-  const textOut: [number, number] = [0, BAND_OPEN_AT * 0.8];
-  const textLead = useTransform(progress, textOut, ["0%", "-22%"]);
-  const textLeadDown = useTransform(progress, textOut, ["0%", "22%"]);
-  const textOpacity = useTransform(progress, [0, BAND_OPEN_AT * 0.7], [1, 0]);
+  /**
+   * A copy sobe de leve e sai antes do fim, para o hero fechar na imagem
+   * limpa em vez de empurrar texto para dentro da vitrine.
+   */
+  const copyY = useTransform(progress, [0, 1], ["0%", "-18%"]);
+  const copyOpacity = useTransform(progress, [0.55, 0.82], [1, 0]);
   const indicatorOpacity = useTransform(progress, [0, 0.05], [1, 0]);
 
   return (
@@ -526,74 +559,83 @@ export function HeroBand() {
             </>
           )}
 
-          {/* Vinheta — costura a faixa no preto do site */}
+          {/*
+            Scrim adaptativo. Gradiente fixo, opacidade variável: a intensidade
+            vem da luminância do quadro atual, então o texto sempre assenta na
+            mesma base independente do que a footage está fazendo.
+          */}
+          <motion.div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              opacity: reduce ? 0.55 : scrim,
+              background:
+                "linear-gradient(to top, rgba(6,7,8,1) 0%, rgba(6,7,8,0.95) 26%, rgba(6,7,8,0.7) 52%, rgba(6,7,8,0.25) 76%, transparent 100%)",
+            }}
+          />
+
+          {/* Vinheta lateral — fecha as bordas e puxa o olho pro centro. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
             style={{
               background:
-                "radial-gradient(120% 100% at 50% 50%, transparent 52%, rgba(6,7,8,0.55) 100%)",
+                "radial-gradient(125% 105% at 50% 42%, transparent 45%, rgba(6,7,8,0.55) 100%)",
+            }}
+          />
+
+          {/* Sombra sob o header, pra nav não flutuar sobre quadro claro. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 top-0"
+            style={{
+              height: "22%",
+              background:
+                "linear-gradient(to bottom, rgba(6,7,8,0.75) 0%, transparent 100%)",
             }}
           />
         </div>
 
-        {/* Barra de cima — cobre o vídeo e desliza pra fora levando o título */}
+        {/*
+          Copy sobre a imagem — é a camada principal agora, não legenda de
+          margem. Ancorada embaixo à esquerda, sobre a parte mais opaca do
+          scrim.
+        */}
         <motion.div
-          className="absolute inset-x-0 top-0 flex h-[20%] items-end px-6 pb-5 will-change-transform md:h-[31%] md:px-16 md:pb-10"
-          style={{
-            background: "var(--color-background)",
-            ...(reduce ? {} : { y: topBarY }),
-          }}
+          className="pointer-events-none absolute inset-x-0 bottom-0 px-6 pb-14 will-change-transform md:px-16 md:pb-20"
+          style={reduce ? undefined : { y: copyY, opacity: copyOpacity }}
         >
-          <motion.div
-            className="mx-auto w-full max-w-6xl"
-            style={reduce ? undefined : { y: textLead, opacity: textOpacity }}
-          >
-            <p className="eyebrow mb-4">Relógios de luxo · desde 2012</p>
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+            <p className="eyebrow pointer-events-auto">
+              Relógios de luxo · desde 2012
+            </p>
+
             <h1
-              className="text-balance"
+              className="pointer-events-auto max-w-4xl text-balance"
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: "clamp(2.25rem, 7vw, 6rem)",
-                lineHeight: 0.94,
+                fontSize: "clamp(2.75rem, 9vw, 8rem)",
+                lineHeight: 0.92,
                 letterSpacing: "-0.03em",
+                textShadow: "0 2px 50px rgba(6,7,8,0.9)",
               }}
             >
-              Andre Watches
+              O tempo tem procedência.
             </h1>
-          </motion.div>
-        </motion.div>
 
-        {/* Barra de baixo — subtexto e CTAs */}
-        <motion.div
-          className="absolute inset-x-0 bottom-0 flex h-[24%] items-start px-6 pt-5 will-change-transform md:h-[31%] md:px-16 md:pt-10"
-          style={{
-            background: "var(--color-background)",
-            ...(reduce ? {} : { y: bottomBarY }),
-          }}
-        >
-          <motion.div
-            className="mx-auto flex w-full max-w-6xl flex-col gap-6 md:flex-row md:items-center md:justify-between"
-            style={reduce ? undefined : { y: textLeadDown, opacity: textOpacity }}
-          >
-            {/*
-              Só no desktop. No mobile ele custava três linhas de uma barra que
-              precisa ser estreita, e repete o que o eyebrow e o H1 já dizem —
-              a peça na tela vale mais do que a frase.
-            */}
             <p
-              className="hidden max-w-md text-base leading-relaxed md:block md:text-lg"
-              style={{ color: "var(--color-muted)" }}
+              className="pointer-events-auto hidden max-w-md text-base leading-relaxed md:block md:text-lg"
+              style={{
+                color: "var(--color-muted)",
+                textShadow: "0 1px 24px rgba(6,7,8,0.9)",
+              }}
             >
               Rolex e outras maisons premium, conferidas peça a peça antes de
               entrarem na vitrine.
             </p>
 
-            <div className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center">
-              <Link
-                href="/colecao"
-                className="btn btn-primary group"
-              >
+            <div className="pointer-events-auto mt-2 flex flex-col gap-4 sm:flex-row sm:items-center">
+              <Link href="/colecao" className="btn btn-primary group">
                 Ver acervo
                 <span
                   aria-hidden
@@ -609,7 +651,7 @@ export function HeroBand() {
                 context="Vim pelo site e quero vender ou trocar um relógio."
               />
             </div>
-          </motion.div>
+          </div>
         </motion.div>
 
         {/* Indicador de scroll */}
