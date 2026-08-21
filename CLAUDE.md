@@ -121,9 +121,15 @@ Ecommerce é fase E.
 - **Toda a coreografia lê a mola `progress`, nunca o `scrollYProgress` cru.**
   É o que dá a inércia (D12). Ligar um transform direto no scroll faz aquele
   elemento congelar enquanto o resto desliza.
-- Frames em `/public/hero-sequence/aw-hero-NNN.webp` (361 arquivos, **1920px**,
-  17,2 MB — 30fps, resolução nativa da fonte). Pipeline:
-  `ffmpeg -i fonte.mp4 -vf "fps=30,scale=1920:-2" -c:v libwebp -quality 68 -f image2 out/f_%03d.webp`
+- Frames em `/public/hero-sequence/aw-hero-NNN.webp` (361 arquivos, **1920px**, 30,5 MB
+  — 30fps, resolução nativa da fonte, q88). Pipeline:
+  `ffmpeg -i fonte.mp4 -vf "fps=30,scale=1920:-2" -c:v libwebp -quality 88 -f image2 out/f_%03d.webp`
+- **Não economize na qualidade do WebP.** q68 economizava 13 MB e produzia
+  macrobloco visível no mostrador escuro — "dá pra ver cada pixel". q88 é o
+  patamar em que o artefato some neste material.
+- **`imageSmoothingQuality = "high"` no contexto do canvas.** O padrão é "low", e
+  em toda janela cuja proporção difere de 16:9 o canvas reamostra — com o filtro
+  barato, isso serrilha. É grátis e resolve metade da queixa de nitidez.
 - **Extraia sempre na resolução da fonte.** Medido: 1920 q68 e 1440 q82 pesam o
   mesmo, e o 1920 é visivelmente mais nítido — nitidez vem mais de pixel do que
   de bitrate. Escalar a fonte para baixo e compensar com qualidade é troca ruim.
@@ -131,8 +137,8 @@ Ecommerce é fase E.
   de DPR erra dos dois lados: desperdiça em tela grande e perde nitidez em tela
   pequena de DPR alto.
   (o `-f image2` é obrigatório — sem ele o ffmpeg gera um WebP animado único).
-- **Mobile também é scrubbing**, com sequência própria: 181 frames a 900px em
-  `/public/hero-sequence-mobile/aw-m-NNN.webp` (3,6 MB, 15fps). Nunca aponte o
+- **Mobile também é scrubbing**, com sequência própria: 181 frames a 1290px em
+  `/public/hero-sequence-mobile/aw-m-NNN.webp` (8,5 MB, 15fps, q86). Nunca aponte o
   mobile pro asset de desktop — 361 bitmaps a 1920px passam de 3 GB decodificados.
 - **A janela deslizante do mobile não é otimização, é o que viabiliza.** Só
   ficam em memória ~31 quadros em volta do atual; o resto é descartado e

@@ -349,6 +349,16 @@ export function HeroBand() {
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
+    /**
+     * Reamostragem de ALTA qualidade. O padrão do browser é "low", e sempre que
+     * o canvas não está exatamente 1:1 com a fonte — o que acontece em toda
+     * janela cuja proporção difere de 16:9 — o filtro barato serrilha as
+     * bordas. Na prática lê como "dá pra ver cada pixel". Custa quase nada
+     * porque são no máximo dois `drawImage` por quadro de tela.
+     */
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
     let lastKey = -1;
     let rafId = 0;
 
