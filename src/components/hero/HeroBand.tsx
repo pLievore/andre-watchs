@@ -77,12 +77,12 @@ const MOBILE_BREAKPOINT_PX = 768;
 /**
  * Altura das margens de palco (classes literais logo abaixo, no JSX).
  *
- * Assimétricas no mobile de propósito: a barra de baixo carrega subtexto MAIS
- * dois CTAs empilhados, o que em tela estreita não cabe em 31% e seria cortado
- * pelo `overflow-hidden`. No desktop os CTAs ficam lado a lado e 31% sobra.
+ * Bem menores no mobile: em tela de 667px de altura, 31% de cada lado deixavam
+ * pouco mais de um terço para a peça — o filme virava tarja. Com 20% e 24%
+ * sobra 56% de vídeo, e cabe porque o subtexto sai do mobile (abaixo).
  *
- *   topo  → h-[26%] md:h-[31%]
- *   baixo → h-[40%] md:h-[31%]
+ *   topo  → h-[20%] md:h-[31%]
+ *   baixo → h-[24%] md:h-[31%]
  *
  * Precisam ser literais: o Tailwind varre o código como texto e não gera classe
  * montada em template literal.
@@ -458,7 +458,7 @@ export function HeroBand() {
 
         {/* Barra de cima — cobre o vídeo e desliza pra fora levando o título */}
         <motion.div
-          className="absolute inset-x-0 top-0 flex h-[26%] items-end px-6 pb-6 will-change-transform md:h-[31%] md:px-16 md:pb-10"
+          className="absolute inset-x-0 top-0 flex h-[20%] items-end px-6 pb-5 will-change-transform md:h-[31%] md:px-16 md:pb-10"
           style={{
             background: "var(--color-background)",
             ...(reduce ? {} : { y: topBarY }),
@@ -485,7 +485,7 @@ export function HeroBand() {
 
         {/* Barra de baixo — subtexto e CTAs */}
         <motion.div
-          className="absolute inset-x-0 bottom-0 flex h-[40%] items-start px-6 pt-6 will-change-transform md:h-[31%] md:px-16 md:pt-10"
+          className="absolute inset-x-0 bottom-0 flex h-[24%] items-start px-6 pt-5 will-change-transform md:h-[31%] md:px-16 md:pt-10"
           style={{
             background: "var(--color-background)",
             ...(reduce ? {} : { y: bottomBarY }),
@@ -495,8 +495,13 @@ export function HeroBand() {
             className="mx-auto flex w-full max-w-6xl flex-col gap-6 md:flex-row md:items-center md:justify-between"
             style={reduce ? undefined : { y: textLeadDown, opacity: textOpacity }}
           >
+            {/*
+              Só no desktop. No mobile ele custava três linhas de uma barra que
+              precisa ser estreita, e repete o que o eyebrow e o H1 já dizem —
+              a peça na tela vale mais do que a frase.
+            */}
             <p
-              className="max-w-md text-base leading-relaxed md:text-lg"
+              className="hidden max-w-md text-base leading-relaxed md:block md:text-lg"
               style={{ color: "var(--color-muted)" }}
             >
               Rolex e outras maisons premium, conferidas peça a peça antes de
