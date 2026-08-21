@@ -60,6 +60,9 @@ Ecommerce é fase E.
   cria emenda dura que lê como retângulo colado. `.on-stage` redefine os tokens
   no escopo, então `.eyebrow`, `.label`, `.btn-primary` etc. se invertem
   sozinhos. **Nunca criar variantes `-invert` de componente.**
+- Uma seção de palco marca-se com `data-stage-hero`. O `Header` procura esse
+  atributo pra saber quando virar papel — rota sem palco já começa clara. Se
+  criar outra seção escura no topo de uma página, marque-a assim.
 - Sombra no claro é curta e de tinta (`rgba(23,24,26,0.3)` no máximo). Sombra
   preta densa suja o papel.
 

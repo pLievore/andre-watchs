@@ -302,6 +302,9 @@ export function HeroBand() {
     <section
       ref={containerRef}
       aria-label="Andre Watches — relógios de luxo"
+      /* Marca a seção como palco escuro: o Header mede o progresso contra ela
+         pra saber quando virar papel. Ver src/components/layout/Header.tsx. */
+      data-stage-hero=""
       className="relative"
       style={{ height: reduce ? "100vh" : "250vh" }}
     >
