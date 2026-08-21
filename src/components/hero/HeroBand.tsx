@@ -256,14 +256,30 @@ export function HeroBand() {
       ctx.drawImage(img, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
     };
 
-    const paint = (force: boolean) => {
+    /**
+     * Abaixo desta velocidade consideramos parado. Parado NUNCA mistura: a
+     * mola assenta em posição fracionária e um blend congelado em 50/50 vira
+     * imagem dupla permanente. Em repouso, encaixa no frame mais próximo.
+     */
+    const SETTLE_SPEED = 0.004;
+
+    const paint = (snap: boolean, force = false) => {
       // Índice FRACIONÁRIO: é o que permite dissolver entre vizinhos.
       const f = Math.min(
         FRAME_COUNT - 1,
         Math.max(0, progress.get() * (FRAME_COUNT - 1)),
       );
-      const key = Math.round(f * BLEND_STEPS);
+      // Em repouso a chave é o frame inteiro; em movimento, o sub-passo.
+      const key = snap ? Math.round(f) * BLEND_STEPS : Math.round(f * BLEND_STEPS);
       if (key === lastKey && !force) return;
+
+      if (snap) {
+        const only = nearest(Math.round(f));
+        if (!only) return;
+        cover(only);
+        lastKey = key;
+        return;
+      }
 
       const i0 = Math.floor(f);
       const t = f - i0;
@@ -286,15 +302,26 @@ export function HeroBand() {
       lastKey = key;
     };
 
-    // Um draw por quadro de tela, no máximo. Sem isso, uma rajada de tiques da
-    // mola vira uma rajada de drawImage dentro do mesmo quadro — trabalho
-    // jogado fora que rouba o orçamento de 16ms.
-    const schedule = () => {
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
+    /**
+     * Laço que só vive enquanto há movimento. Um draw por quadro de tela, no
+     * máximo — sem isso, uma rajada de tiques da mola vira uma rajada de
+     * drawImage dentro do mesmo quadro.
+     *
+     * Ao detectar repouso, faz UM último desenho encaixado no frame inteiro e
+     * se encerra. É esse último passo que elimina a imagem dupla parada.
+     */
+    const loop = () => {
+      const settled = Math.abs(progress.getVelocity()) < SETTLE_SPEED;
+      paint(settled);
+      if (settled) {
         rafId = 0;
-        paint(false);
-      });
+        return;
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+
+    const schedule = () => {
+      if (!rafId) rafId = requestAnimationFrame(loop);
     };
 
     const resize = () => {
@@ -305,7 +332,7 @@ export function HeroBand() {
       const { width, height } = canvas.getBoundingClientRect();
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
-      paint(true);
+      paint(true, true);
     };
 
     resize();
