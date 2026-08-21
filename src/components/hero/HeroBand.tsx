@@ -15,9 +15,8 @@
  *  - 0 → 100%: o índice do frame acompanha o scroll o tempo todo. O relógio se
  *    move porque o usuário rola, que é a tese do §4.1.
  *
- * Desktop: canvas 2D + sequência de WebP (mesma técnica do `HeroSequence`, que
- * segue disponível pra uma sequência de take único no futuro). Canvas é
- * confiável; seek de `<video>` por scroll engasga, principalmente no iOS.
+ * Desktop: canvas 2D + sequência de WebP. Canvas é confiável; seek de `<video>`
+ * por scroll engasga, principalmente no iOS.
  *
  * Mobile: `<video>` nativo em loop, sem scrubbing — o custo de baixar 120
  * frames não se paga em tela pequena.
@@ -75,8 +74,19 @@ const DENSITY_PASSES = [6, 3, 2, 1] as const;
 const LOAD_CONCURRENCY = 6;
 const MOBILE_BREAKPOINT_PX = 768;
 
-/** Altura da margem preta inicial, em % da tela, em cima e embaixo. */
-const BAND_MARGIN_PCT = 31;
+/**
+ * Altura das margens de palco (classes literais logo abaixo, no JSX).
+ *
+ * Assimétricas no mobile de propósito: a barra de baixo carrega subtexto MAIS
+ * dois CTAs empilhados, o que em tela estreita não cabe em 31% e seria cortado
+ * pelo `overflow-hidden`. No desktop os CTAs ficam lado a lado e 31% sobra.
+ *
+ *   topo  → h-[26%] md:h-[31%]
+ *   baixo → h-[40%] md:h-[31%]
+ *
+ * Precisam ser literais: o Tailwind varre o código como texto e não gera classe
+ * montada em template literal.
+ */
 /** Fração do scroll em que a faixa termina de abrir. */
 const BAND_OPEN_AT = 0.45;
 
@@ -448,9 +458,8 @@ export function HeroBand() {
 
         {/* Barra de cima — cobre o vídeo e desliza pra fora levando o título */}
         <motion.div
-          className="absolute inset-x-0 top-0 flex items-end px-6 pb-8 will-change-transform md:px-16 md:pb-10"
+          className="absolute inset-x-0 top-0 flex h-[26%] items-end px-6 pb-6 will-change-transform md:h-[31%] md:px-16 md:pb-10"
           style={{
-            height: `${BAND_MARGIN_PCT}%`,
             background: "var(--color-background)",
             ...(reduce ? {} : { y: topBarY }),
           }}
@@ -476,9 +485,8 @@ export function HeroBand() {
 
         {/* Barra de baixo — subtexto e CTAs */}
         <motion.div
-          className="absolute inset-x-0 bottom-0 flex items-start px-6 pt-8 will-change-transform md:px-16 md:pt-10"
+          className="absolute inset-x-0 bottom-0 flex h-[40%] items-start px-6 pt-6 will-change-transform md:h-[31%] md:px-16 md:pt-10"
           style={{
-            height: `${BAND_MARGIN_PCT}%`,
             background: "var(--color-background)",
             ...(reduce ? {} : { y: bottomBarY }),
           }}

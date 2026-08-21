@@ -114,22 +114,6 @@
     color: var(--color-muted);
   }
 
-  /** Parágrafo narrativo — serifa, medida confortável. */
-  .prose-editorial {
-    font-family: var(--font-serif);
-    font-size: 1.0625rem;
-    line-height: 1.65;
-    color: var(--color-muted);
-  }
-
-  /** Título editorial fluido. Use com um tamanho explícito quando precisar. */
-  .display {
-    font-family: var(--font-display);
-    line-height: 1;
-    letter-spacing: -0.02em;
-    color: var(--color-foreground);
-  }
-
   /**
    * Escopo de palco. Redefine os tokens localmente, então TUDO que já lê
    * `var(--color-*)` — `.eyebrow`, `.label`, `.meta`, `.btn-primary`,
@@ -193,6 +177,26 @@
     opacity: 0.4;
     cursor: not-allowed;
     transform: none;
+  }
+
+  /**
+   * Acordeão sem o triângulo nativo. `marker:content-none` sozinho resolve no
+   * Chrome mas não no WebKit, que usa um pseudo-elemento próprio — e boa parte
+   * deste público está em Mac e iPhone.
+   */
+  details > summary {
+    list-style: none;
+  }
+
+  details > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  /** Campos de formulário: placeholder no mesmo cinza dos rótulos. */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-muted);
+    opacity: 0.7;
   }
 
   /** Link de texto com sublinhado discreto no hover. */

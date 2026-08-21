@@ -142,8 +142,9 @@ Ecommerce é fase E.
 - **A faixa abre por `translateY` de duas barras sólidas, não por `clip-path`.**
   `inset()` animado repinta a camada recortada a cada quadro, e isso rodava
   exatamente no trecho 0–45% do scroll — era a causa do travamento no início.
-- `src/components/hero/HeroSequence.tsx` segue no repo, sem uso, para quando
-  existir uma sequência de **take único com câmera travada** (rotação ou
-  desmontagem). Nesse caso é ele que entra, não o HeroBand.
+- Se um dia existir uma sequência de **take único com câmera travada**, ela entra
+  no próprio `HeroBand` (só trocar os arquivos e `FRAME_COUNT`). O antigo
+  `HeroSequence.tsx` foi removido: era código morto apontando para um asset que
+  já não existe. Está no histórico, no commit `dadbf90`.
 - `scripts/scan-angle-match.mjs` acha trechos de jitter numa sequência de take
-  único; excise via a prop `skipFrames` do HeroSequence.
+  único, se vier a ser necessário.

@@ -2,9 +2,9 @@
  * SPEC §5.2 — card de peça.
  *
  *  - Imagem 4:5
- *  - Marca em mono/tracking largo, modelo em display, referência em mono muted
+ *  - Marca em rótulo discreto, modelo em display, referência em mono
  *  - Preço em sans regular — nunca bold (§1.3: luxo é discreto)
- *  - Hover desktop: lift 8px + borda ganha gradiente de platina + crossfade
+ *  - Hover desktop: lift 8px + filete de acento acende + crossfade da foto
  *  - Peça vendida: card dimmed com selo VENDIDO (prova social, não erro)
  *
  * Proibido no card: badge de promoção, frete grátis, countdown.
@@ -34,7 +34,7 @@ export function WatchCard({ watch }: WatchCardProps) {
   const gradient = watch.placeholderGradient;
   const sold = !watch.available;
 
-  // Peças two-tone/ouro liberam o acento dourado; o resto usa platina (§3.1).
+  // Peças two-tone/ouro liberam o acento dourado; o resto usa tinta (§3.1).
   const accent = isGoldPiece(watch)
     ? "var(--color-accent-gold)"
     : "var(--color-accent)";

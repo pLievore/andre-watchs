@@ -37,7 +37,9 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
   ].filter((img) => img.url !== "");
 
   const [active, setActive] = useState(0);
-  const gradient = watch.placeholderGradient ?? ["#16191c", "#08090a"];
+  // Lavagem clara: o fallback antigo era escuro, herdado da identidade anterior,
+  // e sobre papel viraria uma placa preta no meio da página.
+  const gradient = watch.placeholderGradient ?? ["#eeebe4", "#f7f5f0"];
 
   if (images.length === 0) {
     return (
