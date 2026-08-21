@@ -88,13 +88,18 @@ const BAND_OPEN_AT = 0.45;
  * no alvo sem passar dele. Relógio não quica (CLAUDE.md, regra 6) — se alguém
  * baixar o `damping` abaixo de ~14 isso vira overshoot e quebra a regra.
  *
- * Tempo de acomodação ≈ 0,4s, que é o quanto o movimento "desliza" depois que
- * você para.
+ * Tempo de acomodação ≈ 0,55s. Esse número não é só estética: rolar devagar
+ * entrega poucos frames por segundo (a geometria do hero dá ~17 a 80px/s), e
+ * um deslize mais longo faz a mola continuar percorrendo frames na taxa da
+ * tela depois que o dedo para. Ou seja, converte um input curto e picado numa
+ * corrida contínua de quadros — é a alavanca de fluidez que não custa byte.
+ *
+ * ζ = 16 / (2·√(26·1.1)) ≈ 1.50, ainda superamortecida: chega sem passar.
  */
 const COAST = {
-  stiffness: 50,
-  damping: 20,
-  mass: 1,
+  stiffness: 26,
+  damping: 16,
+  mass: 1.1,
   restDelta: 0.0002,
 } as const;
 
@@ -225,9 +230,11 @@ export function HeroBand() {
      * parado por vários pixels e depois salta. Arredondar o índice transforma
      * movimento contínuo em degraus, e degrau lento lê como travamento.
      *
-     * Com 8 sub-passos existem ~2900 estados visuais em vez de 361.
+     * Com 16 sub-passos existem ~5800 estados visuais em vez de 361. O laço já
+     * roda uma vez por quadro de tela, então elevar isto não adiciona desenho:
+     * só impede que a guarda de repaint descarte um passo que o olho veria.
      */
-    const BLEND_STEPS = 8;
+    const BLEND_STEPS = 16;
 
     /**
      * Acima desta velocidade não vale dissolver: o movimento já borra sozinho e
