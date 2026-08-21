@@ -27,6 +27,7 @@
 
 import {
   motion,
+  useMotionValue,
   useReducedMotion,
   useScroll,
   useSpring,
@@ -39,61 +40,33 @@ import { WhatsappCta } from "@/components/contact/WhatsappCta";
 import { LUMA_DESKTOP, LUMA_MOBILE } from "@/lib/hero-luma";
 
 /**
- * Duas sequências: a mesma coreografia, fontes diferentes.
+ * Sequência de quadros — SÓ no desktop.
  *
- * O desktop roda os 12s da fonte a 30fps — todos os quadros do original, teto
- * de fluidez. O telefone roda 15fps a 1290px, porque o limite lá não é banda, é
- * MEMÓRIA: cada bitmap decodificado ocupa largura × altura × 4 bytes, e 361
- * quadros a 1920px passariam de 3 GB.
- *
- * 1290 não é arbitrário: é 430pt × DPR 3, a largura em pixels reais do maior
- * iPhone. Qualquer aparelho atual recebe a fonte 1:1, sem ampliação. A primeira
- * versão usava 900px e ficou visivelmente mole — celular de DPR 3 pede bem mais
- * pixel do que a conta em pontos sugere.
+ * O telefone recebe um `<video>` nativo em loop. O scrubbing por scroll exige
+ * que o hero consuma 250vh, e no celular isso vira uma parede: o polegar rola,
+ * rola, e a página não sai do lugar. Uma tela cheia de altura e o vídeo tocando
+ * sozinho entrega a mesma imagem sem sequestrar a navegação.
  */
-const SOURCES = {
-  desktop: {
-    count: 361,
-    width: 1920,
-    dir: "/hero-sequence",
-    prefix: "aw-hero",
-  },
-  mobile: {
-    count: 181,
-    width: 1290,
-    dir: "/hero-sequence-mobile",
-    prefix: "aw-m",
-  },
-} as const;
+const FRAME_COUNT = 361;
+const FRAME_WIDTH = 1920;
+const FRAME_DIR = "/hero-sequence";
+const FRAME_PREFIX = "aw-hero";
 
-type Source = (typeof SOURCES)[keyof typeof SOURCES];
-
-/** Primeiro quadro estático — é o que o reduced-motion mostra no lugar da sequência. */
-const POSTER = "/hero-poster.jpg";
-const POSTER_MOBILE = "/hero-poster-mobile.jpg";
-
-function frameUrl(source: Source, i: number) {
-  return `${source.dir}/${source.prefix}-${String(i + 1).padStart(3, "0")}.webp`;
+function frameUrl(i: number) {
+  return `${FRAME_DIR}/${FRAME_PREFIX}-${String(i + 1).padStart(3, "0")}.webp`;
 }
 
 /**
- * Janela deslizante do mobile: quantos quadros ficam em memória à frente e
- * atrás do atual. É a peça que torna o scrubbing viável no telefone — sem ela,
- * 181 bitmaps a 900px somam 330 MB e o iOS Safari mata a aba. Com a janela, o
- * teto é fixo em ~54 MB por mais longa que a sequência seja.
- *
- * Assimétrica porque o scroll costuma seguir adiante: vale mais ter quadro
- * pronto na direção do movimento do que atrás.
- *
- * Encolheu quando a fonte subiu de 900 para 1290px — o bitmap passou de 1,7 MB
- * para 3,6 MB, então a mesma janela custaria o dobro. A folga conta dos DOIS
- * lados, então o total vivo é AHEAD + BEHIND + 2·SLACK + 1 = 25 quadros, ou
- * ~89 MB. Mexer em qualquer um dos três move esse teto.
+ * Vídeo do mobile: recorte 3:4 a partir da fonte. Em retrato o `object-cover`
+ * descarta as laterais de um 16:9, então entregar o quadro cheio seria pagar
+ * banda por pixel que ninguém vê — o recorte custa metade (3,4 MB contra 6,5).
  */
-const WINDOW_AHEAD = 12;
-const WINDOW_BEHIND = 6;
-/** Folga antes de descartar, pra vaivém curto não provocar recarga. */
-const WINDOW_SLACK = 3;
+const MOBILE_VIDEO = "/hero-mobile.mp4";
+/** Quadro parado — o que o reduced-motion mostra no lugar de tudo. */
+const POSTER = "/hero-poster.jpg";
+const POSTER_MOBILE = "/hero-poster-mobile.jpg";
+/** Quadros por segundo da tabela de luminância do mobile — ver hero-luma.ts. */
+const MOBILE_LUMA_FPS = 15;
 
 /**
  * Frames do arranque, carregados em densidade total antes de qualquer outra
@@ -191,10 +164,10 @@ export function HeroBand() {
   const reduce = useReducedMotion();
   const containerRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const imagesRef = useRef<(HTMLImageElement | undefined)[]>([]);
   const [isMobile, setIsMobile] = useState(false);
   const [ready, setReady] = useState(false);
-  const source: Source = isMobile ? SOURCES.mobile : SOURCES.desktop;
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -213,12 +186,12 @@ export function HeroBand() {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  // ── Carregamento dos frames ──────────────────────────────────────────────
+  // ── Carregamento dos frames (só desktop) ─────────────────────────────────
   useEffect(() => {
-    if (reduce) return;
+    if (reduce || isMobile) return;
 
     let cancelled = false;
-    const images: (HTMLImageElement | undefined)[] = new Array(source.count);
+    const images: (HTMLImageElement | undefined)[] = new Array(FRAME_COUNT);
     imagesRef.current = images;
 
     /**
@@ -230,7 +203,7 @@ export function HeroBand() {
     const load = async (i: number) => {
       const img = new Image();
       img.decoding = "async";
-      img.src = frameUrl(source, i);
+      img.src = frameUrl(i);
       try {
         await img.decode();
       } catch {
@@ -246,7 +219,7 @@ export function HeroBand() {
 
     /** Índice do frame que o scroll está mostrando agora. */
     const currentIndex = () =>
-      Math.round(progress.get() * (source.count - 1));
+      Math.round(progress.get() * (FRAME_COUNT - 1));
 
     /**
      * Carrega uma lista de índices em lotes, pulando o que já está em memória.
@@ -255,10 +228,10 @@ export function HeroBand() {
      * isso, quem rola até o fim fica esperando o carregamento chegar lá pela
      * ordem dos arquivos. Assim o download persegue o usuário.
      */
-    const loadBatch = async (indices: number[], token?: () => boolean) => {
+    const loadBatch = async (indices: number[]) => {
       const pending = new Set(indices.filter((i) => !images[i]));
       while (pending.size > 0) {
-        if (cancelled || (token && !token())) return;
+        if (cancelled) return;
         const here = currentIndex();
         const next = [...pending]
           .sort((a, b) => Math.abs(a - here) - Math.abs(b - here))
@@ -268,54 +241,7 @@ export function HeroBand() {
       }
     };
 
-    if (isMobile) {
-      /**
-       * MOBILE — janela deslizante.
-       *
-       * Segurar a sequência inteira decodificada estoura a memória do telefone
-       * e o iOS mata a aba. Aqui só vive o que está perto do frame atual: o que
-       * sai da janela é descartado, e o browser recupera o bitmap. Recarregar
-       * depois é barato porque o arquivo continua no cache de HTTP — o custo é
-       * só decodificar de novo.
-       */
-      let generation = 0;
-      let lastCenter = Number.NEGATIVE_INFINITY;
-
-      const reconcile = () => {
-        const center = currentIndex();
-        // Só reage a movimento real, senão reconciliaria a cada tique da mola.
-        if (Math.abs(center - lastCenter) < 4) return;
-        lastCenter = center;
-
-        const mine = ++generation;
-        const alive = (i: number) =>
-          i >= center - WINDOW_BEHIND - WINDOW_SLACK &&
-          i <= center + WINDOW_AHEAD + WINDOW_SLACK;
-
-        for (let i = 0; i < source.count; i++) {
-          if (images[i] && !alive(i)) images[i] = undefined;
-        }
-
-        const want: number[] = [];
-        for (let d = 0; d <= WINDOW_AHEAD; d++) {
-          if (center + d < source.count) want.push(center + d);
-          if (d > 0 && d <= WINDOW_BEHIND && center - d >= 0)
-            want.push(center - d);
-        }
-        void loadBatch(want, () => mine === generation).then(() => {
-          if (!cancelled) setReady(true);
-        });
-      };
-
-      reconcile();
-      const unsubscribe = progress.on("change", reconcile);
-      return () => {
-        cancelled = true;
-        unsubscribe();
-      };
-    }
-
-    // DESKTOP — densidade progressiva sobre a sequência inteira.
+    // Densidade progressiva sobre a sequência inteira.
     (async () => {
       // 1. Arranque: densidade total no trecho que o usuário vê primeiro.
       await loadBatch(Array.from({ length: EAGER_COUNT }, (_, i) => i));
@@ -327,7 +253,7 @@ export function HeroBand() {
       for (const step of DENSITY_PASSES) {
         if (cancelled) return;
         const indices: number[] = [];
-        for (let i = 0; i < source.count; i += step) indices.push(i);
+        for (let i = 0; i < FRAME_COUNT; i += step) indices.push(i);
         await loadBatch(indices);
       }
     })();
@@ -335,11 +261,11 @@ export function HeroBand() {
     return () => {
       cancelled = true;
     };
-  }, [isMobile, reduce, source, progress]);
+  }, [isMobile, reduce, progress]);
 
   // ── Canvas: dimensiona e desenha o frame do scroll atual ─────────────────
   useEffect(() => {
-    if (reduce) return;
+    if (reduce || isMobile) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -385,7 +311,7 @@ export function HeroBand() {
     const nearest = (i: number) => {
       const imgs = imagesRef.current;
       if (imgs[i]) return imgs[i];
-      for (let d = 1; d < source.count; d++) {
+      for (let d = 1; d < FRAME_COUNT; d++) {
         if (imgs[i - d]) return imgs[i - d];
         if (imgs[i + d]) return imgs[i + d];
       }
@@ -411,8 +337,8 @@ export function HeroBand() {
     const paint = (snap: boolean, force = false) => {
       // Índice FRACIONÁRIO: é o que permite dissolver entre vizinhos.
       const f = Math.min(
-        source.count - 1,
-        Math.max(0, progress.get() * (source.count - 1)),
+        FRAME_COUNT - 1,
+        Math.max(0, progress.get() * (FRAME_COUNT - 1)),
       );
       // Em repouso a chave é o frame inteiro; em movimento, o sub-passo.
       const key = snap ? Math.round(f) * BLEND_STEPS : Math.round(f * BLEND_STEPS);
@@ -435,7 +361,7 @@ export function HeroBand() {
 
       // Dissolve com o próximo só quando estamos entre frames E devagar.
       const slow = Math.abs(progress.getVelocity()) < BLEND_SPEED_LIMIT;
-      if (slow && t > 0.02 && i0 + 1 < source.count) {
+      if (slow && t > 0.02 && i0 + 1 < FRAME_COUNT) {
         const b = imagesRef.current[i0 + 1];
         if (b) {
           ctx.globalAlpha = t;
@@ -482,9 +408,9 @@ export function HeroBand() {
       if (!width || !height) return;
       // Cap em 3 para acompanhar telefone de DPR 3 — com cap 2 o canvas
       // desenhava 780px e a tela esticava para 1170, e a peça saía mole. O
-      // `source.width` abaixo é quem impede desperdício.
+      // `FRAME_WIDTH` abaixo é quem impede desperdício.
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      const targetWidth = Math.min(width * dpr, source.width);
+      const targetWidth = Math.min(width * dpr, FRAME_WIDTH);
       const k = targetWidth / width;
       canvas.width = Math.round(width * k);
       canvas.height = Math.round(height * k);
@@ -499,7 +425,7 @@ export function HeroBand() {
       if (rafId) cancelAnimationFrame(rafId);
       unsub();
     };
-  }, [reduce, source, progress, ready]);
+  }, [isMobile, reduce, progress, ready]);
 
   // ── Coreografia ──────────────────────────────────────────────────────────
   /**
@@ -516,19 +442,54 @@ export function HeroBand() {
    * Passa por mola curta para os cortes da montagem não fazerem o
    * sombreamento piscar.
    */
-  const luma = isMobile ? LUMA_MOBILE : LUMA_DESKTOP;
-  const scrimRaw = useTransform(progress, (p) => {
-    const i = Math.min(
-      luma.length - 1,
-      Math.max(0, Math.round(p * (luma.length - 1))),
-    );
-    return scrimFor(luma[i] ?? 128);
-  });
-  const scrim = useSpring(scrimRaw, SCRIM_COAST);
+  const scrimRaw = useMotionValue(scrimFor(LUMA_DESKTOP[0] ?? 128));
 
   /**
-   * A copy sobe de leve e sai antes do fim, para o hero fechar na imagem
-   * limpa em vez de empurrar texto para dentro da vitrine.
+   * Desktop: a opacidade do scrim segue o quadro que o scroll está mostrando.
+   * Mobile: segue o tempo do vídeo, convertido em índice da mesma tabela. Nos
+   * dois casos o texto assenta sobre a mesma base — muda só quem informa o
+   * quadro atual.
+   */
+  useEffect(() => {
+    if (reduce) return;
+
+    if (!isMobile) {
+      const update = (p: number) => {
+        const i = Math.min(
+          LUMA_DESKTOP.length - 1,
+          Math.max(0, Math.round(p * (LUMA_DESKTOP.length - 1))),
+        );
+        scrimRaw.set(scrimFor(LUMA_DESKTOP[i] ?? 128));
+      };
+      update(progress.get());
+      return progress.on("change", update);
+    }
+
+    let raf = 0;
+    const tick = () => {
+      const video = videoRef.current;
+      if (video && !video.paused) {
+        const i = Math.min(
+          LUMA_MOBILE.length - 1,
+          Math.max(0, Math.round(video.currentTime * MOBILE_LUMA_FPS)),
+        );
+        scrimRaw.set(scrimFor(LUMA_MOBILE[i] ?? 128));
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isMobile, reduce, progress, scrimRaw]);
+
+  const scrim = useSpring(scrimRaw, SCRIM_COAST);
+
+  /** Só o desktop tem coreografia dirigida por scroll. */
+  const scrubbing = !reduce && !isMobile;
+
+  /**
+   * A copy sobe de leve e sai antes do fim — só no desktop, onde o hero é
+   * fixado por 250vh. No mobile a seção tem uma tela de altura e rola embora
+   * sozinha, então mover a copy por scroll não faria sentido.
    */
   const copyY = useTransform(progress, [0, 1], ["0%", "-18%"]);
   const copyOpacity = useTransform(progress, [0.55, 0.82], [1, 0]);
@@ -542,18 +503,39 @@ export function HeroBand() {
          pra saber quando virar papel. Ver src/components/layout/Header.tsx. */
       data-stage-hero=""
       className="relative"
-      style={{ height: reduce ? "100vh" : "250vh" }}
+      /*
+        250vh só onde o scroll dirige os quadros. No mobile o hero tem uma tela
+        e sai do caminho — foi a queixa de "quero descer e não consigo".
+      */
+      style={{ height: scrubbing ? "250vh" : "100vh" }}
     >
-      <div className="on-stage sticky top-0 h-screen w-full overflow-hidden">
+      <div
+        className={`on-stage h-screen w-full overflow-hidden ${
+          scrubbing ? "sticky top-0" : "relative"
+        }`}
+      >
         {/* Faixa: cresce do cinemascope até a sangria total */}
         <div className="absolute inset-0">
           {reduce ? (
-            // Sem movimento: um quadro parado, sem baixar sequência nenhuma.
+            // Sem movimento: um quadro parado, sem baixar sequência nem vídeo.
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={isMobile ? POSTER_MOBILE : POSTER}
               alt="Relógio de luxo em detalhe macro"
               className="h-full w-full object-cover"
+            />
+          ) : isMobile ? (
+            <video
+              ref={videoRef}
+              className="h-full w-full object-cover"
+              poster={POSTER_MOBILE}
+              src={MOBILE_VIDEO}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              aria-label="Detalhe em macro de um relógio de luxo"
             />
           ) : (
             <>
@@ -563,11 +545,10 @@ export function HeroBand() {
                 aria-hidden="true"
               />
               {!ready && (
-                // Poster enquanto os primeiros quadros não chegam — no telefone
-                // é o que evita a faixa abrir sobre um retângulo vazio.
+                // Poster enquanto os primeiros quadros não chegam.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={isMobile ? POSTER_MOBILE : POSTER}
+                  src={POSTER}
                   alt=""
                   aria-hidden="true"
                   className="absolute inset-0 h-full w-full object-cover"
@@ -626,7 +607,7 @@ export function HeroBand() {
           aria-hidden
           className="pointer-events-none absolute inset-0"
           style={{
-            ...(reduce ? {} : { opacity: copyOpacity }),
+            ...(scrubbing ? { opacity: copyOpacity } : {}),
             background:
               "radial-gradient(75% 58% at 28% 82%, rgba(6,7,8,0.70) 0%, rgba(6,7,8,0.42) 42%, transparent 76%)",
           }}
@@ -638,7 +619,10 @@ export function HeroBand() {
         */}
         <motion.div
           className="pointer-events-none absolute inset-x-0 bottom-0 px-6 pb-14 will-change-transform md:px-16 md:pb-20"
-          style={reduce ? undefined : { y: copyY, opacity: copyOpacity }}
+          style={scrubbing ? { y: copyY, opacity: copyOpacity } : undefined}
+          initial={scrubbing || reduce ? undefined : { opacity: 0, y: 18 }}
+          animate={scrubbing || reduce ? undefined : { opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
             <p className="eyebrow pointer-events-auto">

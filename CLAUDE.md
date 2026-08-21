@@ -137,14 +137,16 @@ Ecommerce é fase E.
   de DPR erra dos dois lados: desperdiça em tela grande e perde nitidez em tela
   pequena de DPR alto.
   (o `-f image2` é obrigatório — sem ele o ffmpeg gera um WebP animado único).
-- **Mobile também é scrubbing**, com sequência própria: 181 frames a 1290px em
-  `/public/hero-sequence-mobile/aw-m-NNN.webp` (8,5 MB, 15fps, q86). Nunca aponte o
-  mobile pro asset de desktop — 361 bitmaps a 1920px passam de 3 GB decodificados.
-- **A janela deslizante do mobile não é otimização, é o que viabiliza.** Só
-  ficam em memória ~31 quadros em volta do atual; o resto é descartado e
-  recarregado do cache de HTTP quando volta. Teto fixo em ~54 MB, contra os
-  330 MB que a sequência inteira ocuparia — acima do que o iOS Safari tolera
-  antes de matar a aba. Ver `WINDOW_AHEAD`/`WINDOW_BEHIND` no HeroBand.
+- **Scrubbing é só desktop.** No mobile o hero tem UMA tela de altura e toca
+  `/public/hero-mobile.mp4` em loop. Scrubbing exige 250vh de hero, e no celular
+  isso vira parede: o polegar rola e a página não sai do lugar.
+- O vídeo do mobile é **recorte 3:4** da fonte (810×1080, 3,4 MB). Em retrato o
+  `object-cover` descarta as laterais de um 16:9 — entregar o quadro cheio é
+  pagar banda por pixel que ninguém vê.
+- **Se trocar o vídeo do mobile, rode `node scripts/build-luminance.mjs`.** A
+  tabela do mobile é medida a partir do vídeo JÁ RECORTADO, porque o scrim
+  precisa descrever o que está na tela: medir a fonte 16:9 deu 11–207, o
+  recorte real dá 13–239.
 - **Carga em densidade progressiva** (`DENSITY_PASSES` no HeroBand): arranque
   denso, depois um esqueleto ralo cobrindo a sequência INTEIRA, depois passadas
   que dobram a densidade. Carregar em ordem sequencial deixa a segunda metade

@@ -5,9 +5,13 @@ import fs from "fs";
 const REGION = { top: 0.50, height: 0.50 };
 
 async function build(dir, prefix, count) {
+  return buildFrom(`public/${dir}`, prefix, count);
+}
+
+async function buildFrom(base, prefix, count) {
   const out = [];
   for (let i = 1; i <= count; i++) {
-    const f = `public/${dir}/${prefix}-${String(i).padStart(3, "0")}.webp`;
+    const f = `${base}/${prefix}-${String(i).padStart(3, "0")}.webp`;
     const meta = await sharp(f).metadata();
     const { data } = await sharp(f)
       .extract({
@@ -27,8 +31,32 @@ async function build(dir, prefix, count) {
   return out;
 }
 
+/**
+ * O mobile não tem sequência de arquivos: toca um `<video>`. Extraímos quadros
+ * dele num diretório temporário só pra medir — a tabela precisa descrever o que
+ * está NA TELA, e o vídeo é recortado em 3:4, então medir a fonte 16:9 daria
+ * valores que não correspondem.
+ */
+import { execFileSync } from "node:child_process";
+import os from "node:os";
+import path from "node:path";
+import ffmpeg from "ffmpeg-static";
+
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "luma-"));
+execFileSync(ffmpeg, ["-loglevel", "error", "-y", "-i", "public/hero-mobile.mp4",
+  "-vf", "fps=15", "-c:v", "libwebp", "-quality", "80", "-f", "image2",
+  path.join(tmp, "m-%03d.webp")]);
+const mobileCount = fs.readdirSync(tmp).filter((f) => f.endsWith(".webp")).length;
+
 const desktop = await build("hero-sequence", "aw-hero", 361);
-const mobile = await build("hero-sequence-mobile", "aw-m", 181);
+const mobile = await buildFrom(tmp, "m", mobileCount);
+// Limpeza é oportunista: no Windows o diretório pode continuar travado pelo
+// processo do ffmpeg que acabou de sair, e isso não pode derrubar a geração.
+try {
+  fs.rmSync(tmp, { recursive: true, force: true });
+} catch {
+  /* diretório temporário fica pro sistema recolher */
+}
 
 const stat = (a) => `${Math.min(...a)}–${Math.max(...a)}`;
 const body = `/**
