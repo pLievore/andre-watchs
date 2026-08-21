@@ -41,11 +41,14 @@ import { WhatsappCta } from "@/components/contact/WhatsappCta";
  * Duas sequências: a mesma coreografia, fontes diferentes.
  *
  * O desktop roda os 12s da fonte a 30fps — todos os quadros do original, teto
- * de fluidez. O telefone roda 15fps a 900px, porque o limite lá não é banda, é
+ * de fluidez. O telefone roda 15fps a 1290px, porque o limite lá não é banda, é
  * MEMÓRIA: cada bitmap decodificado ocupa largura × altura × 4 bytes, e 361
- * quadros a 1920px passariam de 3 GB. A 900px, num aparelho de 390pt com DPR
- * capado em 2, o canvas pede 780px — a fonte cobre com folga e 1080px só
- * gastaria memória em pixels que a tela não mostra.
+ * quadros a 1920px passariam de 3 GB.
+ *
+ * 1290 não é arbitrário: é 430pt × DPR 3, a largura em pixels reais do maior
+ * iPhone. Qualquer aparelho atual recebe a fonte 1:1, sem ampliação. A primeira
+ * versão usava 900px e ficou visivelmente mole — celular de DPR 3 pede bem mais
+ * pixel do que a conta em pontos sugere.
  */
 const SOURCES = {
   desktop: {
@@ -56,7 +59,7 @@ const SOURCES = {
   },
   mobile: {
     count: 181,
-    width: 900,
+    width: 1290,
     dir: "/hero-sequence-mobile",
     prefix: "aw-m",
   },
@@ -80,11 +83,16 @@ function frameUrl(source: Source, i: number) {
  *
  * Assimétrica porque o scroll costuma seguir adiante: vale mais ter quadro
  * pronto na direção do movimento do que atrás.
+ *
+ * Encolheu quando a fonte subiu de 900 para 1290px — o bitmap passou de 1,7 MB
+ * para 3,6 MB, então a mesma janela custaria o dobro. A folga conta dos DOIS
+ * lados, então o total vivo é AHEAD + BEHIND + 2·SLACK + 1 = 25 quadros, ou
+ * ~89 MB. Mexer em qualquer um dos três move esse teto.
  */
-const WINDOW_AHEAD = 20;
-const WINDOW_BEHIND = 11;
+const WINDOW_AHEAD = 12;
+const WINDOW_BEHIND = 6;
 /** Folga antes de descartar, pra vaivém curto não provocar recarga. */
-const WINDOW_SLACK = 8;
+const WINDOW_SLACK = 3;
 
 /**
  * Frames do arranque, carregados em densidade total antes de qualquer outra
@@ -433,7 +441,10 @@ export function HeroBand() {
        */
       const { width, height } = canvas.getBoundingClientRect();
       if (!width || !height) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Cap em 3 para acompanhar telefone de DPR 3 — com cap 2 o canvas
+      // desenhava 780px e a tela esticava para 1170, e a peça saía mole. O
+      // `source.width` abaixo é quem impede desperdício.
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
       const targetWidth = Math.min(width * dpr, source.width);
       const k = targetWidth / width;
       canvas.width = Math.round(width * k);
