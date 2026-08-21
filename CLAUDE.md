@@ -74,7 +74,8 @@ Ecommerce é fase E.
   a UI mostra `—` (helper `specValue` em `src/lib/types.ts`).
 - **Nunca** apresentar render de IA como peça real à venda (SPEC §4.3).
 - ⚠️ `/public/pecas/*` são fotos do **Unsplash**, para demonstração ao cliente —
-  não são peças da casa. Estão marcadas no topo de `src/lib/data/watches.ts` e
+  não são peças da casa. Cobrem catálogo, PDP, `/sobre`, os três pilares do
+  `EthosBand` e o orbital do `ClosingCta`. Estão marcadas no topo de `src/lib/data/watches.ts` e
   **bloqueiam publicação** até as fotos reais entrarem (SPEC §14 D8).
 - Proibido badge de promoção, countdown, "últimas unidades". Escassez é fato:
   "1 unidade" é informação, urgência fabricada não.

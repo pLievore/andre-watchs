@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * CTA de fechamento da home — texto à esquerda, 3 mostradores orbitando à direita.
+ * CTA de fechamento da home — texto à esquerda, 3 peças orbitando à direita.
  *
  * Velocidade variável FLUIDA: a rotação é integrada por RAF a partir de uma
  * velocidade que oscila suavemente (raised cosine) entre lenta e bem rápida.
  * Como integramos a velocidade (nunca setamos posição com easing por trecho),
  * não existe salto/"freio" — acelera e desacelera continuamente, em loop.
  *
- * Cada imagem contra-rotaciona (negAngle) pra ficar sempre na vertical.
+ * Cada foto contra-rotaciona (negAngle) pra ficar sempre na vertical.
  * Respeita prefers-reduced-motion (§3.4/§10) → estático no triângulo.
  */
 
@@ -16,18 +16,25 @@ import { motion, useMotionValue, useReducedMotion, useTransform } from "motion/r
 import Link from "next/link";
 import { useEffect } from "react";
 
-import { WhatsappCta } from "@/components/contact/WhatsappCta";
-import { DialPlate, type DialVariant } from "@/components/watch/DialPlate";
+import Image from "next/image";
 
-/**
- * Mostradores neutros em SVG (SPEC §13): nada de foto de estoque de terceiro
- * nem render de IA passando por peça da casa.
- */
-const COLLAGE: readonly { variant: DialVariant; caption: string }[] = [
-  { variant: "dive", caption: "MERGULHO" },
-  { variant: "chronograph", caption: "CRONÓGRAFO" },
-  { variant: "gmt", caption: "GMT" },
-];
+import { WhatsappCta } from "@/components/contact/WhatsappCta";
+
+/** ⚠️ DEMO: fotos do Unsplash, não são peças da casa (ver watches.ts). */
+const COLLAGE = [
+  {
+    src: "/pecas/orbe-1.webp",
+    alt: "Rolex Submariner Date two-tone com mostrador azul",
+  },
+  {
+    src: "/pecas/orbe-2.webp",
+    alt: "Rolex Cosmograph Daytona em ouro amarelo",
+  },
+  {
+    src: "/pecas/orbe-3.webp",
+    alt: "Rolex Datejust two-tone com mostrador chocolate e índices de diamante",
+  },
+] as const;
 
 // Vértices do triângulo: x = r·sin(θ), y = -r·cos(θ), θ = i·120°.
 const SLOTS = [
@@ -115,7 +122,7 @@ export function ClosingCta() {
           </div>
         </div>
 
-        {/* Orbital — 3 mostradores girando com velocidade variável fluida */}
+        {/* Orbital — 3 peças girando com velocidade variável fluida */}
         <div
           className="relative shrink-0"
           aria-hidden
@@ -129,9 +136,9 @@ export function ClosingCta() {
           }
         >
           <motion.div className="absolute inset-0" style={{ rotate: angle }}>
-            {COLLAGE.map((dial, i) => (
+            {COLLAGE.map((photo, i) => (
               <div
-                key={dial.variant}
+                key={photo.src}
                 className="absolute left-1/2 top-1/2"
                 style={{
                   width: "var(--img)",
@@ -140,18 +147,16 @@ export function ClosingCta() {
                 }}
               >
                 <motion.div
-                  className="relative flex h-full w-full items-center justify-center overflow-hidden border shadow-[0_18px_40px_-24px_rgba(23,24,26,0.28)] will-change-transform"
-                  style={{
-                    rotate: negAngle,
-                    borderColor: "var(--color-border)",
-                    background:
-                      "radial-gradient(80% 80% at 50% 25%, var(--color-surface) 0%, var(--color-background) 100%)",
-                  }}
+                  className="relative h-full w-full overflow-hidden border shadow-[0_18px_40px_-24px_rgba(23,24,26,0.28)] will-change-transform"
+                  style={{ rotate: negAngle, borderColor: "var(--color-border)" }}
                 >
-                  <DialPlate
-                    variant={dial.variant}
-                    caption={dial.caption}
-                    className="h-[84%] w-auto"
+                  <Image
+                    src={photo.src}
+                    alt={photo.alt}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 40vw, 240px"
+                    draggable={false}
                   />
                 </motion.div>
               </div>

@@ -19,9 +19,8 @@ import {
   useScroll,
   useTransform,
 } from "motion/react";
+import Image from "next/image";
 import { useRef } from "react";
-
-import { DialPlate, type DialVariant } from "@/components/watch/DialPlate";
 
 const SCROLL_PER_CARD_VH = 95; // altura de scroll por card
 
@@ -38,19 +37,28 @@ const PILLARS = [
     n: "01",
     title: "Somente originais",
     body: "Cada peça passa por conferência de procedência antes de entrar na vitrine: número de série, calibre, acabamento de fábrica e o que acompanha. Réplica e homage não entram aqui.",
-    dial: { variant: "dive" as DialVariant, caption: "PROCEDÊNCIA" },
+    image: {
+      src: "/pecas/ethos-procedencia.webp",
+      alt: "Relojoeiro com lupa e pinça examinando o movimento de um relógio na bancada",
+    },
   },
   {
     n: "02",
     title: "Desde 2012 na mesma mesa",
     body: "Mais de uma década comprando, vendendo, trocando e recebendo peças em consignação. O acervo é pequeno de propósito — a casa só anuncia o que conhece.",
-    dial: { variant: "chronograph" as DialVariant, caption: "DESDE 2012" },
+    image: {
+      src: "/pecas/ethos-casa.webp",
+      alt: "Mãos apresentando um relógio sobre a caixa, em luz baixa",
+    },
   },
   {
     n: "03",
     title: "Estado descrito por inteiro",
     body: "Marcas de uso são fotografadas e escritas, não escondidas. Você sabe exatamente o que vai receber antes de qualquer transferência.",
-    dial: { variant: "gmt" as DialVariant, caption: "SEM SURPRESA" },
+    image: {
+      src: "/pecas/ethos-estado.webp",
+      alt: "Mãos abrindo um relógio de ouro rosé com ferramenta, examinando o interior da caixa",
+    },
   },
 ] as const;
 
@@ -60,17 +68,16 @@ function SlideContent({ pillar }: { pillar: Pillar }) {
   return (
     <div className="mx-auto grid w-full max-w-5xl items-center gap-8 md:grid-cols-2 md:gap-16">
       <div
-        className="relative flex aspect-[4/3] w-full items-center justify-center overflow-hidden border"
-        style={{
-          borderColor: "var(--color-border)",
-          background:
-            "radial-gradient(90% 70% at 50% 20%, var(--color-surface) 0%, var(--color-background) 100%)",
-        }}
+        className="relative aspect-[4/3] w-full overflow-hidden border"
+        style={{ borderColor: "var(--color-border)" }}
       >
-        <DialPlate
-          variant={pillar.dial.variant}
-          caption={pillar.dial.caption}
-          className="h-[78%] w-auto"
+        <Image
+          src={pillar.image.src}
+          alt={pillar.image.alt}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 90vw, 45vw"
+          draggable={false}
         />
       </div>
       <div className="flex flex-col gap-5">
