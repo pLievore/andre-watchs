@@ -229,38 +229,48 @@ export function GerenciadorFotos({
                   {papelDa(i)}
                 </span>
 
-                {/*
-                  O alt é requisito de acessibilidade (SPEC §9) e é o que um
-                  leitor de tela lê no lugar da peça. Editável aqui porque o
-                  automático — "Rolex Submariner" — descreve a peça, não a foto.
-                */}
-                <form action={salvarAlt} className="flex flex-col gap-2">
-                  <input type="hidden" name="id" value={f.id} />
-                  <input type="hidden" name="slug" value={slug} />
-                  <label htmlFor={`alt-${f.id}`} className="meta">
-                    Descrição da imagem
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    <input
-                      id={`alt-${f.id}`}
-                      name="alt"
-                      defaultValue={f.alt}
-                      className="campo flex-1"
-                      style={{ minWidth: "12rem" }}
-                      placeholder="Rolex Submariner ref. 126610LN, mostrador preto, de frente"
-                    />
-                    <button
-                      type="submit"
-                      className="label border px-3"
-                      style={{
-                        minHeight: 44,
-                        borderColor: "var(--color-border)",
-                      }}
-                    >
-                      Salvar
-                    </button>
-                  </div>
-                </form>
+                {/* O automático cobre o uso comum; o detalhe fica disponível
+                    para quem quiser descrever enquadramento ou mostrador. */}
+                <details>
+                  <summary
+                    className="meta cursor-pointer py-2.5"
+                    style={{ color: "var(--color-muted)" }}
+                  >
+                    Descrição para leitor de tela (opcional)
+                  </summary>
+                  <p className="meta mb-3 max-w-prose leading-relaxed">
+                    Não aparece junto da foto. É lida por tecnologias de
+                    acessibilidade e usada se a imagem não carregar.
+                  </p>
+                  <form action={salvarAlt} className="flex flex-col gap-2">
+                    <input type="hidden" name="id" value={f.id} />
+                    <input type="hidden" name="slug" value={slug} />
+                    <label htmlFor={`alt-${f.id}`} className="meta">
+                      Texto alternativo
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      <input
+                        id={`alt-${f.id}`}
+                        name="alt"
+                        defaultValue={f.alt}
+                        maxLength={300}
+                        className="campo flex-1"
+                        style={{ minWidth: "12rem" }}
+                        placeholder="Rolex Submariner, mostrador preto, de frente"
+                      />
+                      <button
+                        type="submit"
+                        className="label border px-3"
+                        style={{
+                          minHeight: 44,
+                          borderColor: "var(--color-border)",
+                        }}
+                      >
+                        Salvar
+                      </button>
+                    </div>
+                  </form>
+                </details>
 
                 <div className="flex flex-wrap items-center gap-2">
                   <div>

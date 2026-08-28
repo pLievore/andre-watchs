@@ -69,6 +69,10 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
   como acesso de cliente.
 - Menu do site tem três formas: visitante, cliente, dono. Link que não serve ao
   papel de quem está logado é beco sem saída, não conveniência.
+- No mobile, **cliente ativo usa a barra inferior** de
+  `ClienteNavMobile.tsx`; visitante e dono continuam com o menu do Header. A
+  barra tem Acervo, Vender, A casa e Conta, e o layout reserva espaço depois do
+  rodapé para ela não cobrir conteúdo.
 
 ## Clientes: a identidade mora em dois lugares
 
@@ -98,6 +102,9 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
 - **O bucket `pecas` é privado.** Foto com URL pública fura o clube inteiro —
   bastaria compartilhar o endereço da imagem. Toda foto vira link assinado por
   `src/lib/db/fotos.ts`; nunca troque por `getPublicUrl`.
+- Há dois formatos válidos de URL: legado local começa por `/pecas/`; upload do
+  bucket é `slug/uuid.ext`, sem barra inicial. `fotos.ts` só assina o segundo —
+  tratar todo caminho relativo como Storage faz as 18 fotos locais sumirem.
 - **`on delete cascade` não apaga arquivo do Storage.** Quem exclui peça ou
   foto remove os objetos do bucket na mesma operação, senão sobra imagem órfã
   que nenhuma tela alcança.

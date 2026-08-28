@@ -4,9 +4,9 @@
 > seguir" em uma página. É o único documento que muda a cada entrega — se ele
 > discordar de outro, ele está certo e o outro está velho.
 >
-> **Última atualização**: 2026-08-28 (foto já entra no cadastro por upload
-> direto, reordenação ficou otimista e atômica, Header mobile corrigido; falta
-> o deploy)
+> **Última atualização**: 2026-08-28 (cliente ganhou navegação inferior no
+> mobile, 18 fotos legadas voltaram ao acervo e descrição alternativa ficou
+> opcional e recolhida; falta o deploy)
 
 ---
 
@@ -39,9 +39,9 @@ consulta direta à API sem sessão.
 
 Além do que a Fase 2 previa: o cliente logado tem `/acervo/conta` — edita
 nome e telefone, e troca a própria senha. É a mitigação do risco D24
-(PLANO-CLUBE §3, "aditiva, liga quando quiser") ligada agora. Chega pelo
-header, que ganhou também um menu de celular — não existia navegação nenhuma
-em tela pequena antes disso.
+(PLANO-CLUBE §3, "aditiva, liga quando quiser") ligada agora. No mobile, o
+cliente usa uma barra inferior persistente com Acervo, Vender, A casa e Conta;
+o menu sanduíche fica para visitante e dono.
 
 O painel local também cobre o núcleo da Fase 3: cadastro e edição completos de
 peças e clientes. Foto pode ser escolhida já na criação da peça e vai direto ao
@@ -50,6 +50,12 @@ Action. Cadastro e edição compartilham o fluxo. A ordenação é otimista na t
 e transacional no banco (`supabase/fase-5.sql`). Testado no Chrome com três
 JPEGs de 4,34 MB, rajada de oito toques e 30 movimentos concorrentes; o cadastro
 descartável e seus objetos foram removidos ao fim.
+
+As 18 fotos da semente voltaram a aparecer. Elas usam caminhos locais iniciados
+por `/pecas/`; o assinador os confundia com uploads do bucket e os descartava
+quando a assinatura falhava. Upload novo continua privado no formato
+`slug/uuid.ext`. A descrição alternativa é gerada automaticamente e sua edição
+manual ficou opcional, recolhida em cada foto.
 
 ### ⚠️ Estado inconsistente entre banco e produção
 

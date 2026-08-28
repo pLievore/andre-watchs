@@ -52,6 +52,11 @@ limpa falhas parciais e só registra a foto depois de confirmar o objeto. A
 ordem muda imediatamente na tela e é consolidada pela função transacional
 `mover_foto`, que serializa toques concorrentes por peça.
 
+As 18 fotos da semente continuam locais em `/public/pecas` e chegam do banco
+como `/pecas/arquivo.webp`; upload real usa `slug/uuid.ext` no bucket. O
+assinador distingue os formatos — só o segundo recebe URL assinada. O alt é
+automático, com edição opcional recolhida no painel.
+
 ---
 
 ## Clientes

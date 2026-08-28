@@ -323,7 +323,7 @@ export async function salvarAlt(form: FormData): Promise<void> {
   const id = String(form.get("id") ?? "");
   const slug = String(form.get("slug") ?? "");
   const alt = String(form.get("alt") ?? "").trim();
-  if (!id || !slug || !alt) return;
+  if (!id || !slug || !alt || alt.length > 300) return;
 
   await dbAdmin.from("fotos").update({ alt }).eq("id", id);
   revalidar(slug);

@@ -32,6 +32,8 @@ import { useLayoutEffect, useState } from "react";
 
 import { sair } from "@/app/(site)/acesso/actions";
 
+import { ClienteNavMobile } from "./ClienteNavMobile";
+
 const NAV_PUBLICA = [
   { href: "/vender", label: "Vender" },
   { href: "/sobre", label: "A casa" },
@@ -151,115 +153,125 @@ export function Header({
       : NAV_PUBLICA;
 
   const autenticado = isAdmin || isClienteAtivo;
+  const clienteComBarra = isClienteAtivo && !isAdmin;
 
   return (
-    <motion.header
-      className="fixed inset-x-0 top-0 z-50 border-b"
-      style={
-        {
-          background,
-          color: foreground,
-          borderColor: border,
-          // Reescreve os tokens no escopo do header: os filhos herdam.
-          "--color-foreground": foreground,
-          "--color-muted": muted,
-          "--color-border": border,
-        } as MotionStyle
-      }
-    >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-16 md:py-7">
-        <Link
-          href="/"
-          className="flex items-center gap-3"
-          aria-label="ANDRE WATCHES — página inicial"
-        >
-          <Monogram />
-          <span className="label" style={{ color: "var(--color-foreground)" }}>
-            Andre<span style={{ color: "var(--color-muted)" }}> · </span>Watches
-          </span>
-        </Link>
+    <>
+      <motion.header
+        className="fixed inset-x-0 top-0 z-50 border-b"
+        style={
+          {
+            background,
+            color: foreground,
+            borderColor: border,
+            // Reescreve os tokens no escopo do header: os filhos herdam.
+            "--color-foreground": foreground,
+            "--color-muted": muted,
+            "--color-border": border,
+          } as MotionStyle
+        }
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-16 md:py-7">
+          <Link
+            href="/"
+            className="flex items-center gap-3"
+            aria-label="ANDRE WATCHES — página inicial"
+          >
+            <Monogram />
+            <span
+              className="label"
+              style={{ color: "var(--color-foreground)" }}
+            >
+              Andre<span style={{ color: "var(--color-muted)" }}> · </span>
+              Watches
+            </span>
+          </Link>
 
-        <nav
-          aria-label="Navegação principal"
-          className="hidden items-center gap-10 md:flex"
-        >
-          {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="label link-quiet">
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="hidden md:block">
-          {autenticado ? (
-            <form action={sair}>
-              <button type="submit" className="label link-quiet">
-                Sair
-              </button>
-            </form>
-          ) : (
-            <Link href="/acesso" className="label link-quiet">
-              Entrar
-            </Link>
-          )}
-        </div>
-
-        <button
-          type="button"
-          className="md:hidden"
-          aria-expanded={menuAberto}
-          aria-controls="menu-celular"
-          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
-          onClick={() => setMenuAberto((v) => !v)}
-        >
-          <MenuIcon aberto={menuAberto} />
-        </button>
-      </div>
-
-      <AnimatePresence>
-        {menuAberto && (
-          <motion.nav
-            id="menu-celular"
-            aria-label="Navegação principal (celular)"
-            className="absolute inset-x-0 top-full flex flex-col gap-1 border-t px-6 py-6 md:hidden"
-            style={{ background, borderColor: border }}
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{
-              duration: reduceMotion ? 0 : 0.3,
-              ease: [0.22, 1, 0.36, 1],
-            }}
+          <nav
+            aria-label="Navegação principal"
+            className="hidden items-center gap-10 md:flex"
           >
             {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="label link-quiet py-3"
-              >
+              <Link key={link.href} href={link.href} className="label link-quiet">
                 {link.label}
               </Link>
             ))}
-            <div
-              className="mt-2 border-t pt-4"
-              style={{ borderColor: "var(--color-border)" }}
+          </nav>
+
+          <div className="hidden md:block">
+            {autenticado ? (
+              <form action={sair}>
+                <button type="submit" className="label link-quiet">
+                  Sair
+                </button>
+              </form>
+            ) : (
+              <Link href="/acesso" className="label link-quiet">
+                Entrar
+              </Link>
+            )}
+          </div>
+
+          {!clienteComBarra && (
+            <button
+              type="button"
+              className="md:hidden"
+              aria-expanded={menuAberto}
+              aria-controls="menu-celular"
+              aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
+              onClick={() => setMenuAberto((v) => !v)}
             >
-              {autenticado ? (
-                <form action={sair}>
-                  <button type="submit" className="label link-quiet py-3">
-                    Sair
-                  </button>
-                </form>
-              ) : (
-                <Link href="/acesso" className="label link-quiet py-3">
-                  Entrar
+              <MenuIcon aberto={menuAberto} />
+            </button>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {menuAberto && !clienteComBarra && (
+            <motion.nav
+              id="menu-celular"
+              aria-label="Navegação principal (celular)"
+              className="absolute inset-x-0 top-full flex flex-col gap-1 border-t px-6 py-6 md:hidden"
+              style={{ background, borderColor: border }}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{
+                duration: reduceMotion ? 0 : 0.3,
+                ease: [0.22, 1, 0.36, 1],
+              }}
+            >
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="label link-quiet py-3"
+                >
+                  {link.label}
                 </Link>
-              )}
-            </div>
-          </motion.nav>
-        )}
-      </AnimatePresence>
-    </motion.header>
+              ))}
+              <div
+                className="mt-2 border-t pt-4"
+                style={{ borderColor: "var(--color-border)" }}
+              >
+                {autenticado ? (
+                  <form action={sair}>
+                    <button type="submit" className="label link-quiet py-3">
+                      Sair
+                    </button>
+                  </form>
+                ) : (
+                  <Link href="/acesso" className="label link-quiet py-3">
+                    Entrar
+                  </Link>
+                )}
+              </div>
+            </motion.nav>
+          )}
+        </AnimatePresence>
+      </motion.header>
+      {clienteComBarra && <ClienteNavMobile />}
+    </>
   );
 }
 

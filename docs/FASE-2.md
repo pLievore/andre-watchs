@@ -46,6 +46,10 @@ operação. Fechá-la seria perder contato à toa.
 grid abaixo. Sem tela intermediária: no celular cada toque a mais pesa, e a
 partir da terceira visita cerimônia vira atrito.
 
+No celular autenticado, a navegação recorrente também fica direta: uma barra
+inferior persistente leva a Acervo, Vender, A casa e Conta. Visitante continua
+com o menu superior; o produto só assume a forma de aplicativo depois do login.
+
 ---
 
 ## 2.1 — `clientes` e o RLS apertado
@@ -181,6 +185,7 @@ regras de tom, com exemplo de frase ruim e frase boa. Leia antes de acrescentar.
 - [x] `/colecao` redireciona para `/acervo`
 - [x] Erro de login não revela se o e-mail existe
 - [x] **Consulta direta à API com a chave publishable, sem sessão, não devolve peça**
+- [x] Cliente autenticado em 390×844 vê barra inferior, fotos e estados ativos corretos
 - [ ] Testado em celular físico (só verificado por breakpoint responsivo)
 
 O penúltimo item é o que prova que a proteção é do banco e não só da aplicação.

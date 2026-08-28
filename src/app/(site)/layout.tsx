@@ -52,7 +52,11 @@ export default async function RootLayout({
             isClienteAtivo={cliente?.status === "ativo"}
             isAdmin={ehAdmin}
           />
-          <div className="relative z-10">
+          <div
+            className={`relative z-10 ${
+              cliente?.status === "ativo" && !ehAdmin ? "pb-20 md:pb-0" : ""
+            }`}
+          >
             <main id="main">{children}</main>
             <Footer />
           </div>

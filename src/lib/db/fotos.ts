@@ -8,8 +8,8 @@ import "server-only";
  * endereço da imagem e o acervo estaria na rua sem ninguém precisar de login.
  *
  * Então toda foto guardada no Storage vira link assinado de vida curta, gerado
- * no servidor a cada render. Fotos antigas — as do Unsplash da demonstração —
- * continuam sendo URL absoluta e passam direto.
+ * no servidor a cada render. Fotos antigas — arquivos da demonstração em
+ * `/public/pecas` — começam por `/` e passam direto.
  */
 
 import { dbAdmin } from "@/lib/db/admin";
@@ -18,9 +18,12 @@ import type { Watch, WatchImage } from "@/lib/types";
 /** Uma hora: cobre a visita inteira sem virar link permanente disfarçado. */
 const VALIDADE_SEGUNDOS = 3600;
 
-/** URL absoluta é foto externa (Unsplash); o resto é caminho no bucket. */
+/**
+ * Upload novo é `slug/uuid.ext`. URL absoluta e caminho iniciado por `/` são
+ * assets externos ou arquivos legados de `public/pecas`, não objetos do bucket.
+ */
 function ehCaminhoDeBucket(url: string): boolean {
-  return url !== "" && !/^https?:\/\//i.test(url);
+  return url !== "" && !url.startsWith("/") && !/^https?:\/\//i.test(url);
 }
 
 function caminhosDe(w: Watch): string[] {
