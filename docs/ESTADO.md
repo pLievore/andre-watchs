@@ -4,7 +4,7 @@
 > seguir" em uma página. É o único documento que muda a cada entrega — se ele
 > discordar de outro, ele está certo e o outro está velho.
 >
-> **Última atualização**: 2026-08-24
+> **Última atualização**: 2026-08-24 (Fase 1 validada em local)
 
 ---
 
@@ -27,7 +27,8 @@ Site de acervo de relógios de luxo, em transição de **vitrine pública** para
 
 ## O que NÃO existe ainda
 
-- **Banco de dados** — o catálogo é um array em `src/lib/data/watches.ts`
+- ~~Banco de dados~~ — **feito**: Supabase, 10 peças migradas. `watches.ts`
+  segue como semente de referência
 - **Autenticação** — nenhuma
 - **Painel administrativo** — nenhum
 - **Gateway de pagamento** — fora de escopo por decisão (a venda fecha no WhatsApp)

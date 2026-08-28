@@ -6,43 +6,78 @@
  * IDEMPOTENTE: usa `slug` como chave. Rodar de novo atualiza em vez de
  * duplicar, então dá pra corrigir o mock e semear outra vez sem limpar nada.
  *
- * Usa a chave service_role porque escrita não passa por RLS (ver docs/BANCO.md).
+ * Usa a chave secret porque escrita não passa por RLS (ver docs/BANCO.md).
  * Roda só na sua máquina, nunca em produção.
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, unlinkSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 
-// Lê as variáveis do .env.local sem depender de pacote extra.
+// ── Variáveis ────────────────────────────────────────────────────────────────
+// Lê o .env.local sem depender de pacote extra.
 for (const linha of readFileSync(".env.local", "utf8").split("\n")) {
-  const m = linha.match(/^\s*([A-Z_]+)\s*=\s*(.*)\s*$/);
+  const m = linha.match(/^\s*([A-Z_]+)\s*=\s*(.*?)\s*$/);
   if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const chave = process.env.SUPABASE_SECRET_KEY;
 if (!url || !chave) {
-  console.error("Faltam variáveis do Supabase no .env.local — ver docs/FASE-1.md §1.1");
+  console.error(
+    "Faltam NEXT_PUBLIC_SUPABASE_URL e/ou SUPABASE_SECRET_KEY no .env.local.\n" +
+      "A secret key está em Project Settings → API Keys. Ver docs/FASE-1.md §1.1.",
+  );
   process.exit(1);
 }
 
 const db = createClient(url, chave, { auth: { persistSession: false } });
 
-// O mock é TypeScript; extraímos o array por avaliação do literal em vez de
-// compilar o projeto só pra semear.
+// ── Ler as peças ─────────────────────────────────────────────────────────────
+//
+// O arquivo é TypeScript e o Node não importa .ts direto. Em vez de fatiar o
+// texto procurando colchete — o que quebrou antes, porque `MockWatch[]` tem um
+// `[` no meio da declaração —, tiramos as anotações de tipo e importamos o
+// módulo de verdade. Assim a extração não depende de formatação.
+
 const fonte = readFileSync("src/lib/data/watches.ts", "utf8");
-const inicio = fonte.indexOf("MOCK_WATCHES: readonly MockWatch[] = [");
-const abre = fonte.indexOf("[", inicio);
-let profundidade = 0, fim = abre;
-for (let i = abre; i < fonte.length; i++) {
-  if (fonte[i] === "[") profundidade++;
-  else if (fonte[i] === "]" && --profundidade === 0) { fim = i + 1; break; }
+
+// Recorta só a declaração do MOCK_WATCHES. O que vem depois são funções
+// auxiliares com assinatura tipada, que o Node não interpreta.
+const inicio = fonte.indexOf("export const MOCK_WATCHES");
+if (inicio === -1) {
+  console.error("Não achei `export const MOCK_WATCHES` em src/lib/data/watches.ts.");
+  process.exit(1);
 }
-const pecas = eval(fonte.slice(abre, fim));
+const seguinte = fonte.indexOf("\nexport ", inicio + 1);
+const trecho = fonte.slice(inicio, seguinte === -1 ? undefined : seguinte);
+
+// Fora a anotação de tipo, o corpo já é JavaScript válido.
+const js = trecho.replace(": readonly MockWatch[]", "");
+
+const temp = "scripts/.watches.tmp.mjs";
+writeFileSync(temp, js);
+
+let pecas;
+try {
+  ({ MOCK_WATCHES: pecas } = await import(pathToFileURL(temp).href));
+} finally {
+  unlinkSync(temp);
+}
+
+if (!Array.isArray(pecas) || pecas.length === 0) {
+  console.error(
+    "Nenhuma peça encontrada em src/lib/data/watches.ts.\n" +
+      "Se o arquivo mudou de formato, ajuste a extração acima.",
+  );
+  process.exit(1);
+}
 
 console.log(`${pecas.length} peças no arquivo de origem\n`);
 
-let inseridas = 0;
+// ── Inserir ──────────────────────────────────────────────────────────────────
+
+let ok = 0;
 for (const p of pecas) {
   const { data: peca, error } = await db
     .from("pecas")
@@ -76,8 +111,8 @@ for (const p of pecas) {
     continue;
   }
 
-  // Fotos são substituídas por inteiro: é mais simples e mais correto que
-  // tentar reconciliar, e a ordem sempre reflete o arquivo de origem.
+  // Fotos são substituídas por inteiro: mais simples e mais correto que
+  // reconciliar, e a ordem sempre reflete o arquivo de origem.
   await db.from("fotos").delete().eq("peca_id", peca.id);
 
   const fotos = [
@@ -91,7 +126,8 @@ for (const p of pecas) {
   if (fotos.length) await db.from("fotos").insert(fotos);
 
   console.log(`  ✓ ${p.slug} (${fotos.length} foto${fotos.length === 1 ? "" : "s"})`);
-  inseridas++;
+  ok++;
 }
 
-console.log(`\n${inseridas} de ${pecas.length} peças no banco.`);
+console.log(`\n${ok} de ${pecas.length} peças no banco.`);
+if (ok < pecas.length) process.exit(1);

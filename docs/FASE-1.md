@@ -14,13 +14,13 @@
 
 | # | Passo | Status |
 |---|---|---|
-| 1.1 | Projeto no Supabase e variáveis de ambiente | 🟡 **aguarda o dono** — só ele tem a conta |
-| 1.2 | Esquema das tabelas + RLS | ✅ SQL escrito em `supabase/schema.sql`, falta aplicar |
+| 1.1 | Projeto no Supabase e variáveis de ambiente | ✅ |
+| 1.2 | Esquema das tabelas + RLS | ✅ aplicado |
 | 1.3 | Cliente de banco no código | ✅ |
 | 1.4 | Camada de acesso a dados (`src/lib/db/`) | ✅ |
-| 1.5 | Migrar o catálogo mock para o banco | ✅ script pronto, falta rodar |
+| 1.5 | Migrar o catálogo mock para o banco | ✅ 10 peças no banco |
 | 1.6 | Trocar as páginas para lerem do banco | ✅ |
-| 1.7 | Verificação e deploy | ⬜ depende de 1.1 |
+| 1.7 | Verificação e deploy | 🟡 verificado local; falta deploy |
 
 Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluído
 
@@ -111,30 +111,29 @@ transformar nada em client component por causa de dados**.
 
 ## 1.7 — Verificação
 
-- [ ] `npx tsc --noEmit` limpo
-- [ ] As quatro rotas devolvem 200
-- [ ] O acervo mostra as mesmas peças de antes
-- [ ] A PDP de uma peça específica abre igual
-- [ ] Peça vendida continua com o selo
-- [ ] Peça sem referência ainda mostra `—`
-- [ ] Nenhuma chave `secret` no pacote do cliente
+- [x] `npx tsc --noEmit` limpo
+- [x] As quatro rotas devolvem 200
+- [x] O acervo mostra as mesmas 10 peças
+- [x] A PDP abre igual, com preço correto
+- [x] Peça vendida continua com o selo (Daytona)
+- [x] Peça sem referência ainda mostra `—` (Breitling)
+- [x] Consignação ainda aparece (Bluesy)
+- [x] Fotos vêm ordenadas do banco
+- [x] Nenhuma chave `secret` no pacote do cliente (`import "server-only"`)
 - [ ] Deploy com as variáveis configuradas na Vercel
 
 ---
 
-## ⏭️ O que falta — e depende de você
+## ⏭️ Falta só o deploy
 
-O código está pronto. **Tudo que resta exige a conta do Supabase**, que só você
-pode criar:
+Local está validado. Para fechar a fase:
 
-1. Criar o projeto (região São Paulo)
-2. Colar as três chaves no `.env.local`
-3. Rodar `supabase/schema.sql` no SQL Editor
-4. `node scripts/seed-pecas.mjs`
-5. `npm run dev` e conferir que o acervo aparece igual
-6. Configurar as mesmas variáveis na Vercel e fazer deploy
-
-Do passo 3 em diante, qualquer agente consegue continuar sozinho.
+1. Na Vercel → Settings → Environment Variables, adicionar:
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   *(a `SUPABASE_SECRET_KEY` só é necessária quando o painel existir — hoje
+   nada em produção escreve no banco)*
+2. `npx vercel --prod --yes`
+3. Conferir que `/colecao` em produção mostra as 10 peças
 
 ---
 
