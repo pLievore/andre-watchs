@@ -87,7 +87,7 @@ create policy pecas_leitura_autenticada
 Está escrito aqui para que a troca seja um passo previsto e não uma descoberta.
 
 **Escrita nunca passa por RLS.** Não existe política de `insert`, `update` ou
-`delete` — toda escrita usa a chave `service_role`, só no servidor, só pelo
+`delete` — toda escrita usa a chave `secret`, só no servidor, só pelo
 painel. Um cliente comprometido não consegue alterar nada, porque o caminho não
 existe.
 
@@ -95,16 +95,41 @@ existe.
 
 ## As duas chaves, e a que não pode vazar
 
-| Chave | Onde | Respeita RLS |
-|---|---|---|
-| `anon` | pode ir ao navegador | **sim** |
-| `service_role` | **só no servidor** | **não — ignora tudo** |
+O Supabase renomeou as chaves: `anon` virou **publishable**, `service_role`
+virou **secret**. Os nomes antigos ainda aparecem em tutoriais pela internet.
 
-`service_role` no pacote do cliente entrega o banco inteiro para qualquer um que
+| Chave | Variável | Onde | Respeita RLS |
+|---|---|---|---|
+| publishable *(era anon)* | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | pode ir ao navegador | **sim** |
+| secret *(era service_role)* | `SUPABASE_SECRET_KEY` | **só no servidor** | **não — ignora tudo** |
+
+A `secret` no pacote do cliente entrega o banco inteiro para qualquer um que
 abra o inspetor. Por isso ela mora em `src/lib/db/admin.ts`, com aviso no topo
 do arquivo, e nunca é importada por componente cliente.
 
 Regra prática: se o arquivo tem `"use client"`, ele não pode importar `admin.ts`.
+
+---
+
+## As connection strings
+
+`DATABASE_URL` e `DIRECT_URL` estão no `.env.example` mas **o código não usa
+nenhuma das duas**. As consultas passam pela API do Supabase, não por conexão
+direta ao Postgres.
+
+Ficam registradas porque:
+
+- um ORM (Drizzle, Prisma) precisaria delas se entrar depois
+- migração por linha de comando usa a `DIRECT_URL`
+
+A diferença entre as duas: `DATABASE_URL` aponta para o pooler em **modo
+transação** (porta 6543), que é o certo para aplicação serverless, onde cada
+requisição pode abrir conexão nova. `DIRECT_URL` é o pooler em **modo sessão**
+(porta 5432) — necessário para migração, porque modo transação não suporta
+comando de esquema.
+
+⚠️ As duas carregam a **senha do banco** em texto claro. Nunca no `.env.example`,
+nunca em commit.
 
 ---
 

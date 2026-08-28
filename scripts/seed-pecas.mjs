@@ -20,7 +20,7 @@ for (const linha of readFileSync(".env.local", "utf8").split("\n")) {
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const chave = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const chave = process.env.SUPABASE_SECRET_KEY;
 if (!url || !chave) {
   console.error("Faltam variáveis do Supabase no .env.local — ver docs/FASE-1.md §1.1");
   process.exit(1);

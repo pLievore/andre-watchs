@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * ⚠️ CLIENTE ADMINISTRATIVO — chave `service_role`, **IGNORA RLS**.
+ * ⚠️ CLIENTE ADMINISTRATIVO — chave `secret`, **IGNORA RLS**.
  *
  * Esta chave enxerga e altera tudo. Se ela chegar ao navegador, o banco inteiro
  * fica exposto para quem abrir o inspetor.
@@ -17,11 +17,11 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serviceKey = process.env.SUPABASE_SECRET_KEY;
 
 if (!url || !serviceKey) {
   throw new Error(
-    "Faltam NEXT_PUBLIC_SUPABASE_URL e/ou SUPABASE_SERVICE_ROLE_KEY. " +
+    "Faltam NEXT_PUBLIC_SUPABASE_URL e/ou SUPABASE_SECRET_KEY. " +
       "Ver docs/FASE-1.md §1.1.",
   );
 }

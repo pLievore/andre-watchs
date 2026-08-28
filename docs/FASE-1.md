@@ -60,8 +60,8 @@ Fase 2 aperta essa política — está previsto e documentado em BANCO.md.
 
 Dois clientes, e a distinção importa:
 
-- `src/lib/db/client.ts` — chave **anon**, respeita RLS. É o padrão.
-- `src/lib/db/admin.ts` — chave **service_role**, ignora RLS. Só em código de
+- `src/lib/db/client.ts` — chave **publishable**, respeita RLS. É o padrão.
+- `src/lib/db/admin.ts` — chave **secret**, ignora RLS. Só em código de
   servidor, só onde for inevitável. **Nunca importar em componente cliente.**
 
 ---
@@ -117,7 +117,7 @@ transformar nada em client component por causa de dados**.
 - [ ] A PDP de uma peça específica abre igual
 - [ ] Peça vendida continua com o selo
 - [ ] Peça sem referência ainda mostra `—`
-- [ ] Nenhuma chave `service_role` no pacote do cliente
+- [ ] Nenhuma chave `secret` no pacote do cliente
 - [ ] Deploy com as variáveis configuradas na Vercel
 
 ---

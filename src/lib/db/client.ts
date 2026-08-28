@@ -1,5 +1,5 @@
 /**
- * Cliente de banco padrão — chave `anon`, **respeita RLS**.
+ * Cliente de banco padrão — chave `publishable`, **respeita RLS**.
  *
  * É este que se usa em 99% dos casos. Ele só enxerga o que as políticas do
  * banco permitem, então um erro de lógica na aplicação não vira vazamento.
@@ -10,13 +10,13 @@
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 if (!url || !anonKey) {
   // Falha alto e cedo. Sem isto, a ausência da variável vira um erro obscuro
   // de rede no meio de uma consulta, muito mais difícil de diagnosticar.
   throw new Error(
-    "Faltam NEXT_PUBLIC_SUPABASE_URL e/ou NEXT_PUBLIC_SUPABASE_ANON_KEY. " +
+    "Faltam NEXT_PUBLIC_SUPABASE_URL e/ou NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. " +
       "Copie .env.example para .env.local e preencha — ver docs/FASE-1.md §1.1.",
   );
 }
