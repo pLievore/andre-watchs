@@ -111,6 +111,9 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
   **bloqueiam publicação** até as fotos reais entrarem (SPEC §14 D8).
 - Proibido badge de promoção, countdown, "últimas unidades". Escassez é fato:
   "1 unidade" é informação, urgência fabricada não.
+- **Nunca** chamar o acervo de "pequeno" (mesmo querendo dizer seletivo) — soa a
+  falta de estoque, não a curadoria, e tira credibilidade. Prefira "a casa só
+  anuncia o que conhece" / "escolhido a dedo".
 
 ## Comandos
 

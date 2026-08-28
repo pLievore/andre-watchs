@@ -62,7 +62,6 @@ export default async function AcervoPage() {
       <AccessVisitRecorder />
 
       <header className="flex max-w-4xl flex-col gap-6">
-        <p className="eyebrow">Acervo reservado</p>
         <h1
           className="text-balance"
           style={{
@@ -78,9 +77,7 @@ export default async function AcervoPage() {
           className="max-w-xl text-base leading-relaxed"
           style={{ color: "var(--color-muted)" }}
         >
-          Referência, condição e o que acompanha vêm declarados. O que a casa
-          ainda não confirmou aparece como <span aria-label="dado ausente">—</span>,
-          nunca como suposição.
+          Acervo privado e personalizado para você.
         </p>
       </header>
 

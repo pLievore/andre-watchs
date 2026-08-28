@@ -37,7 +37,7 @@ type Frase = string;
 const PRIMEIRA_VISITA: Frase[] = [
   "Bem-vindo, {nome}. O que está aqui é o acervo da casa hoje.",
   "{nome}, seja bem-vindo. Cada peça abaixo passou pela bancada antes de entrar.",
-  "Bem-vindo, {nome}. O acervo é pequeno de propósito.",
+  "Bem-vindo, {nome}. O que está no acervo hoje foi escolhido a dedo.",
   "{nome}, o acesso está liberado. Fique à vontade.",
   "Bem-vindo, {nome}. Qualquer peça daqui pode virar conversa.",
 ];

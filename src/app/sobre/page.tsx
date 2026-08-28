@@ -71,8 +71,8 @@ export default function AboutPage() {
         >
           <p>
             A Andre Watches trabalha com relógios de luxo há mais de uma década:
-            compra, venda, troca e consignação. O acervo é pequeno de propósito
-            — a casa só anuncia o que conhece peça por peça.
+            compra, venda, troca e consignação. A casa só anuncia o que
+            conhece, peça por peça.
           </p>
           <p>
             Não existe catálogo infinito nem estoque de terceiro anunciado às
@@ -97,7 +97,7 @@ export default function AboutPage() {
             />
           </div>
           <figcaption className="meta mt-3">
-            O acervo é pequeno de propósito.
+            Cada peça é conferida antes de entrar no acervo.
           </figcaption>
         </figure>
 

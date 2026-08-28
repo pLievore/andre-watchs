@@ -45,9 +45,9 @@ export default function SellPage() {
         className="mt-8 max-w-2xl text-lg leading-relaxed"
         style={{ color: "var(--color-muted)" }}
       >
-        Metade do que passa por aqui chega pela mão de quem já tinha a peça.
-        Manda os dados do seu relógio e a avaliação começa na conversa — sem
-        compromisso e sem cadastro.
+        Cada negociação começa pela mesma pergunta: o que se sabe, de fato,
+        sobre este relógio. Envie os dados da sua peça e a avaliação começa
+        numa conversa direta com a casa.
       </p>
 
       <section className="mt-24" aria-labelledby="modes-title">

@@ -36,6 +36,12 @@ A Fase 2 — Porta está implementada e verificada (checklist completo em
 ligada. Testado com dois clientes descartáveis (ativo e pendente) e por
 consulta direta à API sem sessão.
 
+Além do que a Fase 2 previa: o cliente logado tem `/acervo/conta` — edita
+nome e telefone, e troca a própria senha. É a mitigação do risco D24
+(PLANO-CLUBE §3, "aditiva, liga quando quiser") ligada agora. Chega pelo
+header, que ganhou também um menu de celular — não existia navegação nenhuma
+em tela pequena antes disso.
+
 ### ⚠️ Estado inconsistente entre banco e produção
 
 O Supabase é um projeto só, compartilhado por local e produção — não há

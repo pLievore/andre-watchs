@@ -45,7 +45,7 @@ const PILLARS = [
   {
     n: "02",
     title: "Desde 2012 na mesma mesa",
-    body: "Mais de uma década comprando, vendendo, trocando e recebendo peças em consignação. O acervo é pequeno de propósito — a casa só anuncia o que conhece.",
+    body: "Mais de uma década comprando, vendendo, trocando e recebendo peças em consignação. A casa só anuncia o que conhece, peça por peça.",
     image: {
       src: "/pecas/ethos-casa.webp",
       alt: "Mãos apresentando um relógio sobre a caixa, em luz baixa",
