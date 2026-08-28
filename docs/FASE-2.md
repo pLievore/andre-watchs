@@ -12,16 +12,20 @@
 
 | # | Passo | Status |
 |---|---|---|
-| 2.1 | Tabela `clientes` + RLS apertado | ✅ SQL em `supabase/fase-2.sql`, falta aplicar |
+| 2.1 | Tabela `clientes` + `solicitacoes_acesso`, RLS apertado | ✅ aplicado em produção, confirmado por consulta |
 | 2.2 | Auth do Supabase no servidor (sessão em cookie) | ✅ |
 | 2.3 | Middleware de proteção | ✅ |
-| 2.4 | `/acesso` — entrar e pedir acesso | ⬜ |
-| 2.5 | `/acervo` e `/acervo/[slug]` | ⬜ |
-| 2.6 | Home vira institucional | ⬜ |
-| 2.7 | Saudação de boas-vindas | ✅ repositório pronto, falta ligar na tela |
-| 2.8 | Verificação e deploy | ⬜ |
+| 2.4 | `/acesso` — entrar e pedir acesso | ✅ |
+| 2.5 | `/acervo` e `/acervo/[slug]` | ✅ |
+| 2.6 | Home vira institucional | ✅ |
+| 2.7 | Saudação de boas-vindas | ✅ ligada em `/acervo` |
+| 2.8 | Verificação | ✅ ver checklist — falta só o deploy |
 
 Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluído
+
+⚠️ **A migração já está em produção; o deploy do código, não.** Ver
+[ESTADO.md](ESTADO.md) — o Supabase é compartilhado entre local e produção, e
+isso deixou o `/colecao` público de pé só por cache estático.
 
 ---
 
@@ -69,6 +73,11 @@ create policy pecas_leitura_cliente_ativo
 a proteção entra antes das telas, nunca depois. O contrário deixaria uma janela
 com acervo exposto.
 
+**Isso já aconteceu.** A migração foi aplicada no Supabase de produção em
+2026-08-28 (confirmado por consulta: a chave publishable, sem sessão, não
+devolve mais nenhuma peça). O passo 2.5 já existe neste commit — falta publicar
+para o público parar de ver `/colecao` vazio e passar a ver `/acesso`.
+
 O SQL vive em [`supabase/fase-2.sql`](../supabase/fase-2.sql).
 
 ---
@@ -111,9 +120,13 @@ Uma página, duas funções:
 erro nunca diz se o e-mail existe: *"e-mail ou senha incorretos"* e ponto —
 senão vira ferramenta de descobrir quem é cliente da casa.
 
-**Pedir acesso** — nome, e-mail, telefone e uma linha de contexto. Cria
-`clientes` com status `pendente`. O texto de retorno é claro sobre o que
-acontece: *"seu pedido foi registrado. A casa avalia e entra em contato."*
+**Pedir acesso** — nome, e-mail, telefone e uma linha de contexto. **Não cria
+`clientes` nem conta no Auth**: entra em `solicitacoes_acesso`, uma fila
+simples (docs/BANCO.md). Criar identidade antes da aprovação permitiria que
+qualquer um ocupasse o e-mail de um futuro cliente; o painel da Fase 3 é quem
+promove um pedido a cliente de verdade. O texto de retorno é claro sobre o que
+acontece: *"pedido registrado. A casa avalia e entra em contato pelo
+WhatsApp."*
 
 Também nesta tela: o WhatsApp da casa visível, para quem não conseguir entrar
 ter uma saída que não seja desistir.
@@ -159,18 +172,22 @@ regras de tom, com exemplo de frase ruim e frase boa. Leia antes de acrescentar.
 
 ## 2.8 — Verificação
 
-- [ ] `npx tsc --noEmit` limpo
-- [ ] Deslogado: `/acervo` redireciona para `/acesso`
-- [ ] Deslogado: `/acervo/[slug]` redireciona, mesmo com link direto
-- [ ] Cliente `pendente` loga mas não vê acervo
-- [ ] Cliente `ativo` vê o acervo e a saudação com o nome
-- [ ] Home, `/sobre` e `/vender` seguem públicas
-- [ ] `/colecao` redireciona para `/acervo`
-- [ ] Erro de login não revela se o e-mail existe
-- [ ] **Consulta direta à API com a chave publishable, sem sessão, não devolve peça**
-- [ ] Testado em celular
+- [x] `npx tsc --noEmit` limpo
+- [x] Deslogado: `/acervo` redireciona para `/acesso`
+- [x] Deslogado: `/acervo/[slug]` redireciona, mesmo com link direto
+- [x] Cliente `pendente` loga mas não vê acervo
+- [x] Cliente `ativo` vê o acervo e a saudação com o nome
+- [x] Home, `/sobre` e `/vender` seguem públicas
+- [x] `/colecao` redireciona para `/acervo`
+- [x] Erro de login não revela se o e-mail existe
+- [x] **Consulta direta à API com a chave publishable, sem sessão, não devolve peça**
+- [ ] Testado em celular físico (só verificado por breakpoint responsivo)
 
 O penúltimo item é o que prova que a proteção é do banco e não só da aplicação.
+
+Verificado em local em 2026-08-28 com dois clientes descartáveis
+(`scripts/criar-cliente.mjs` + um segundo com status `pendente`), removidos
+depois pelo Auth admin. Falta só o deploy.
 
 ---
 

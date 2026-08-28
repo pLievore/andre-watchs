@@ -4,7 +4,8 @@
 > seguir" em uma página. É o único documento que muda a cada entrega — se ele
 > discordar de outro, ele está certo e o outro está velho.
 >
-> **Última atualização**: 2026-08-24 (Fase 1 validada em local)
+> **Última atualização**: 2026-08-28 (Fase 2 implementada e verificada em
+> local; falta o deploy)
 
 ---
 
@@ -18,19 +19,42 @@ Site de acervo de relógios de luxo, em transição de **vitrine pública** para
 ## O que está pronto e no ar
 
 **https://andre-watches.vercel.app** — deploy de produção, projeto
-`andre-watches` na conta `plievores-projects`.
+`andre-watches` na conta `plievores-projects`. **Ainda roda o código da Fase
+1** — o deploy da Fase 2 é um `git push` deliberado que falta dar (ver
+"Estado inconsistente" abaixo).
 
 - Landing com hero de scrubbing por scroll (361 quadros, canvas 2D)
 - `/colecao`, `/relogios/[slug]`, `/sobre`, `/vender`
 - Sistema de design completo (papel e tinta, palco escuro no hero)
 - Marca: monograma AW em `public/brand/`
 
+## O que está pronto em local, aguardando deploy
+
+A Fase 2 — Porta está implementada e verificada (checklist completo em
+[FASE-2.md](FASE-2.md)): `/acesso` (entrar e pedir acesso), `/acervo` e
+`/acervo/[slug]` protegidos por middleware + RLS, home institucional, saudação
+ligada. Testado com dois clientes descartáveis (ativo e pendente) e por
+consulta direta à API sem sessão.
+
+### ⚠️ Estado inconsistente entre banco e produção
+
+O Supabase é um projeto só, compartilhado por local e produção — não há
+ambiente de staging (docs/BANCO.md). A migração `supabase/fase-2.sql` **já foi
+aplicada nesse banco** em 2026-08-28, o que já fechou `pecas`/`fotos` para
+qualquer leitura sem sessão de cliente ativo. O `/colecao` público que ainda
+está de pé na Vercel só continua mostrando peças porque a página ficou em
+cache estático de antes da troca — qualquer revalidação ou rebuild sem o
+deploy desta fase o deixa vazio. A correção é publicar o código desta fase, não
+reabrir o banco: era o resultado esperado (FASE-2.md §2.1), só chegou antes do
+deploy.
+
 ## O que NÃO existe ainda
 
 - ~~Banco de dados~~ — **feito**: Supabase, 10 peças migradas. `watches.ts`
   segue como semente de referência
-- **Autenticação** — nenhuma
-- **Painel administrativo** — nenhum
+- ~~Autenticação~~ — **feito na Fase 2**, em local. Falta publicar
+- **Painel administrativo** — nenhum (Fase 3 — sem ele, cliente novo só entra
+  por `scripts/criar-cliente.mjs`)
 - **Gateway de pagamento** — fora de escopo por decisão (a venda fecha no WhatsApp)
 
 ## Bloqueios conhecidos
@@ -39,6 +63,7 @@ Site de acervo de relógios de luxo, em transição de **vitrine pública** para
 |---|---|---|
 | **Fotos são do Unsplash** | Não são peças da casa. Bloqueiam publicação real | SPEC D8 |
 | **WhatsApp cai no Instagram** | `NEXT_PUBLIC_WHATSAPP_NUMBER` vazio; o CTA usa o Instagram como alternativa | SPEC D7 |
+| **Produção com RLS de Fase 2 e código de Fase 1** | Deploy pendente após a migração já aplicada | ver acima |
 
 ---
 
@@ -47,6 +72,11 @@ Site de acervo de relógios de luxo, em transição de **vitrine pública** para
 **Fase 2 — Porta.** Autenticação, middleware, `/acesso`. O acervo fica privado
 e a home vira landing institucional. **É aqui que o produto vira clube.**
 
+Implementada e verificada em local. Falta: `git push` + `npx vercel --prod` (o
+banco já está migrado, é só o código que falta subir), e o Andre cadastrar os
+primeiros clientes reais com `scripts/criar-cliente.mjs` — o painel de
+cadastro é Fase 3.
+
 Progresso: ver [FASE-2.md](FASE-2.md).
 
 ## Fases
@@ -54,7 +84,7 @@ Progresso: ver [FASE-2.md](FASE-2.md).
 | | Fase | Status |
 |---|---|---|
 | 1 | **Fundação** — Supabase, RLS, catálogo no banco | ✅ em produção |
-| 2 | **Porta** — auth, acervo privado, home institucional | 🟡 em andamento |
+| 2 | **Porta** — auth, acervo privado, home institucional | ✅ em local · ⬜ deploy |
 | 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | ⬜ |
 | 4 | **Inteligência** — eventos, funil identificado, saudação | ⬜ |
 | 5 | **Acabamento** — mobile, estados vazios, a11y, desempenho | ⬜ |

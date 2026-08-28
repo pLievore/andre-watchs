@@ -69,11 +69,30 @@ impossível indexar.
 
 `on delete cascade`: apagar a peça leva as fotos junto. Não existe foto órfã.
 
+### `clientes`
+
+Quem pode entrar. O `id` referencia `auth.users(id)` — a identidade mora no
+Supabase Auth; telefone, status e último acesso ficam aqui. `on delete
+cascade`: apagar o usuário no Auth apaga o cliente, não sobra registro órfão.
+
+`status` é exatamente o que a função `private.e_cliente_ativo()` verifica antes
+de liberar leitura de `pecas`/`fotos` — ver "RLS" abaixo.
+
+### `solicitacoes_acesso`
+
+A fila do caminho "pedir acesso" (PLANO-CLUBE §4). **Um pedido não é uma
+identidade**: esta tabela não toca `auth.users`. Criar a conta no Auth antes da
+aprovação permitiria que qualquer pessoa ocupasse o e-mail de um futuro
+cliente — por isso o pedido fica só aqui, sem login nenhum, até o painel da
+Fase 3 aprovar e promovê-lo a `clientes` de verdade.
+
+RLS ligado, sem nenhuma policy: só a chave `secret`, no servidor, lê ou
+escreve. O navegador nunca consulta esta tabela diretamente.
+
 ### Ainda não criadas — chegam na fase que precisar delas
 
 | Tabela | Fase |
 |---|---|
-| `clientes` | 2 — quem pode entrar |
 | `convites` | 3 — link de uso único |
 | `eventos` | 4 — funil |
 | `interesses` | 4 — pipeline de venda |
@@ -84,21 +103,36 @@ migração a mais.
 
 ---
 
-## RLS — e a mudança prevista
+## RLS — a mudança que já aconteceu
 
-**Hoje (Fase 1)**: o site ainda é público, então leitura de `pecas` e `fotos` é
-liberada para qualquer um.
+**Fase 1**: o site era público, leitura de `pecas` e `fotos` liberada para
+qualquer um.
 
-**Na Fase 2**, essas duas políticas viram:
+**Fase 2** trocou as duas políticas por uma que não pergunta só "está
+autenticado", pergunta "é cliente ativo" — aplicada no banco de produção em
+2026-08-28, confirmada por consulta direta com a chave publishable:
 
 ```sql
-drop policy pecas_leitura_publica on pecas;
-create policy pecas_leitura_autenticada
+create or replace function private.e_cliente_ativo()
+returns boolean language sql security definer stable
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.clientes
+    where id = (select auth.uid()) and status = 'ativo'
+  );
+$$;
+
+create policy pecas_leitura_cliente_ativo
   on pecas for select
-  using (auth.role() = 'authenticated');
+  to authenticated
+  using ((select private.e_cliente_ativo()));
 ```
 
-Está escrito aqui para que a troca seja um passo previsto e não uma descoberta.
+`auth.role() = 'authenticated'` sozinho não bastaria: um cliente recusado ou
+desativado continua autenticado e não pode ver nada mesmo assim. A função mora
+no schema `private` (não `public`) e é `security definer` para poder ler
+`clientes` de dentro da política sem cair em recursão de RLS.
 
 **Escrita nunca passa por RLS.** Não existe política de `insert`, `update` ou
 `delete` — toda escrita usa a chave `secret`, só no servidor, só pelo
