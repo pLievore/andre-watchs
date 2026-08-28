@@ -26,6 +26,20 @@ e um vazamento: se sobrar um endpoint desprotegido, o banco ainda nega.
 
 ---
 
+## Região: ca-central-1
+
+O projeto ficou no Canadá, não em São Paulo. É ~120ms a mais por consulta para
+o público brasileiro.
+
+**Decisão consciente de manter** (2026-08-24): o acervo é privado, os clientes
+são poucos e específicos, e o banco já estava povoado. Recriar custaria mais que
+os 120ms valem.
+
+Registrado para não ser reaberto. Se um dia o volume justificar, a migração é
+rodar `schema.sql` e `seed-pecas.mjs` num projeto novo.
+
+---
+
 ## Convenção de nomes
 
 **Tabelas e colunas em português, código em inglês.** O SQL é lido junto com o

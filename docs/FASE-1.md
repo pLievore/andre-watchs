@@ -20,7 +20,7 @@
 | 1.4 | Camada de acesso a dados (`src/lib/db/`) | ✅ |
 | 1.5 | Migrar o catálogo mock para o banco | ✅ 10 peças no banco |
 | 1.6 | Trocar as páginas para lerem do banco | ✅ |
-| 1.7 | Verificação e deploy | 🟡 verificado local; falta deploy |
+| 1.7 | Verificação e deploy | ✅ |
 
 Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluído
 
@@ -120,20 +120,13 @@ transformar nada em client component por causa de dados**.
 - [x] Consignação ainda aparece (Bluesy)
 - [x] Fotos vêm ordenadas do banco
 - [x] Nenhuma chave `secret` no pacote do cliente (`import "server-only"`)
-- [ ] Deploy com as variáveis configuradas na Vercel
+- [x] Deploy com as variáveis configuradas na Vercel
 
 ---
 
-## ⏭️ Falta só o deploy
+## ✅ Fase concluída
 
-Local está validado. Para fechar a fase:
-
-1. Na Vercel → Settings → Environment Variables, adicionar:
-   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   *(a `SUPABASE_SECRET_KEY` só é necessária quando o painel existir — hoje
-   nada em produção escreve no banco)*
-2. `npx vercel --prod --yes`
-3. Conferir que `/colecao` em produção mostra as 10 peças
+Produção lê do banco desde 2026-08-24. Próxima: [FASE-2.md](FASE-2.md).
 
 ---
 

@@ -44,20 +44,20 @@ Site de acervo de relógios de luxo, em transição de **vitrine pública** para
 
 ## Fase atual
 
-**Fase 1 do [PLANO-CLUBE.md](../PLANO-CLUBE.md) — Fundação.**
+**Fase 2 — Porta.** Autenticação, middleware, `/acesso`. O acervo fica privado
+e a home vira landing institucional. **É aqui que o produto vira clube.**
 
-Subir Supabase, criar as tabelas com RLS e migrar o catálogo do arquivo para o
-banco. Ao fim da fase o site continua **público e visualmente idêntico**, só que
-lendo do banco. Nada que o usuário veja muda.
+Progresso: ver [FASE-2.md](FASE-2.md).
 
-Progresso: ver [FASE-1.md](FASE-1.md).
+## Fases
 
-## Próximas fases
-
-2. **Porta** — auth, middleware, `/acesso`. Acervo fica privado, home vira institucional
-3. **Painel** — CRUD de peças, gestão de clientes, os três caminhos de entrada
-4. **Inteligência** — eventos, funil identificado, interesses, saudação
-5. **Acabamento** — mobile, estados vazios, acessibilidade, desempenho
+| | Fase | Status |
+|---|---|---|
+| 1 | **Fundação** — Supabase, RLS, catálogo no banco | ✅ em produção |
+| 2 | **Porta** — auth, acervo privado, home institucional | 🟡 em andamento |
+| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | ⬜ |
+| 4 | **Inteligência** — eventos, funil identificado, saudação | ⬜ |
+| 5 | **Acabamento** — mobile, estados vazios, a11y, desempenho | ⬜ |
 
 ---
 
