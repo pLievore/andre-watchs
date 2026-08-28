@@ -14,7 +14,7 @@ export default async function PainelLayout({
   // O middleware é a primeira barreira; esta é a segunda. Rota nova aqui dentro
   // fica coberta mesmo se alguém alterar o matcher do middleware sem perceber.
   const admin = await usuarioAdmin();
-  if (!admin) redirect("/acesso");
+  if (!admin) redirect("/painel/entrar");
 
   return (
     <div className="min-h-dvh">

@@ -4,8 +4,8 @@
 > seguir" em uma página. É o único documento que muda a cada entrega — se ele
 > discordar de outro, ele está certo e o outro está velho.
 >
-> **Última atualização**: 2026-08-28 (gestão de peças completa: criar, fotos,
-> três estados; falta o deploy)
+> **Última atualização**: 2026-08-28 (gestão de peças completa e portas de
+> acesso separadas — cliente e admin; falta o deploy)
 
 ---
 
@@ -110,6 +110,10 @@ contemplação. Herdar a casca do site trazia scroll suave para dentro de uma
 tabela, que é ativamente ruim para quem trabalha.
 
 Tokens do painel: escopo `.painel` em `globals.css`.
+
+**As portas também são separadas**: `/acesso` para o cliente, `/painel/entrar`
+para a casa. O guard do painel vive em `painel/(interno)/layout.tsx`; a porta
+fica fora dele, senão exigiria a sessão que existe para ser criada ali.
 
 ## Mapa da documentação
 

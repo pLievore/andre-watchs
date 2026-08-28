@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Cadastrar peça" };
 
 export default async function NovaPecaPage() {
   const admin = await usuarioAdmin();
-  if (!admin) redirect("/acesso");
+  if (!admin) redirect("/painel/entrar");
 
   return (
     <div className="flex max-w-2xl flex-col gap-8">

@@ -43,6 +43,25 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
   `node scripts/aplicar-sql.mjs supabase/<arquivo>.sql`. Registre na tabela do
   topo de [docs/BANCO.md](docs/BANCO.md).
 
+## Duas portas, nunca uma
+
+- **`/acesso` é do cliente. `/painel/entrar` é da casa.** Não são a mesma tela
+  com um `if` dentro: o login de cliente ainda precisa checar
+  `clientes.status`, e o do admin nunca olha `clientes` — o dono não é cliente
+  da própria casa.
+- A porta do cliente **recusa e-mail de admin antes de autenticar**. Conferir a
+  senha primeiro faria a tela responder diferente para senha certa e errada, e
+  ela viraria um oráculo para descobrir qual conta administra o site.
+- `/painel/entrar` fica dentro de `/painel` para o endereço dizer a que área
+  pertence, e por isso é excluída à mão da proteção de prefixo no middleware
+  (`PORTA_ADMIN`) — senão exigiria a sessão que existe para ser criada ali.
+- Rota nova do painel entra sob `painel/(interno)/`, que é onde vive o guard.
+  Coisa colocada em `painel/` direto **nasce sem proteção**.
+- Cliente autenticado que tenta `/painel` vai para `/acervo`, não para a porta
+  do admin: ali ele nunca entraria, e a tela sugeriria que é só achar a senha.
+- Conta do admin é `/painel/conta` — nunca `/acervo/conta`, que exige
+  `clientes.status = 'ativo'` e recusaria o dono.
+
 ## Peças: estado e fotos
 
 - **O estado comercial é `estado`** (enum: `disponivel`, `reservada`,

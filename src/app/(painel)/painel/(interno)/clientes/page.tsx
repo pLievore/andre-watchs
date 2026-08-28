@@ -21,7 +21,7 @@ function desdeQuando(iso: string | null): string {
 
 export default async function PainelClientesPage() {
   const admin = await usuarioAdmin();
-  if (!admin) redirect("/acesso");
+  if (!admin) redirect("/painel/entrar");
 
   const { data: clientes } = await dbAdmin
     .from("clientes")

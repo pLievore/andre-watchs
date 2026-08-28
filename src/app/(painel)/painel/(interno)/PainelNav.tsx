@@ -17,7 +17,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { sair } from "@/app/(site)/acesso/actions";
+import { sairDoPainel } from "@/app/(painel)/painel/entrar/actions";
 
 const SECOES = [
   { href: "/painel", rotulo: "Pedidos", icone: IconePedidos },
@@ -85,13 +85,18 @@ export function PainelNav({ email }: { email: string }) {
           className="flex flex-col gap-2 border-t p-3"
           style={{ borderColor: "var(--color-border)" }}
         >
-          <span className="meta truncate px-3" title={email}>
+          <Link
+            href="/painel/conta"
+            className="meta link-quiet truncate px-3"
+            title={email}
+            aria-current={atual === "/painel/conta" ? "page" : undefined}
+          >
             {email}
-          </span>
+          </Link>
           <Link href="/" className="meta link-quiet px-3">
             Ver o site →
           </Link>
-          <form action={sair}>
+          <form action={sairDoPainel}>
             <button
               type="submit"
               className="meta link-quiet w-full px-3 py-1 text-left"
@@ -113,7 +118,7 @@ export function PainelNav({ email }: { email: string }) {
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        {SECOES.map(({ href, rotulo, icone: Icone }) => {
+        {[...SECOES, { href: "/painel/conta", rotulo: "Conta", icone: IconeConta }].map(({ href, rotulo, icone: Icone }) => {
           const ativo = estaAtivo(href, atual);
           return (
             <Link
@@ -176,6 +181,15 @@ function IconePecas() {
       <circle cx="12" cy="13" r="6.2" />
       <path d="M12 10v3l2 1.5" />
       <path d="M9.5 3.5h5" />
+    </svg>
+  );
+}
+
+function IconeConta() {
+  return (
+    <svg {...svg}>
+      <circle cx="12" cy="8" r="3.4" />
+      <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
     </svg>
   );
 }

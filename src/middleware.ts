@@ -21,6 +21,13 @@ const PROTEGIDAS_CLIENTE = ["/acervo"];
 /** Exige sessão e e-mail em `ADMIN_EMAILS`. Nunca olha `clientes`. */
 const PROTEGIDAS_ADMIN = ["/painel"];
 
+/**
+ * A porta do admin. Fica DENTRO de `/painel` para o endereço dizer a que área
+ * pertence, e por isso precisa ser excluída à mão da proteção do prefixo —
+ * senão ela exigiria a sessão que existe justamente para ser criada ali.
+ */
+const PORTA_ADMIN = "/painel/entrar";
+
 export async function middleware(request: NextRequest) {
   const cookiesSessao: {
     name: string;
@@ -74,9 +81,9 @@ export async function middleware(request: NextRequest) {
   const ehAreaCliente = PROTEGIDAS_CLIENTE.some(
     (p) => caminho === p || caminho.startsWith(`${p}/`),
   );
-  const ehAreaAdmin = PROTEGIDAS_ADMIN.some(
-    (p) => caminho === p || caminho.startsWith(`${p}/`),
-  );
+  const ehAreaAdmin =
+    caminho !== PORTA_ADMIN &&
+    PROTEGIDAS_ADMIN.some((p) => caminho === p || caminho.startsWith(`${p}/`));
   const admin = isAdminEmail(user?.email);
 
   // O status só interessa pra área de cliente e pro atalho de `/acesso` — o
@@ -92,19 +99,31 @@ export async function middleware(request: NextRequest) {
   }
 
   if (ehAreaAdmin) {
+    // A administração tem porta própria. Mandar para `/acesso` misturaria as
+    // duas entradas — que é justamente o que a separação existe para evitar.
     if (!user) {
       const url = request.nextUrl.clone();
-      url.pathname = "/acesso";
+      url.pathname = PORTA_ADMIN;
       url.searchParams.set("destino", `${caminho}${request.nextUrl.search}`);
       return redirecionar(url);
     }
-    // Sem `estado` na URL: não é uma questão de status de cliente pendente,
-    // é simplesmente uma área que não é dele.
+    // Autenticado como cliente tentando o painel: vai para a área que é dele,
+    // não para a porta do admin — ali ele nunca vai conseguir entrar, e a
+    // tela de login sugeriria que é só questão de achar a senha certa.
     if (!admin) {
       const url = request.nextUrl.clone();
-      url.pathname = "/acesso";
+      url.pathname = "/acervo";
+      url.search = "";
       return redirecionar(url);
     }
+  }
+
+  // Admin já autenticado não fica olhando a própria porta.
+  if (caminho === PORTA_ADMIN && admin) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/painel";
+    url.search = "";
+    return redirecionar(url);
   }
 
   if (ehAreaCliente) {

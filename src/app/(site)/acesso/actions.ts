@@ -37,6 +37,17 @@ export async function entrar(
     return { erro: "Preencha e-mail e senha." };
   }
 
+  /*
+   * A administração tem porta própria (`/painel/entrar`) e não entra por aqui.
+   * A recusa acontece ANTES de tentar autenticar: se a senha fosse conferida
+   * primeiro, esta tela responderia diferente para o e-mail do admin com senha
+   * certa e com senha errada — e viraria um oráculo para descobrir qual conta
+   * administra o site.
+   */
+  if (isAdminEmail(email)) {
+    return { erro: "E-mail ou senha incorretos." };
+  }
+
   const db = await dbServidor();
   const { data, error } = await db.auth.signInWithPassword({
     email,
@@ -45,12 +56,6 @@ export async function entrar(
 
   if (error || !data.user) {
     return { erro: "E-mail ou senha incorretos." };
-  }
-
-  // O admin não é cliente: pula a checagem de `clientes` e vai pro painel.
-  if (isAdminEmail(email)) {
-    revalidatePath("/", "layout");
-    redirect(destinoSeguroAposLogin(destinoPedido, "/painel"));
   }
 
   // Autenticado não basta: quem está pendente ou recusado não entra.

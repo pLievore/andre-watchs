@@ -18,7 +18,7 @@ function formatarData(iso: string): string {
 
 export default async function PainelPedidosPage() {
   const admin = await usuarioAdmin();
-  if (!admin) redirect("/acesso");
+  if (!admin) redirect("/painel/entrar");
 
   const [{ data: pendentes }, { data: recusadas }] = await Promise.all([
     dbAdmin

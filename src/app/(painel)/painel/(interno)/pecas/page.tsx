@@ -23,7 +23,7 @@ interface LinhaLista {
 
 export default async function PainelPecasPage() {
   const admin = await usuarioAdmin();
-  if (!admin) redirect("/acesso");
+  if (!admin) redirect("/painel/entrar");
 
   // Disponíveis primeiro, depois em negociação, depois vendidas: é a ordem em
   // que o Andre pensa no estoque. A ordem do enum já entrega isso.

@@ -22,7 +22,7 @@ export default async function EditarPecaPage({
   searchParams: Promise<{ nova?: string }>;
 }) {
   const admin = await usuarioAdmin();
-  if (!admin) redirect("/acesso");
+  if (!admin) redirect("/painel/entrar");
 
   const { slug } = await params;
   const { nova } = await searchParams;
