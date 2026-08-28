@@ -1,16 +1,44 @@
 # CLAUDE.md — ANDRE WATCHES
 
-Fonte da verdade do produto/escopo é o **SPEC.md**. Este arquivo cobre só as
-**regras de execução** que não devem ser adivinhadas.
+## 👉 Comece por aqui
+
+**Leia [`docs/ESTADO.md`](docs/ESTADO.md) antes de qualquer coisa.** Ele diz em
+uma página o que já existe, o que não existe e qual é a fase atual. É o único
+documento que muda a cada entrega — se ele discordar de outro arquivo, ele está
+certo e o outro está velho.
+
+| Arquivo | O que responde |
+|---|---|
+| [docs/ESTADO.md](docs/ESTADO.md) | onde estamos, o que falta |
+| **CLAUDE.md** *(este)* | como trabalhar neste repo |
+| [SPEC.md](SPEC.md) | o que o produto é e por quê |
+| [PLANO-CLUBE.md](PLANO-CLUBE.md) | o plano da fase contratada |
+| [docs/FASE-1.md](docs/FASE-1.md) | passo a passo da fase atual |
+| [docs/BANCO.md](docs/BANCO.md) | esquema, RLS, as duas chaves |
 
 Especialistas invocáveis vivem em `.claude/agents/` (ver o README de lá).
 
 ## Escopo atual
 
-**Front-end apenas** (SPEC §14 D5). Sem DB, sem gateway, sem checkout.
-Conversão = preço visível + CTA de WhatsApp, centralizado em
-`src/components/contact/WhatsappCta.tsx` — **ponto único de verdade** do canal.
-Ecommerce é fase E.
+O site está virando **acervo privado**: catálogo atrás de login, painel para o
+dono. Ver [PLANO-CLUBE.md](PLANO-CLUBE.md).
+
+Sem gateway de pagamento por decisão — a venda fecha no WhatsApp, centralizado
+em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do canal.
+
+## Banco de dados
+
+**Supabase** (Postgres + auth + RLS). Detalhes em [docs/BANCO.md](docs/BANCO.md).
+
+- Toda leitura passa por `src/lib/db/pecas.ts` — **a única fronteira de tradução**
+  entre o banco (português) e os componentes (o tipo `Watch`). Se um componente
+  precisar mudar de assinatura por causa do banco, o mapeamento é que está errado.
+- `src/lib/db/client.ts` é o padrão (chave anon, respeita RLS).
+- `src/lib/db/admin.ts` ignora RLS. Abre com `import "server-only"` — arquivo com
+  `"use client"` que o importar **quebra o build**, que é o objetivo. Nunca remova
+  essa linha.
+- **RLS ligado em toda tabela nova, desde o primeiro dia.** Ligar depois obriga a
+  auditar cada consulta já escrita.
 
 ## Stack (travada — ver SPEC §2.1)
 
