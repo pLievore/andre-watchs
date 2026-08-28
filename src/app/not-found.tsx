@@ -23,14 +23,10 @@ export default function NotFound() {
           O endereço que você procura não existe ou a peça já saiu do acervo.
         </p>
         <Link
-          href="/colecao"
-          className="self-center px-6 py-3 label"
-          style={{
-            background: "var(--color-foreground)",
-            color: "var(--color-background)",
-          }}
+          href="/acesso"
+          className="btn btn-primary self-center"
         >
-          Ver acervo →
+          Ir para o acesso →
         </Link>
       </div>
     </section>

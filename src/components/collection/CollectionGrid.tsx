@@ -4,7 +4,7 @@
  * SPEC §11 — grid do acervo com filtro por marca e disponibilidade.
  *
  * Client component porque o filtro é estado local. O catálogo chega por prop
- * do server component (`/colecao/page.tsx`), então a fronteira client fica
+ * do server component (`/acervo/page.tsx`), então a fronteira client fica
  * baixa na árvore e a listagem continua renderizando no servidor.
  *
  * Reveal em stagger com `whileInView` (§3.4), `once: true` — a peça não
@@ -15,7 +15,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useState } from "react";
 
 import { WatchCard } from "@/components/watch/WatchCard";
-import type { MockWatch } from "@/lib/data/watches";
+import type { Watch } from "@/lib/types";
 
 type Availability = "todas" | "disponiveis" | "vendidas";
 
@@ -28,7 +28,7 @@ const AVAILABILITY_FILTERS: readonly { id: Availability; label: string }[] = [
 const ALL_BRANDS = "Todas as marcas";
 
 interface CollectionGridProps {
-  watches: readonly MockWatch[];
+  watches: readonly Watch[];
 }
 
 export function CollectionGrid({ watches }: CollectionGridProps) {

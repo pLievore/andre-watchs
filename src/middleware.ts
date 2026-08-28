@@ -10,13 +10,33 @@
  * alguém encontre um caminho que passe por aqui. Ver docs/BANCO.md.
  */
 
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+
+import { AUTH_COOKIE_OPTIONS } from "@/lib/db/auth-cookies";
 
 /** Prefixos que exigem sessão e status `ativo`. */
 const PROTEGIDAS = ["/acervo", "/painel"];
 
 export async function middleware(request: NextRequest) {
+  const cookiesSessao: {
+    name: string;
+    value: string;
+    options: CookieOptions;
+  }[] = [];
+  const headersSessao = new Map<string, string>();
+
+  const aplicarSessao = (response: NextResponse) => {
+    cookiesSessao.forEach(({ name, value, options }) =>
+      response.cookies.set(name, value, options),
+    );
+    headersSessao.forEach((value, key) => response.headers.set(key, value));
+    return response;
+  };
+
+  const redirecionar = (url: URL) =>
+    aplicarSessao(NextResponse.redirect(url));
+
   // Esta resposta é a que sai daqui: o cliente do Supabase escreve nela os
   // cookies de sessão renovada.
   let resposta = NextResponse.next({ request });
@@ -25,14 +45,17 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      cookieOptions: AUTH_COOKIE_OPTIONS,
       cookies: {
         getAll: () => request.cookies.getAll(),
-        setAll(novos) {
+        setAll(novos, headers) {
+          cookiesSessao.push(...novos);
+          Object.entries(headers).forEach(([key, value]) =>
+            headersSessao.set(key, value),
+          );
           novos.forEach(({ name, value }) => request.cookies.set(name, value));
           resposta = NextResponse.next({ request });
-          novos.forEach(({ name, value, options }) =>
-            resposta.cookies.set(name, value, options),
-          );
+          aplicarSessao(resposta);
         },
       },
     },
@@ -49,39 +72,46 @@ export async function middleware(request: NextRequest) {
     (p) => caminho === p || caminho.startsWith(`${p}/`),
   );
 
-  if (protegida) {
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/acesso";
-      // Para devolver a pessoa ao lugar certo depois de entrar.
-      url.searchParams.set("destino", caminho);
-      return NextResponse.redirect(url);
-    }
-
-    // Autenticado não basta: recusado e desativado continuam com login válido.
+  // O status é necessário tanto para autorizar rota privada quanto para saber
+  // se `/acesso` deve redirecionar. Consultar uma vez evita o loop de sessão
+  // pendente: autenticado não significa autorizado.
+  let status: string | null = null;
+  if (user && (protegida || caminho === "/acesso")) {
     const { data: cliente } = await db
       .from("clientes")
       .select("status")
       .eq("id", user.id)
       .maybeSingle();
+    status = cliente?.status ?? null;
+  }
 
-    if (cliente?.status !== "ativo") {
+  if (protegida) {
+    if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/acesso";
-      url.searchParams.set("estado", cliente?.status ?? "pendente");
-      return NextResponse.redirect(url);
+      // Para devolver a pessoa ao lugar certo depois de entrar.
+      url.searchParams.set("destino", `${caminho}${request.nextUrl.search}`);
+      return redirecionar(url);
+    }
+
+    // Autenticado não basta: recusado e desativado continuam com login válido.
+    if (status !== "ativo") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/acesso";
+      url.searchParams.set("estado", status ?? "pendente");
+      return redirecionar(url);
     }
   }
 
   // Já entrou e vai para a tela de acesso — manda direto ao acervo.
-  if (caminho === "/acesso" && user) {
+  if (caminho === "/acesso" && user && status === "ativo") {
     const url = request.nextUrl.clone();
     url.pathname = "/acervo";
     url.search = "";
-    return NextResponse.redirect(url);
+    return redirecionar(url);
   }
 
-  return resposta;
+  return aplicarSessao(resposta);
 }
 
 export const config = {

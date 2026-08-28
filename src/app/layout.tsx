@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
+import { clienteAtual } from "@/lib/db/server";
 
 import "./globals.css";
 
@@ -27,11 +28,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cliente = await clienteAtual();
+
   return (
     <html lang="pt-BR">
       <body>
@@ -42,7 +45,7 @@ export default function RootLayout({
           Pular para o conteúdo
         </a>
         <SmoothScroll>
-          <Header />
+          <Header isClienteAtivo={cliente?.status === "ativo"} />
           <div className="relative z-10">
             <main id="main">{children}</main>
             <Footer />

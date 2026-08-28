@@ -94,9 +94,9 @@ export function watchFullName(w: Watch): string {
   return ref ? `${w.brand} ${w.model} ref. ${ref}` : `${w.brand} ${w.model}`;
 }
 
-/** SPEC §11 — rota da PDP. */
+/** PLANO-CLUBE §5 — rota privada da PDP. */
 export function watchHref(w: Watch): string {
-  return `/relogios/${w.slug}`;
+  return `/acervo/${w.slug}`;
 }
 
 /** SPEC §1.3 — sem dado confirmado, a UI mostra travessão, nunca palpite. */

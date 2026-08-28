@@ -36,7 +36,7 @@ const PILLARS = [
   {
     n: "01",
     title: "Somente originais",
-    body: "Cada peça passa por conferência de procedência antes de entrar na vitrine: número de série, calibre, acabamento de fábrica e o que acompanha. Réplica e homage não entram aqui.",
+    body: "Cada peça passa por conferência de procedência antes de entrar no acervo: número de série, calibre, acabamento de fábrica e o que acompanha. Réplica e homage não entram aqui.",
     image: {
       src: "/pecas/ethos-procedencia.webp",
       alt: "Relojoeiro com lupa e pinça examinando o movimento de um relógio na bancada",

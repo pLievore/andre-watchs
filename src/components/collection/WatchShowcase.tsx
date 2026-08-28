@@ -36,7 +36,7 @@ export function WatchShowcase({
   watches,
   eyebrow = "No cofre agora",
   title,
-  viewAllHref = "/colecao",
+  viewAllHref = "/acervo",
   viewAllLabel = "Ver toda a coleção",
 }: WatchShowcaseProps) {
 

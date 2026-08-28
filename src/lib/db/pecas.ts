@@ -19,7 +19,7 @@ import type {
 } from "@/lib/types";
 
 /** Colunas pedidas em toda consulta. Explícito para não trazer lixo. */
-const CAMPOS = `
+export const CAMPOS = `
   slug, marca, modelo, condicao, integralidade,
   referencia, calibre, diametro_mm, material_caixa, pulseira, mostrador, ano_cartao,
   preco_centavos, disponivel, consignada, historia, notas_estado,
@@ -32,7 +32,7 @@ interface LinhaFoto {
   ordem: number;
 }
 
-interface LinhaPeca {
+export interface LinhaPeca {
   slug: string;
   marca: string;
   modelo: string;
@@ -58,7 +58,7 @@ function ou<T>(v: T | null): T | undefined {
   return v ?? undefined;
 }
 
-function paraWatch(l: LinhaPeca): Watch {
+export function paraWatch(l: LinhaPeca): Watch {
   const fotos = [...(l.fotos ?? [])].sort((a, b) => a.ordem - b.ordem);
   const [primeira, segunda, ...resto] = fotos;
 

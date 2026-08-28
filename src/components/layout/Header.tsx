@@ -27,10 +27,9 @@ import {
 import Link from "next/link";
 import { useEffect } from "react";
 
-import { WhatsappCta } from "@/components/contact/WhatsappCta";
+import { sair } from "@/app/acesso/actions";
 
-const NAV_LINKS = [
-  { href: "/colecao", label: "Acervo" },
+const NAV_PUBLICA = [
   { href: "/vender", label: "Vender" },
   { href: "/sobre", label: "A casa" },
 ] as const;
@@ -63,7 +62,7 @@ const FLIP_START = 0.62;
 /** Onde termina — pouco antes do hero sair, para não haver papel sobre o filme. */
 const FLIP_END = 0.98;
 
-export function Header() {
+export function Header({ isClienteAtivo }: { isClienteAtivo: boolean }) {
   const { scrollY } = useScroll();
   /** 1 = papel. Sem palco na página, é onde fica e nunca sai. */
   const progress = useMotionValue(1);
@@ -109,6 +108,9 @@ export function Header() {
   const foreground = useTransform(progress, range, [STAGE.fg, PAPER.fg]);
   const muted = useTransform(progress, range, [STAGE.muted, PAPER.muted]);
   const border = useTransform(progress, range, [STAGE.border, PAPER.border]);
+  const navLinks = isClienteAtivo
+    ? [{ href: "/acervo", label: "Acervo" }, ...NAV_PUBLICA]
+    : NAV_PUBLICA;
 
   return (
     <motion.header
@@ -141,18 +143,24 @@ export function Header() {
           aria-label="Navegação principal"
           className="hidden items-center gap-10 md:flex"
         >
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="label link-quiet">
               {link.label}
             </Link>
           ))}
         </nav>
 
-        <WhatsappCta
-          variant="link"
-          label="Falar com a casa"
-          context="Vim pelo site e gostaria de falar sobre uma peça."
-        />
+        {isClienteAtivo ? (
+          <form action={sair}>
+            <button type="submit" className="label link-quiet">
+              Sair
+            </button>
+          </form>
+        ) : (
+          <Link href="/acesso" className="label link-quiet">
+            Entrar
+          </Link>
+        )}
       </div>
     </motion.header>
   );

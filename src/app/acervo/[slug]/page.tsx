@@ -5,7 +5,10 @@ import { notFound } from "next/navigation";
 import { WhatsappCta } from "@/components/contact/WhatsappCta";
 import { WatchCard } from "@/components/watch/WatchCard";
 import { WatchGallery } from "@/components/watch/WatchGallery";
-import { buscarPecaPorSlug, listarPecas, listarSlugs } from "@/lib/db/pecas";
+import {
+  buscarPecaDoCliente,
+  listarPecasDoCliente,
+} from "@/lib/db/pecas-sessao";
 import {
   formatBracelet,
   formatCompleteness,
@@ -16,9 +19,12 @@ import {
 } from "@/lib/format";
 import { specValue, watchFullName } from "@/lib/types";
 
-export async function generateStaticParams() {
-  return (await listarSlugs()).map((slug) => ({ slug }));
-}
+/*
+ * Sem `generateStaticParams`: página privada não pode ser pré-renderizada. Se
+ * fosse, o HTML com as peças ficaria em cache e seria servido a qualquer um,
+ * passando por cima do RLS. Renderiza sempre no servidor, com a sessão.
+ */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -26,7 +32,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const watch = await buscarPecaPorSlug(slug);
+  const watch = await buscarPecaDoCliente(slug);
   if (!watch) return { title: "Peça não encontrada" };
 
   const name = watchFullName(watch);
@@ -36,6 +42,7 @@ export async function generateMetadata({
       watch.story ??
       `${name} — ${formatCondition(watch.condition)}, ${formatCompleteness(watch.completeness)}. Disponível na Andre Watches.`,
     openGraph: { title: name, type: "website" },
+    robots: { index: false, follow: false },
   };
 }
 
@@ -45,11 +52,11 @@ export default async function WatchPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const watch = await buscarPecaPorSlug(slug);
+  const watch = await buscarPecaDoCliente(slug);
   if (!watch) notFound();
 
   const name = watchFullName(watch);
-  const related = (await listarPecas())
+  const related = (await listarPecasDoCliente())
     .filter((w) => w.slug !== watch.slug && w.available)
     .slice(0, 3);
 
@@ -92,13 +99,15 @@ export default async function WatchPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
       />
 
       <article className="mx-auto max-w-7xl px-6 pb-24 pt-32 md:px-16 md:pb-32 md:pt-44">
         <nav aria-label="Você está em" className="mb-10">
           <Link
-            href="/colecao"
+            href="/acervo"
             className="label underline-offset-8 hover:underline"
           >
             ← Acervo

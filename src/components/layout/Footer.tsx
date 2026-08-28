@@ -18,8 +18,7 @@ const FOOTER_NAV = [
   {
     title: "Acervo",
     links: [
-      { href: "/colecao", label: "Peças disponíveis" },
-      { href: "/colecao?estado=vendido", label: "Vendidas" },
+      { href: "/acesso", label: "Entrar ou pedir acesso" },
       { href: "/sobre", label: "A casa" },
     ],
   },

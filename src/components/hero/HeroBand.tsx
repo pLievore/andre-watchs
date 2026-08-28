@@ -657,13 +657,13 @@ export function HeroBand() {
                 textShadow: "0 1px 18px rgba(6,7,8,0.8)",
               }}
             >
-              Rolex e outras maisons premium, conferidas peça a peça antes de
-              entrarem na vitrine.
+              Relógios de luxo conferidos peça a peça. O acervo da casa é
+              reservado aos clientes.
             </p>
 
             <div className="pointer-events-auto mt-2 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link href="/colecao" className="btn btn-primary group">
-                Ver acervo
+              <Link href="/acesso" className="btn btn-primary group">
+                Acessar o acervo
                 <span
                   aria-hidden
                   className="transition-transform duration-300 group-hover:translate-x-1"

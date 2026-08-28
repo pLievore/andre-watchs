@@ -106,22 +106,15 @@ create trigger pecas_atualizado_em
 -- ─────────────────────────────────────────────────────────────────────────────
 -- RLS
 --
--- FASE 1: o site ainda é público, então leitura é liberada.
--- FASE 2: estas duas políticas serão trocadas por leitura só para autenticado.
---         A troca está prevista em docs/BANCO.md.
+-- O baseline acompanha a fase atual: nenhuma leitura pública. As policies de
+-- cliente ativo são instaladas por `fase-2.sql`, depois deste arquivo.
 --
--- Escrita nunca passa por aqui: só a chave service_role, no servidor.
+-- É importante que este arquivo NUNCA recrie as policies públicas da Fase 1:
+-- reaplicá-lo depois da Fase 2 não pode reabrir o acervo por acidente.
 -- ─────────────────────────────────────────────────────────────────────────────
 
 alter table pecas  enable row level security;
 alter table fotos  enable row level security;
 
 drop policy if exists pecas_leitura_publica on pecas;
-create policy pecas_leitura_publica
-  on pecas for select
-  using (true);
-
 drop policy if exists fotos_leitura_publica on fotos;
-create policy fotos_leitura_publica
-  on fotos for select
-  using (true);

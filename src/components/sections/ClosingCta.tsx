@@ -111,10 +111,10 @@ export function ClosingCta() {
               context="Vim pelo site e quero conversar sobre comprar, vender ou trocar uma peça."
             />
             <Link
-              href="/colecao"
+              href="/acesso"
               className="btn btn-ghost group"
             >
-              Ver o acervo
+              Acessar o acervo
               <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
                 →
               </span>
