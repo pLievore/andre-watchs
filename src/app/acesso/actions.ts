@@ -10,6 +10,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { isAdminEmail } from "@/lib/admin";
 import { dbAdmin } from "@/lib/db/admin";
 import { dbServidor } from "@/lib/db/server";
 import { destinoSeguroAposLogin } from "@/lib/rotas";
@@ -30,9 +31,7 @@ export async function entrar(
 ): Promise<EstadoForm> {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const senha = String(form.get("senha") ?? "");
-  const destino = destinoSeguroAposLogin(
-    String(form.get("destino") ?? "/acervo"),
-  );
+  const destinoPedido = String(form.get("destino") ?? "");
 
   if (!email || !senha) {
     return { erro: "Preencha e-mail e senha." };
@@ -46,6 +45,12 @@ export async function entrar(
 
   if (error || !data.user) {
     return { erro: "E-mail ou senha incorretos." };
+  }
+
+  // O admin não é cliente: pula a checagem de `clientes` e vai pro painel.
+  if (isAdminEmail(email)) {
+    revalidatePath("/", "layout");
+    redirect(destinoSeguroAposLogin(destinoPedido, "/painel"));
   }
 
   // Autenticado não basta: quem está pendente ou recusado não entra.
@@ -66,7 +71,7 @@ export async function entrar(
   }
 
   revalidatePath("/", "layout");
-  redirect(destino);
+  redirect(destinoSeguroAposLogin(destinoPedido, "/acervo"));
 }
 
 export async function sair() {

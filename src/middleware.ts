@@ -13,10 +13,13 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { isAdminEmail } from "@/lib/admin";
 import { AUTH_COOKIE_OPTIONS } from "@/lib/db/auth-cookies";
 
-/** Prefixos que exigem sessão e status `ativo`. */
-const PROTEGIDAS = ["/acervo", "/painel"];
+/** Exige sessão e `clientes.status = 'ativo'` — inclusive para o admin. */
+const PROTEGIDAS_CLIENTE = ["/acervo"];
+/** Exige sessão e e-mail em `ADMIN_EMAILS`. Nunca olha `clientes`. */
+const PROTEGIDAS_ADMIN = ["/painel"];
 
 export async function middleware(request: NextRequest) {
   const cookiesSessao: {
@@ -68,15 +71,18 @@ export async function middleware(request: NextRequest) {
   } = await db.auth.getUser();
 
   const caminho = request.nextUrl.pathname;
-  const protegida = PROTEGIDAS.some(
+  const ehAreaCliente = PROTEGIDAS_CLIENTE.some(
     (p) => caminho === p || caminho.startsWith(`${p}/`),
   );
+  const ehAreaAdmin = PROTEGIDAS_ADMIN.some(
+    (p) => caminho === p || caminho.startsWith(`${p}/`),
+  );
+  const admin = isAdminEmail(user?.email);
 
-  // O status é necessário tanto para autorizar rota privada quanto para saber
-  // se `/acesso` deve redirecionar. Consultar uma vez evita o loop de sessão
-  // pendente: autenticado não significa autorizado.
+  // O status só interessa pra área de cliente e pro atalho de `/acesso` — o
+  // admin não tem (nem precisa de) linha em `clientes` pra usar o painel.
   let status: string | null = null;
-  if (user && (protegida || caminho === "/acesso")) {
+  if (user && !admin && (ehAreaCliente || caminho === "/acesso")) {
     const { data: cliente } = await db
       .from("clientes")
       .select("status")
@@ -85,7 +91,23 @@ export async function middleware(request: NextRequest) {
     status = cliente?.status ?? null;
   }
 
-  if (protegida) {
+  if (ehAreaAdmin) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/acesso";
+      url.searchParams.set("destino", `${caminho}${request.nextUrl.search}`);
+      return redirecionar(url);
+    }
+    // Sem `estado` na URL: não é uma questão de status de cliente pendente,
+    // é simplesmente uma área que não é dele.
+    if (!admin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/acesso";
+      return redirecionar(url);
+    }
+  }
+
+  if (ehAreaCliente) {
     if (!user) {
       const url = request.nextUrl.clone();
       url.pathname = "/acesso";
@@ -95,6 +117,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Autenticado não basta: recusado e desativado continuam com login válido.
+    // Inclusive o admin, se um dia tiver linha em `clientes` com outro status.
     if (status !== "ativo") {
       const url = request.nextUrl.clone();
       url.pathname = "/acesso";
@@ -103,10 +126,16 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Já entrou e vai para a tela de acesso — manda direto ao acervo.
-  if (caminho === "/acesso" && user && status === "ativo") {
+  // Já entrou e vai para a tela de acesso — manda direto pra área certa.
+  if (caminho === "/acesso" && user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/acervo";
+    if (admin) {
+      url.pathname = "/painel";
+    } else if (status === "ativo") {
+      url.pathname = "/acervo";
+    } else {
+      return aplicarSessao(resposta);
+    }
     url.search = "";
     return redirecionar(url);
   }
