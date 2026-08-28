@@ -23,6 +23,7 @@ export type ClienteAtual = {
   id: string;
   nome: string;
   email: string;
+  telefone: string | null;
   status: StatusCliente;
   ultimo_acesso: string | null;
 };
@@ -70,7 +71,7 @@ export const clienteAtual = cache(async (): Promise<ClienteAtual | null> => {
 
   const { data, error } = await db
     .from("clientes")
-    .select("id, nome, email, status, ultimo_acesso")
+    .select("id, nome, email, telefone, status, ultimo_acesso")
     .eq("id", user.id)
     .maybeSingle();
 

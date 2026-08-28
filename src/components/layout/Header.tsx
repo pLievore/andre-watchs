@@ -18,14 +18,17 @@
  */
 
 import {
+  AnimatePresence,
   type MotionStyle,
   motion,
   useMotionValue,
+  useReducedMotion,
   useScroll,
   useTransform,
 } from "motion/react";
 import Link from "next/link";
-import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { sair } from "@/app/acesso/actions";
 
@@ -64,8 +67,17 @@ const FLIP_END = 0.98;
 
 export function Header({ isClienteAtivo }: { isClienteAtivo: boolean }) {
   const { scrollY } = useScroll();
+  const pathname = usePathname();
+  const reduceMotion = useReducedMotion();
+  const [menuAberto, setMenuAberto] = useState(false);
   /** 1 = papel. Sem palco na página, é onde fica e nunca sai. */
   const progress = useMotionValue(1);
+
+  // Trocar de rota fecha o menu do celular — sem isso ele ficaria aberto por
+  // cima da página nova depois de um clique num link.
+  useEffect(() => {
+    setMenuAberto(false);
+  }, [pathname]);
 
   useEffect(() => {
     const hero = document.querySelector<HTMLElement>("[data-stage-hero]");
@@ -109,7 +121,11 @@ export function Header({ isClienteAtivo }: { isClienteAtivo: boolean }) {
   const muted = useTransform(progress, range, [STAGE.muted, PAPER.muted]);
   const border = useTransform(progress, range, [STAGE.border, PAPER.border]);
   const navLinks = isClienteAtivo
-    ? [{ href: "/acervo", label: "Acervo" }, ...NAV_PUBLICA]
+    ? [
+        { href: "/acervo", label: "Acervo" },
+        { href: "/acervo/conta", label: "Minha conta" },
+        ...NAV_PUBLICA,
+      ]
     : NAV_PUBLICA;
 
   return (
@@ -150,18 +166,75 @@ export function Header({ isClienteAtivo }: { isClienteAtivo: boolean }) {
           ))}
         </nav>
 
-        {isClienteAtivo ? (
-          <form action={sair}>
-            <button type="submit" className="label link-quiet">
-              Sair
-            </button>
-          </form>
-        ) : (
-          <Link href="/acesso" className="label link-quiet">
-            Entrar
-          </Link>
-        )}
+        <div className="hidden md:block">
+          {isClienteAtivo ? (
+            <form action={sair}>
+              <button type="submit" className="label link-quiet">
+                Sair
+              </button>
+            </form>
+          ) : (
+            <Link href="/acesso" className="label link-quiet">
+              Entrar
+            </Link>
+          )}
+        </div>
+
+        <button
+          type="button"
+          className="md:hidden"
+          aria-expanded={menuAberto}
+          aria-controls="menu-celular"
+          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
+          onClick={() => setMenuAberto((v) => !v)}
+        >
+          <MenuIcon aberto={menuAberto} />
+        </button>
       </div>
+
+      <AnimatePresence>
+        {menuAberto && (
+          <motion.nav
+            id="menu-celular"
+            aria-label="Navegação principal (celular)"
+            className="absolute inset-x-0 top-full flex flex-col gap-1 border-t px-6 py-6 md:hidden"
+            style={{ background, borderColor: border }}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{
+              duration: reduceMotion ? 0 : 0.3,
+              ease: [0.22, 1, 0.36, 1],
+            }}
+          >
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="label link-quiet py-3"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div
+              className="mt-2 border-t pt-4"
+              style={{ borderColor: "var(--color-border)" }}
+            >
+              {isClienteAtivo ? (
+                <form action={sair}>
+                  <button type="submit" className="label link-quiet py-3">
+                    Sair
+                  </button>
+                </form>
+              ) : (
+                <Link href="/acesso" className="label link-quiet py-3">
+                  Entrar
+                </Link>
+              )}
+            </div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </motion.header>
   );
 }
@@ -184,6 +257,27 @@ function Monogram() {
       <circle cx="12" cy="12" r="11" strokeWidth="0.8" opacity="0.5" />
       <path d="M8 17V9.5L12 6l4 3.5V17" />
       <path d="M8 12.6h8" />
+    </svg>
+  );
+}
+
+/** Alterna entre hambúrguer e X — mesmo traço fino do Monogram. */
+function MenuIcon({ aberto }: { aberto: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className="h-6 w-6"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="square"
+    >
+      {aberto ? (
+        <path d="M6 6l12 12M18 6L6 18" />
+      ) : (
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      )}
     </svg>
   );
 }
