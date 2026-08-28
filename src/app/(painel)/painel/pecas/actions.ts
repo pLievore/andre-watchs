@@ -1,7 +1,7 @@
 "use server";
 
 /**
- * Edição de peças pelo painel.
+ * Gestão de peças pelo painel.
  *
  * Toda escrita passa pela chave secret (`dbAdmin`): não existe política de
  * `insert`/`update` no RLS, então este é o único caminho — e ele exige admin
@@ -12,11 +12,15 @@
  */
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { dbAdmin } from "@/lib/db/admin";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
+import type { WatchState } from "@/lib/types";
 
 export type EstadoPeca = { erro?: string; sucesso?: string };
+
+const ESTADOS: readonly WatchState[] = ["disponivel", "reservada", "vendida"];
 
 /** Campo vazio vira `null`: no banco, ausência é `null`, nunca string vazia. */
 function ouNulo(v: FormDataEntryValue | null): string | null {
@@ -52,6 +56,129 @@ function precoParaCentavos(v: FormDataEntryValue | null): number | null {
   return Number.isFinite(centavos) && centavos >= 0 ? centavos : null;
 }
 
+function estadoValido(v: FormDataEntryValue | null): WatchState {
+  const s = String(v ?? "");
+  return (ESTADOS as readonly string[]).includes(s)
+    ? (s as WatchState)
+    : "disponivel";
+}
+
+/**
+ * `Rolex Submariner Date 126610LN` → `rolex-submariner-date-126610ln`.
+ *
+ * O slug é a URL da peça e nunca muda depois de criado — link que o Andre
+ * mandou no WhatsApp semana passada tem que continuar abrindo. Por isso ele é
+ * derivado uma vez, na criação, e o formulário de edição não o toca.
+ */
+function paraSlug(partes: string[]): string {
+  return partes
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
+/** Sufixa `-2`, `-3`… até achar um livre. Duas Submariner iguais acontecem. */
+async function slugLivre(base: string): Promise<string> {
+  const raiz = base || "peca";
+  for (let n = 1; n < 50; n++) {
+    const tentativa = n === 1 ? raiz : `${raiz}-${n}`;
+    const { data } = await dbAdmin
+      .from("pecas")
+      .select("slug")
+      .eq("slug", tentativa)
+      .maybeSingle();
+    if (!data) return tentativa;
+  }
+  return `${raiz}-${Date.now()}`;
+}
+
+/** Revalida os lugares onde a peça aparece. */
+function revalidar(slug: string) {
+  revalidatePath("/acervo");
+  revalidatePath(`/acervo/${slug}`);
+  revalidatePath("/painel/pecas");
+  revalidatePath(`/painel/pecas/${slug}`);
+}
+
+/** Campos comuns a criar e salvar. */
+function camposDoForm(form: FormData) {
+  return {
+    marca: String(form.get("marca") ?? "").trim(),
+    modelo: String(form.get("modelo") ?? "").trim(),
+    condicao: String(form.get("condicao") ?? "seminovo"),
+    integralidade: String(form.get("integralidade") ?? "caixa-e-papeis"),
+    referencia: ouNulo(form.get("referencia")),
+    calibre: ouNulo(form.get("calibre")),
+    diametro_mm: numeroOuNulo(form.get("diametro_mm")),
+    material_caixa: ouNulo(form.get("material_caixa")),
+    pulseira: ouNulo(form.get("pulseira")),
+    mostrador: ouNulo(form.get("mostrador")),
+    ano_cartao: numeroOuNulo(form.get("ano_cartao")),
+    estado: estadoValido(form.get("estado")),
+    consignada: form.get("consignada") === "on",
+    historia: ouNulo(form.get("historia")),
+    notas_estado: ouNulo(form.get("notas_estado")),
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Criar
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Cria a peça e leva direto para a edição dela.
+ *
+ * O formulário de criação pede só o mínimo — marca, modelo, preço, estado —
+ * porque o momento de cadastrar é o momento em que a peça chegou na mão e o
+ * Andre ainda não conferiu calibre nem ano de cartão. Exigir tudo de uma vez
+ * empurraria para o palpite, que é exatamente o que o SPEC §1.3 proíbe.
+ *
+ * Depois de criada, a tela de edição já traz o envio de fotos.
+ */
+export async function criarPeca(
+  _anterior: EstadoPeca,
+  form: FormData,
+): Promise<EstadoPeca> {
+  const admin = await usuarioAdmin();
+  if (!admin) return { erro: "Sessão expirada. Entre novamente." };
+
+  const campos = camposDoForm(form);
+  if (!campos.marca || !campos.modelo) {
+    return { erro: "Marca e modelo são obrigatórios." };
+  }
+
+  const preco = precoParaCentavos(form.get("preco"));
+  if (preco === null) return { erro: "Informe um preço válido." };
+
+  const slug = await slugLivre(
+    paraSlug([campos.marca, campos.modelo, campos.referencia ?? ""]),
+  );
+
+  const { error } = await dbAdmin
+    .from("pecas")
+    .insert({ ...campos, slug, preco_centavos: preco });
+
+  if (error) {
+    console.error("Falha ao criar peça", {
+      code: error.code,
+      message: error.message,
+    });
+    return { erro: "Não foi possível criar a peça. Tente de novo." };
+  }
+
+  revalidar(slug);
+  // `redirect` lança por dentro — tem que ser a última linha.
+  redirect(`/painel/pecas/${slug}?nova=1`);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Editar
+// ─────────────────────────────────────────────────────────────────────────────
+
 export async function salvarPeca(
   _anterior: EstadoPeca,
   form: FormData,
@@ -62,75 +189,91 @@ export async function salvarPeca(
   const slug = String(form.get("slug") ?? "").trim();
   if (!slug) return { erro: "Peça não identificada." };
 
-  const marca = String(form.get("marca") ?? "").trim();
-  const modelo = String(form.get("modelo") ?? "").trim();
-  if (!marca || !modelo) return { erro: "Marca e modelo são obrigatórios." };
+  const campos = camposDoForm(form);
+  if (!campos.marca || !campos.modelo) {
+    return { erro: "Marca e modelo são obrigatórios." };
+  }
 
   const preco = precoParaCentavos(form.get("preco"));
   if (preco === null) return { erro: "Informe um preço válido." };
 
   const { error } = await dbAdmin
     .from("pecas")
-    .update({
-      marca,
-      modelo,
-      condicao: String(form.get("condicao") ?? "seminovo"),
-      integralidade: String(form.get("integralidade") ?? "caixa-e-papeis"),
-      referencia: ouNulo(form.get("referencia")),
-      calibre: ouNulo(form.get("calibre")),
-      diametro_mm: numeroOuNulo(form.get("diametro_mm")),
-      material_caixa: ouNulo(form.get("material_caixa")),
-      pulseira: ouNulo(form.get("pulseira")),
-      mostrador: ouNulo(form.get("mostrador")),
-      ano_cartao: numeroOuNulo(form.get("ano_cartao")),
-      preco_centavos: preco,
-      disponivel: form.get("disponivel") === "on",
-      consignada: form.get("consignada") === "on",
-      historia: ouNulo(form.get("historia")),
-      notas_estado: ouNulo(form.get("notas_estado")),
-    })
+    .update({ ...campos, preco_centavos: preco })
     .eq("slug", slug);
 
   if (error) {
-    console.error("Falha ao salvar peça", { code: error.code, message: error.message });
+    console.error("Falha ao salvar peça", {
+      code: error.code,
+      message: error.message,
+    });
     return { erro: "Não foi possível salvar. Tente de novo." };
   }
 
-  // O acervo do cliente e a própria lista do painel precisam refletir na hora.
-  revalidatePath("/acervo");
-  revalidatePath(`/acervo/${slug}`);
-  revalidatePath("/painel/pecas");
-
+  revalidar(slug);
   return { sucesso: "Peça salva." };
 }
 
 /**
- * Atalho de disponibilidade, direto da lista.
+ * Troca de estado direto da lista.
  *
- * É a operação mais frequente do Andre — vendeu uma peça e precisa tirá-la da
- * vitrine agora. Obrigá-lo a abrir o formulário inteiro para um botão seria
- * atrito no uso diário.
+ * É a operação mais frequente do Andre — vendeu ou apartou uma peça e precisa
+ * refletir isso agora. Obrigá-lo a abrir o formulário inteiro para uma escolha
+ * de três opções seria atrito no uso diário.
  */
-export async function alternarDisponibilidade(form: FormData): Promise<void> {
+export async function mudarEstado(form: FormData): Promise<void> {
   const admin = await usuarioAdmin();
   if (!admin) return;
 
   const slug = String(form.get("slug") ?? "").trim();
   if (!slug) return;
 
-  const { data: atual } = await dbAdmin
-    .from("pecas")
-    .select("disponivel")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (!atual) return;
-
   await dbAdmin
     .from("pecas")
-    .update({ disponivel: !atual.disponivel })
+    .update({ estado: estadoValido(form.get("estado")) })
     .eq("slug", slug);
 
-  revalidatePath("/acervo");
-  revalidatePath(`/acervo/${slug}`);
-  revalidatePath("/painel/pecas");
+  revalidar(slug);
+}
+
+/**
+ * Apaga a peça e as fotos dela.
+ *
+ * Existe para o caso de cadastro errado, não para tirar peça vendida do
+ * registro: peça que a casa vendeu é histórico e vale mais listada do que
+ * apagada. A confirmação fica na UI.
+ */
+export async function excluirPeca(form: FormData): Promise<void> {
+  const admin = await usuarioAdmin();
+  if (!admin) return;
+
+  const slug = String(form.get("slug") ?? "").trim();
+  if (!slug) return;
+
+  const { data: peca } = await dbAdmin
+    .from("pecas")
+    .select("id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (!peca) return;
+
+  // Os arquivos do Storage não caem no `on delete cascade` do Postgres —
+  // aquilo só apaga a linha da tabela `fotos`. Sem isto, o bucket vira
+  // depósito de imagem órfã que ninguém mais consegue nem listar.
+  const { data: fotos } = await dbAdmin
+    .from("fotos")
+    .select("url")
+    .eq("peca_id", peca.id);
+
+  const caminhos = (fotos ?? [])
+    .map((f) => f.url)
+    .filter((u) => u && !/^https?:\/\//i.test(u));
+  if (caminhos.length) {
+    await dbAdmin.storage.from("pecas").remove(caminhos);
+  }
+
+  await dbAdmin.from("pecas").delete().eq("id", peca.id);
+
+  revalidar(slug);
+  redirect("/painel/pecas");
 }

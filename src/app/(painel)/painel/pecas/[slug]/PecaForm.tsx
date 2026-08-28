@@ -28,6 +28,12 @@ const INTEGRALIDADES = [
   ["somente-relogio", "Somente relógio"],
 ] as const;
 
+const ESTADOS = [
+  ["disponivel", "Disponível — à venda no acervo"],
+  ["reservada", "Em negociação — aparece com selo, segue à venda"],
+  ["vendida", "Vendida — fica no acervo como registro, sem CTA"],
+] as const;
+
 export interface PecaEditavel {
   slug: string;
   marca: string;
@@ -42,7 +48,7 @@ export interface PecaEditavel {
   mostrador: string | null;
   ano_cartao: number | null;
   preco_centavos: number;
-  disponivel: boolean;
+  estado: string;
   consignada: boolean;
   historia: string | null;
   notas_estado: string | null;
@@ -215,26 +221,22 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
           required
         />
 
-        <div className="flex flex-wrap gap-6">
-          <label className="flex items-center gap-2.5 text-sm">
-            <input
-              type="checkbox"
-              name="disponivel"
-              defaultChecked={peca.disponivel}
-              className="h-4 w-4"
-            />
-            Disponível no acervo
-          </label>
-          <label className="flex items-center gap-2.5 text-sm">
-            <input
-              type="checkbox"
-              name="consignada"
-              defaultChecked={peca.consignada}
-              className="h-4 w-4"
-            />
-            Peça em consignação
-          </label>
-        </div>
+        <Selecao
+          id="estado"
+          rotulo="Estado comercial"
+          opcoes={ESTADOS}
+          padrao={peca.estado}
+        />
+
+        <label className="flex items-center gap-2.5 text-sm">
+          <input
+            type="checkbox"
+            name="consignada"
+            defaultChecked={peca.consignada}
+            className="h-4 w-4"
+          />
+          Peça em consignação
+        </label>
       </div>
 
       <div
@@ -257,7 +259,7 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="notas_estado" className="label">
-            Estado — marcas de uso, o que o comprador precisa saber
+            Conservação — marcas de uso, o que o comprador precisa saber
           </label>
           <textarea
             id="notas_estado"
@@ -278,8 +280,8 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
             className="text-sm"
             style={{
               color: estado.erro
-                ? "var(--color-error)"
-                : "var(--color-muted)",
+                ? "var(--estado-erro)"
+                : "var(--estado-ok)",
             }}
           >
             {estado.erro ?? estado.sucesso}

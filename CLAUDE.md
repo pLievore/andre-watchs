@@ -39,6 +39,28 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
   essa linha.
 - **RLS ligado em toda tabela nova, desde o primeiro dia.** Ligar depois obriga a
   auditar cada consulta já escrita.
+- Migração nova vira arquivo em `supabase/`, idempotente, aplicada com
+  `node scripts/aplicar-sql.mjs supabase/<arquivo>.sql`. Registre na tabela do
+  topo de [docs/BANCO.md](docs/BANCO.md).
+
+## Peças: estado e fotos
+
+- **O estado comercial é `estado`** (enum: `disponivel`, `reservada`,
+  `vendida`), não `disponivel`. O booleano ainda existe, derivado por trigger,
+  só para não quebrar consulta antiga — **nunca escreva nele**.
+  `Watch.available` é açúcar para `state === "disponivel"`.
+- Os três estados aparecem para o cliente: disponível segue com CTA, **em
+  negociação ganha selo e continua à venda** (esconder afastaria o segundo
+  interessado), vendida vira registro do que passou pela casa.
+- **O bucket `pecas` é privado.** Foto com URL pública fura o clube inteiro —
+  bastaria compartilhar o endereço da imagem. Toda foto vira link assinado por
+  `src/lib/db/fotos.ts`; nunca troque por `getPublicUrl`.
+- **`on delete cascade` não apaga arquivo do Storage.** Quem exclui peça ou
+  foto remove os objetos do bucket na mesma operação, senão sobra imagem órfã
+  que nenhuma tela alcança.
+- `ordem = 0` é a capa do card, `1` é o crossfade do hover, o resto é galeria.
+  A constraint `fotos_ordem_unica` impede empate, então trocar duas de lugar
+  exige o desvio por `-1` que o `moverFoto` faz.
 
 ## Stack (travada — ver SPEC §2.1)
 

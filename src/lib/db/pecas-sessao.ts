@@ -12,6 +12,7 @@ import "server-only";
  */
 
 import { dbServidor } from "@/lib/db/server";
+import { assinarFotos, assinarFotosDe } from "@/lib/db/fotos";
 import { CAMPOS, paraWatch, type LinhaPeca } from "@/lib/db/pecas";
 import type { Watch } from "@/lib/types";
 
@@ -20,11 +21,11 @@ export async function listarPecasDoCliente(): Promise<Watch[]> {
   const { data, error } = await db
     .from("pecas")
     .select(CAMPOS)
-    .order("disponivel", { ascending: false })
+    .order("estado", { ascending: true })
     .order("criado_em", { ascending: false });
 
   if (error) throw new Error(`Falha ao listar peças: ${error.message}`);
-  return (data as unknown as LinhaPeca[]).map(paraWatch);
+  return assinarFotos((data as unknown as LinhaPeca[]).map(paraWatch));
 }
 
 export async function buscarPecaDoCliente(
@@ -38,7 +39,8 @@ export async function buscarPecaDoCliente(
     .maybeSingle();
 
   if (error) throw new Error(`Falha ao buscar peça ${slug}: ${error.message}`);
-  return data ? paraWatch(data as unknown as LinhaPeca) : undefined;
+  if (!data) return undefined;
+  return assinarFotosDe(paraWatch(data as unknown as LinhaPeca));
 }
 
 /**

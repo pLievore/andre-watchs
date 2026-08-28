@@ -16,13 +16,14 @@ import type {
   Watch,
   WatchCompleteness,
   WatchCondition,
+  WatchState,
 } from "@/lib/types";
 
 /** Colunas pedidas em toda consulta. Explícito para não trazer lixo. */
 export const CAMPOS = `
   slug, marca, modelo, condicao, integralidade,
   referencia, calibre, diametro_mm, material_caixa, pulseira, mostrador, ano_cartao,
-  preco_centavos, disponivel, consignada, historia, notas_estado,
+  preco_centavos, estado, disponivel, consignada, historia, notas_estado,
   fotos ( url, alt, ordem )
 `;
 
@@ -46,6 +47,7 @@ export interface LinhaPeca {
   mostrador: string | null;
   ano_cartao: number | null;
   preco_centavos: number;
+  estado: WatchState;
   disponivel: boolean;
   consignada: boolean;
   historia: string | null;
@@ -78,7 +80,8 @@ export function paraWatch(l: LinhaPeca): Watch {
       warrantyYear: ou(l.ano_cartao),
     },
     priceCents: l.preco_centavos,
-    available: l.disponivel,
+    state: l.estado,
+    available: l.estado === "disponivel",
     consigned: l.consignada,
     story: ou(l.historia),
     conditionNotes: ou(l.notas_estado),
@@ -97,7 +100,7 @@ export async function listarPecas(): Promise<Watch[]> {
   const { data, error } = await db
     .from("pecas")
     .select(CAMPOS)
-    .order("disponivel", { ascending: false })
+    .order("estado", { ascending: true })
     .order("criado_em", { ascending: false });
 
   if (error) throw new Error(`Falha ao listar peças: ${error.message}`);
@@ -109,7 +112,7 @@ export async function listarDestaques(limite = 8): Promise<Watch[]> {
   const { data, error } = await db
     .from("pecas")
     .select(CAMPOS)
-    .order("disponivel", { ascending: false })
+    .order("estado", { ascending: true })
     .order("criado_em", { ascending: false })
     .limit(limite);
 

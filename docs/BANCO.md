@@ -4,6 +4,24 @@
 > [`supabase/schema.sql`](../supabase/schema.sql) — este arquivo explica **por
 > quê**, o SQL diz **o quê**.
 
+## Migrações, na ordem
+
+Todas idempotentes: rodar de novo não quebra nada.
+
+| Arquivo | O que faz | Aplicada |
+|---|---|---|
+| `supabase/schema.sql` | `pecas`, `fotos`, tipos, RLS ligado | ✅ |
+| `supabase/fase-2.sql` | `clientes`, `solicitacoes_acesso`, fecha o acervo | ✅ 2026-08-28 |
+| `supabase/fase-4.sql` | enum `estado_peca`, bucket `pecas`, ordem única de foto | ✅ 2026-08-28 |
+
+```bash
+node scripts/aplicar-sql.mjs supabase/fase-4.sql
+```
+
+Usa a `DIRECT_URL` (porta 5432, modo sessão) e envia o arquivo inteiro numa
+chamada só — fatiar por `;` quebraria os blocos `do $$ … $$` e o corpo das
+funções, que têm ponto e vírgula dentro.
+
 ---
 
 ## Por que Supabase
@@ -61,13 +79,52 @@ sabe mostrar `—`. Um `not null` aqui obrigaria alguém a inventar.
 `preco_centavos` é `bigint` e não `numeric`: dinheiro em inteiro não tem erro de
 arredondamento. Peça de R$ 300 mil cabe folgado.
 
+**`estado` é o estado comercial** — enum `estado_peca`: `disponivel`,
+`reservada`, `vendida`. Começou como `disponivel boolean` e não deu conta: a
+peça com proposta na mesa não é vendida (pode voltar) nem disponível (não
+adianta um segundo cliente disputar sem saber que há alguém na frente). Um
+booleano tem dois estados e o negócio tem três.
+
+A ordem do enum é a ordem em que o dono pensa no estoque, então
+`order by estado` já entrega a listagem certa sem `case`.
+
+`disponivel` **continua existindo**, derivado de `estado` por trigger
+(`sincroniza_disponivel`, em `fase-4.sql`). Não é redundância por descuido: a
+migração precisava rodar antes do deploy do código novo, e sem a coluna
+sincronizada toda consulta ainda não migrada passaria a mentir durante a
+janela entre uma coisa e outra. O trigger funciona nos dois sentidos — quem
+escreve `estado` atualiza o booleano, quem escreve só o booleano (código
+antigo) tem a intenção traduzida para o enum.
+
 ### `fotos`
 
 Separada de `pecas` porque uma peça tem de 1 a 8 fotos, **a ordem importa**, e
 cada uma precisa do próprio `alt` horológico. Em array seria custoso reordenar e
 impossível indexar.
 
-`on delete cascade`: apagar a peça leva as fotos junto. Não existe foto órfã.
+`on delete cascade`: apagar a peça leva as linhas de foto junto.
+
+⚠️ **O cascade não alcança o Storage.** Ele apaga a linha, não o arquivo. Quem
+exclui peça ou foto tem que remover os objetos do bucket na mesma operação —
+é o que `excluirPeca` e `excluirFoto` fazem. Sem isso o bucket vira depósito de
+imagem órfã que nenhuma tela consegue mais listar nem apagar.
+
+`fotos_ordem_unica (peca_id, ordem)` impede duas fotos disputando a capa. Como
+consequência, trocar duas de lugar precisa de um passo intermediário — o
+`moverFoto` desvia uma para `-1` antes de fazer a troca.
+
+### Storage: bucket `pecas`
+
+**Privado.** Foto de peça com URL pública seria o furo que anula o clube
+inteiro: bastaria alguém compartilhar o endereço da imagem, e o acervo estaria
+na rua sem ninguém precisar de login. Verificado: `getPublicUrl` responde 400.
+
+O cliente recebe link assinado de uma hora, gerado no servidor por
+`src/lib/db/fotos.ts` — em lote, uma chamada para a lista inteira, porque uma
+por peça faria dezenas de idas ao Storage só para montar o acervo.
+
+Limites no próprio bucket (10 MB, só imagem): validação que a aplicação não
+pode esquecer de fazer.
 
 ### `clientes`
 
@@ -96,6 +153,8 @@ escreve. O navegador nunca consulta esta tabela diretamente.
 | `convites` | 3 — link de uso único |
 | `eventos` | 4 — funil |
 | `interesses` | 4 — pipeline de venda |
+
+Nenhuma das três existe hoje. Ver [BALANCO.md](BALANCO.md).
 
 Criar tabela antes da fase que a usa gera esquema morto que ninguém valida.
 Os tipos enum delas já estão no `schema.sql` porque são baratos e evitam uma

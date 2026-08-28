@@ -96,7 +96,9 @@ for (const p of pecas) {
         mostrador: p.specs.dial ?? null,
         ano_cartao: p.specs.warrantyYear ?? null,
         preco_centavos: p.priceCents,
-        disponivel: p.available,
+        // Escreve o enum, não o booleano: `disponivel` é coluna derivada e
+        // some quando o trigger de compatibilidade for retirado.
+        estado: p.available ? "disponivel" : "vendida",
         consignada: p.consigned ?? false,
         historia: p.story ?? null,
         notas_estado: p.conditionNotes ?? null,

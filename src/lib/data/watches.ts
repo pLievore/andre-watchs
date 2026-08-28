@@ -27,7 +27,16 @@ export interface MockWatch extends Watch {
   placeholderGradient?: readonly [string, string];
 }
 
-export const MOCK_WATCHES: readonly MockWatch[] = [
+/**
+ * As entradas abaixo declaram só `available`; `state` sai daí.
+ *
+ * Derivar em vez de escrever nas dez entradas evita a única falha que importa
+ * neste arquivo de demonstração: uma peça com `available: true` e
+ * `state: "vendida"`, que renderizaria um card contradizendo a si mesmo.
+ */
+type MockWatchBruto = Omit<MockWatch, "state">;
+
+const CATALOGO: readonly MockWatchBruto[] = [
   {
     slug: "rolex-submariner-date-126613lb",
     brand: "Rolex",
@@ -337,6 +346,11 @@ export const MOCK_WATCHES: readonly MockWatch[] = [
     },
   },
 ];
+
+export const MOCK_WATCHES: readonly MockWatch[] = CATALOGO.map((w) => ({
+  ...w,
+  state: w.available ? "disponivel" : "vendida",
+}));
 
 /** Vitrine da home — SPEC §5.3: 6 a 8 peças, disponíveis primeiro. */
 export const FEATURED_WATCHES: readonly MockWatch[] = [...MOCK_WATCHES]

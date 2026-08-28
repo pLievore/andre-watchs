@@ -6,6 +6,8 @@
  *  - Preço em sans regular — nunca bold (§1.3: luxo é discreto)
  *  - Hover desktop: lift 8px + filete de acento acende + crossfade da foto
  *  - Peça vendida: card dimmed com selo VENDIDO (prova social, não erro)
+ *  - Peça em negociação: selo discreto, sem véu — ela continua à venda até
+ *    fechar, e apagar o card afastaria o segundo interessado
  *
  * Proibido no card: badge de promoção, frete grátis, countdown.
  */
@@ -19,7 +21,13 @@ import {
   formatPrice,
   formatReferenceLine,
 } from "@/lib/format";
-import { type Watch, isGoldPiece, watchFullName, watchHref } from "@/lib/types";
+import {
+  type Watch,
+  isGoldPiece,
+  stateLabel,
+  watchFullName,
+  watchHref,
+} from "@/lib/types";
 
 type CardWatch = Watch & { placeholderGradient?: readonly [string, string] };
 
@@ -32,7 +40,8 @@ export function WatchCard({ watch }: WatchCardProps) {
   const hasPrimaryImage = watch.images.primary.url !== "";
   const hasSecondaryImage = !!watch.images.secondary?.url;
   const gradient = watch.placeholderGradient;
-  const sold = !watch.available;
+  const sold = watch.state === "vendida";
+  const reserved = watch.state === "reservada";
 
   // Peças two-tone/ouro liberam o acento dourado; o resto usa tinta (§3.1).
   const accent = isGoldPiece(watch)
@@ -122,6 +131,11 @@ export function WatchCard({ watch }: WatchCardProps) {
           }}
         />
 
+        {/*
+          Vendida ganha véu — o card vira registro do que passou pela casa.
+          Em negociação NÃO ganha véu: a peça ainda está à venda, e esconder a
+          foto afastaria quem entraria na fila. O selo fica no canto, discreto.
+        */}
         {sold && (
           <div
             className="absolute inset-0 z-10 flex items-center justify-center"
@@ -136,9 +150,24 @@ export function WatchCard({ watch }: WatchCardProps) {
                 borderColor: "var(--color-foreground)",
               }}
             >
-              Vendido
+              {stateLabel(watch.state)}
             </span>
           </div>
+        )}
+
+        {reserved && (
+          <span
+            className="absolute left-4 top-4 z-10 px-3 py-1.5 text-xs"
+            style={{
+              fontFamily: "var(--font-serif)",
+              fontStyle: "italic",
+              background: "var(--color-background)",
+              color: "var(--color-foreground)",
+              border: "1px solid var(--color-foreground)",
+            }}
+          >
+            {stateLabel(watch.state)}
+          </span>
         )}
       </div>
 

@@ -58,6 +58,16 @@ export interface WatchSpecs {
   warrantyYear?: number;
 }
 
+/**
+ * Estado comercial da peça.
+ *
+ * Três estados, não dois: a peça com proposta na mesa não é "vendida" (pode
+ * voltar ao acervo) nem "disponível" (não adianta um segundo cliente disputar
+ * sem saber que há alguém na frente). Dizer isso ao cliente é honestidade, e
+ * honestidade aqui também é escassez real — o oposto de urgência fabricada.
+ */
+export type WatchState = "disponivel" | "reservada" | "vendida";
+
 export interface Watch {
   /** SPEC §10 — `rolex-submariner-date-126610ln`. */
   slug: string;
@@ -67,7 +77,13 @@ export interface Watch {
   completeness: WatchCompleteness;
   specs: WatchSpecs;
   priceCents: number;
-  /** `false` = vendida. Card vai dimmed com selo VENDIDO (SPEC §5.2). */
+  /** Fonte de verdade do estado comercial. */
+  state: WatchState;
+  /**
+   * `estado === "disponivel"`. Derivado, mantido porque metade da UI só quer
+   * saber se dá para comprar — e `!w.available` lê melhor que uma comparação
+   * de string repetida em todo card.
+   */
   available: boolean;
   /** Peça em consignação de terceiro (SPEC §1.2). */
   consigned?: boolean;
@@ -104,6 +120,15 @@ export const NO_DATA = "—";
 
 export function specValue(value: string | number | undefined): string {
   return value === undefined || value === "" ? NO_DATA : String(value);
+}
+
+/** Rótulo do estado, do jeito que o cliente lê. */
+export function stateLabel(state: WatchState): string {
+  return state === "disponivel"
+    ? "Disponível"
+    : state === "reservada"
+      ? "Em negociação"
+      : "Vendido";
 }
 
 /** Peças two-tone/ouro liberam `--color-accent-gold` (SPEC §3.1). */

@@ -4,8 +4,8 @@
 > seguir" em uma página. É o único documento que muda a cada entrega — se ele
 > discordar de outro, ele está certo e o outro está velho.
 >
-> **Última atualização**: 2026-08-28 (Fase 2 implementada e verificada em
-> local; falta o deploy)
+> **Última atualização**: 2026-08-28 (gestão de peças completa: criar, fotos,
+> três estados; falta o deploy)
 
 ---
 
@@ -59,8 +59,10 @@ deploy.
 - ~~Banco de dados~~ — **feito**: Supabase, 10 peças migradas. `watches.ts`
   segue como semente de referência
 - ~~Autenticação~~ — **feito na Fase 2**, em local. Falta publicar
-- **Painel administrativo** — nenhum (Fase 3 — sem ele, cliente novo só entra
-  por `scripts/criar-cliente.mjs`)
+- **Funil e eventos** — nada é registrado: não se sabe quem viu qual peça nem
+  quem foi ao WhatsApp (Fase 4). Ver [BALANCO.md](BALANCO.md)
+- **Interesses** — o clique no WhatsApp não vira registro de negociação
+- **Convite por link** — terceiro caminho de entrada do D25, nunca construído
 - **Gateway de pagamento** — fora de escopo por decisão (a venda fecha no WhatsApp)
 
 ## Bloqueios conhecidos
@@ -70,6 +72,7 @@ deploy.
 | **Fotos são do Unsplash** | Não são peças da casa. Bloqueiam publicação real | SPEC D8 |
 | **WhatsApp cai no Instagram** | `NEXT_PUBLIC_WHATSAPP_NUMBER` vazio; o CTA usa o Instagram como alternativa | SPEC D7 |
 | **Produção com RLS de Fase 2 e código de Fase 1** | Deploy pendente após a migração já aplicada | ver acima |
+| **`fase-4.sql` já aplicada no banco** | Mesma situação da Fase 2: o banco tem `estado` e o bucket `pecas`, a produção ainda não tem o código que os usa | ver acima |
 
 ---
 
@@ -91,7 +94,7 @@ Progresso: ver [FASE-2.md](FASE-2.md).
 |---|---|---|
 | 1 | **Fundação** — Supabase, RLS, catálogo no banco | ✅ em produção |
 | 2 | **Porta** — auth, acervo privado, home institucional | ✅ em local · ⬜ deploy |
-| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | ⬜ |
+| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | 🟡 peças e clientes ✅ · convite ⬜ |
 | 4 | **Inteligência** — eventos, funil identificado, saudação | ⬜ |
 | 5 | **Acabamento** — mobile, estados vazios, a11y, desempenho | ⬜ |
 

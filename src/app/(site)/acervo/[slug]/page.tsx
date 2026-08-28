@@ -78,9 +78,12 @@ export default async function WatchPage({
         watch.condition === "novo"
           ? "https://schema.org/NewCondition"
           : "https://schema.org/UsedCondition",
-      availability: watch.available
-        ? "https://schema.org/InStock"
-        : "https://schema.org/SoldOut",
+      availability:
+        watch.state === "disponivel"
+          ? "https://schema.org/InStock"
+          : watch.state === "reservada"
+            ? "https://schema.org/LimitedAvailability"
+            : "https://schema.org/SoldOut",
     },
   };
 
@@ -151,12 +154,38 @@ export default async function WatchPage({
               </span>
             </div>
 
-            {watch.available ? (
+            {/*
+              Três estados, três conversas diferentes. A peça em negociação
+              continua com CTA: ela não saiu do acervo, e quem chega depois tem
+              o direito de dizer "me avisa se não fechar". Fingir que está livre
+              seria desonesto; escondê-la seria perder o segundo comprador.
+            */}
+            {watch.state !== "vendida" ? (
               <div className="flex flex-col gap-4">
+                {watch.state === "reservada" && (
+                  <div
+                    className="border px-5 py-4"
+                    style={{ borderColor: "var(--color-foreground)" }}
+                  >
+                    <p className="label">Em negociação</p>
+                    <p className="mt-2 text-sm leading-relaxed">
+                      Há uma conversa em andamento por esta peça. Ela só sai do
+                      acervo quando fechar — até lá, dá pra entrar na fila.
+                    </p>
+                  </div>
+                )}
                 <WhatsappCta
                   variant="primary"
-                  label="Falar sobre esta peça"
-                  context={`Olá! Tenho interesse na peça: ${name} (${formatCondition(watch.condition)}, ${formatCompleteness(watch.completeness)}) — ${formatPrice(watch.priceCents)}.`}
+                  label={
+                    watch.state === "reservada"
+                      ? "Avise-me se não fechar"
+                      : "Falar sobre esta peça"
+                  }
+                  context={
+                    watch.state === "reservada"
+                      ? `Olá! Vi que o ${name} está em negociação. Gostaria de ser avisado se a conversa não fechar.`
+                      : `Olá! Tenho interesse na peça: ${name} (${formatCondition(watch.condition)}, ${formatCompleteness(watch.completeness)}) — ${formatPrice(watch.priceCents)}.`
+                  }
                 />
                 <WhatsappCta
                   variant="secondary"

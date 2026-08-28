@@ -17,11 +17,12 @@ import { useMemo, useState } from "react";
 import { WatchCard } from "@/components/watch/WatchCard";
 import type { Watch } from "@/lib/types";
 
-type Availability = "todas" | "disponiveis" | "vendidas";
+type Availability = "todas" | "disponiveis" | "reservadas" | "vendidas";
 
 const AVAILABILITY_FILTERS: readonly { id: Availability; label: string }[] = [
   { id: "todas", label: "Todas" },
   { id: "disponiveis", label: "Disponíveis" },
+  { id: "reservadas", label: "Em negociação" },
   { id: "vendidas", label: "Vendidas" },
 ];
 
@@ -45,8 +46,9 @@ export function CollectionGrid({ watches }: CollectionGridProps) {
     () =>
       watches.filter((w) => {
         if (brand !== ALL_BRANDS && w.brand !== brand) return false;
-        if (availability === "disponiveis" && !w.available) return false;
-        if (availability === "vendidas" && w.available) return false;
+        if (availability === "disponiveis" && w.state !== "disponivel") return false;
+        if (availability === "reservadas" && w.state !== "reservada") return false;
+        if (availability === "vendidas" && w.state !== "vendida") return false;
         return true;
       }),
     [watches, brand, availability],
