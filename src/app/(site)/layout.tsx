@@ -5,7 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { clienteAtual } from "@/lib/db/server";
 
-import "./globals.css";
+import "../globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://andrewatches.com.br"),

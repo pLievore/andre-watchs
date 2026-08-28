@@ -210,6 +210,89 @@
   }
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PAINEL — escopo `.painel`, aplicado no <html> do layout raiz de (painel).
+   
+   Não é um tema alternativo do site: é outro produto. A vitrine é papel e
+   respiro, para contemplar; o painel é ferramenta de trabalho, usada todo dia,
+   e precisa de DENSIDADE — vinte peças na tela sem rolagem infinita.
+   
+   Fundo levemente mais quente que o palco do hero, para não confundir "estou
+   trabalhando" com "estou vendo o site".
+   ───────────────────────────────────────────────────────────────────────────── */
+.painel {
+  --color-background: #131110;
+  --color-surface: #1b1917;
+  --color-surface-2: #232120;
+  --color-foreground: #f0ece5;
+  --color-muted: #9b948a;
+  --color-border: #302c29;
+  --color-accent: #c2a875;
+
+  /* Estado — semântico, separado do acento da marca. Sempre acompanhado de
+     forma (rótulo, posição), nunca só cor: quem não distingue vermelho de
+     verde também administra o próprio negócio. */
+  --estado-ok: #6f9c72;
+  --estado-alerta: #c9944a;
+  --estado-erro: #c4675c;
+  --estado-neutro: #8a837a;
+
+  color-scheme: dark;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+.painel body {
+  background: var(--color-background);
+}
+
+@layer components {
+  /* Etiqueta de estado. Cor + rótulo, e o ponto dá a forma. */
+  .selo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.55rem;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.01em;
+    border: 1px solid var(--color-border);
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  .selo::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: currentColor;
+    flex: none;
+  }
+
+  .selo-ok     { color: var(--estado-ok); }
+  .selo-alerta { color: var(--estado-alerta); }
+  .selo-erro   { color: var(--estado-erro); }
+
+  /* Campo de formulário do painel — alvo de toque confortável no celular. */
+  .campo {
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-foreground);
+    padding: 0.7rem 0.85rem;
+    font-size: 1rem;
+    min-height: 44px;
+    width: 100%;
+  }
+
+  .campo:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+  }
+}
+
 /* Indicador de scroll do hero (§4) — pulso vertical do fio */
 @keyframes hero-scroll-pulse {
   0%,

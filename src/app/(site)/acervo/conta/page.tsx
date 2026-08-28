@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { sair } from "@/app/acesso/actions";
+import { sair } from "@/app/(site)/acesso/actions";
 import { WhatsappCta } from "@/components/contact/WhatsappCta";
 import { clienteAtual } from "@/lib/db/server";
 

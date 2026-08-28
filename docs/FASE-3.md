@@ -16,12 +16,13 @@
 | 3.1 | Quem é admin (`ADMIN_EMAILS`, sem tabela nova) | ✅ |
 | 3.2 | Login e middleware reconhecem admin | ✅ |
 | 3.3 | `/painel` — aprovar/recusar pedidos de acesso | ✅ |
-| 3.4 | `/painel/clientes` — listar e mudar status | ⬜ o layout já linka, mas a página não existe (404) |
+| 3.4 | `/painel/clientes` — listar e mudar status | ✅ |
 | 3.5 | `/painel/pecas` — listar e editar (sem foto ainda) | ✅ validado com sessão de admin |
 | 3.6 | Upload de foto (recorte, WebP, tamanhos) | ⬜ |
 | 3.7 | Criar peça nova pelo painel | ⬜ |
 | 3.8 | Convites por link (uso único, 7 dias) | ⬜ |
-| 3.9 | Verificação | 🟡 porta e peças validadas; falta clientes, fotos e convites |
+| 3.10 | Casca própria do painel (route groups) | ✅ |
+| 3.9 | Verificação | 🟡 porta, peças e clientes validados; falta fotos e convites |
 
 Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluído
 

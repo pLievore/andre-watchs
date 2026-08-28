@@ -97,6 +97,17 @@ Progresso: ver [FASE-2.md](FASE-2.md).
 
 ---
 
+## Vitrine e painel são produtos separados
+
+`src/app/(site)` e `src/app/(painel)` são **route groups irmãos**, com layouts
+raiz próprios. Não compartilham header, rodapé nem Lenis — só os tokens de CSS.
+
+Motivo: o painel é ferramenta de trabalho usada todo dia, a vitrine é peça de
+contemplação. Herdar a casca do site trazia scroll suave para dentro de uma
+tabela, que é ativamente ruim para quem trabalha.
+
+Tokens do painel: escopo `.painel` em `globals.css`.
+
 ## Mapa da documentação
 
 | Arquivo | O que responde | Muda com que frequência |

@@ -30,7 +30,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { sair } from "@/app/acesso/actions";
+import { sair } from "@/app/(site)/acesso/actions";
 
 const NAV_PUBLICA = [
   { href: "/vender", label: "Vender" },
