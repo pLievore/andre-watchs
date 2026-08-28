@@ -4,8 +4,8 @@
 > seguir" em uma página. É o único documento que muda a cada entrega — se ele
 > discordar de outro, ele está certo e o outro está velho.
 >
-> **Última atualização**: 2026-08-28 (gestão de peças completa e portas de
-> acesso separadas — cliente e admin; falta o deploy)
+> **Última atualização**: 2026-08-28 (gestão de peças e de clientes completas,
+> portas de acesso separadas, fluxo do dono no site corrigido; falta o deploy)
 
 ---
 
@@ -94,7 +94,7 @@ Progresso: ver [FASE-2.md](FASE-2.md).
 |---|---|---|
 | 1 | **Fundação** — Supabase, RLS, catálogo no banco | ✅ em produção |
 | 2 | **Porta** — auth, acervo privado, home institucional | ✅ em local · ⬜ deploy |
-| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | 🟡 peças e clientes ✅ · convite ⬜ |
+| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | 🟡 peças ✅ · clientes ✅ · convite por link ⬜ |
 | 4 | **Inteligência** — eventos, funil identificado, saudação | ⬜ |
 | 5 | **Acabamento** — mobile, estados vazios, a11y, desempenho | ⬜ |
 

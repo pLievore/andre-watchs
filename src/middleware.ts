@@ -135,14 +135,33 @@ export async function middleware(request: NextRequest) {
       return redirecionar(url);
     }
 
-    // Autenticado não basta: recusado e desativado continuam com login válido.
-    // Inclusive o admin, se um dia tiver linha em `clientes` com outro status.
-    if (status !== "ativo") {
+    /*
+     * O dono entra no acervo — é a vitrine dele.
+     *
+     * Antes esta regra o expulsava: ele não tem linha em `clientes`, então
+     * `status` nunca era 'ativo' e ele acabava teleportado para o painel. Na
+     * prática o Andre não conseguia ver a própria loja, e o link "ver como o
+     * cliente vê" da tela de peça não levava a lugar nenhum.
+     *
+     * A leitura dele passa pela chave secret (ver `pecas-sessao.ts`), porque o
+     * RLS continua liberando apenas cliente ativo — a política do banco não
+     * muda por causa disto.
+     */
+    if (!admin && status !== "ativo") {
       const url = request.nextUrl.clone();
       url.pathname = "/acesso";
       url.searchParams.set("estado", status ?? "pendente");
       return redirecionar(url);
     }
+  }
+
+  // A conta do admin é no painel. `/acervo/conta` exige cliente ativo e o
+  // recusaria — mandá-lo para lá seria um beco sem saída.
+  if (caminho === "/acervo/conta" && admin) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/painel/conta";
+    url.search = "";
+    return redirecionar(url);
   }
 
   // Já entrou e vai para a tela de acesso — manda direto pra área certa.

@@ -49,12 +49,21 @@ cliente como link assinado de uma hora, gerado no servidor (`src/lib/db/fotos.ts
 
 ## Clientes
 
+> **Atualizado em 2026-08-28**: a gestão passou a ser o cadastro inteiro, e não
+> só o interruptor de acesso.
+
 | Prometido (§7) | Existe? |
 |---|---|
-| Lista com nome, e-mail, telefone | ✅ |
+| Lista com nome, e-mail, telefone | ✅ com busca por nome/e-mail/telefone |
 | Último acesso | ✅ em linguagem relativa |
 | Fila de pendentes, aprovar/recusar | ✅ |
-| Ativar / desativar | ✅ |
+| Status | ✅ os **quatro**, não só ativo/inativo |
+| **Ficha do cliente** | ✅ `/painel/clientes/[id]` |
+| **Editar cadastro** | ✅ nome, telefone, observação privada |
+| **Trocar e-mail de acesso** | ✅ grava no Auth e na tabela juntos |
+| **Redefinir senha** | ✅ volta ao telefone ou define uma específica |
+| **Cadastrar cliente direto** | ✅ sem passar pela fila de pedidos |
+| **Excluir cliente** | ✅ com confirmação por digitação |
 | **Gerar convite por link** | ❌ **não existe** — sem tabela `convites` |
 
 Dos três caminhos de entrada decididos em D25, **dois funcionam**: cadastro por

@@ -61,6 +61,30 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
   do admin: ali ele nunca entraria, e a tela sugeriria que é só achar a senha.
 - Conta do admin é `/painel/conta` — nunca `/acervo/conta`, que exige
   `clientes.status = 'ativo'` e recusaria o dono.
+- **O dono navega o acervo.** Ele não tem linha em `clientes`, então a regra de
+  cliente ativo o expulsava e ele acabava teleportado ao painel — não conseguia
+  ver a própria loja. A leitura dele passa pela chave secret
+  (`leitorDoAcervo` em `pecas-sessao.ts`); o RLS não afrouxa por causa disso.
+  A `BarraPrevia` avisa que é a visão da casa, e a visita dele **não** conta
+  como acesso de cliente.
+- Menu do site tem três formas: visitante, cliente, dono. Link que não serve ao
+  papel de quem está logado é beco sem saída, não conveniência.
+
+## Clientes: a identidade mora em dois lugares
+
+- `auth.users` guarda **e-mail e senha** (o login usa isso); `clientes` guarda
+  nome, telefone, status e observação. **Toda escrita de e-mail vai nos dois** —
+  gravar só na tabela deixa a pessoa entrando com o e-mail antigo enquanto o
+  painel mostra o novo, e o descompasso só aparece quando alguém não entra.
+- Trocar e-mail escreve no Auth **primeiro**: se falhar (e-mail em uso), a
+  tabela não chega a divergir.
+- Criar cliente que falhe ao gravar a linha **apaga o usuário do Auth**. Conta
+  sem linha em `clientes` é órfã: entra no login e não passa em checagem
+  nenhuma.
+- São **quatro** status, não dois. `recusado` e `inativo` barram igual, mas um
+  é "não quisemos" e o outro é "não é mais" — a distinção é do negócio.
+- Excluir cliente é para cadastro errado e pedido de LGPD. Para quem parou de
+  comprar existe `inativo`, que preserva o histórico.
 
 ## Peças: estado e fotos
 

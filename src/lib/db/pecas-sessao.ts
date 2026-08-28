@@ -11,13 +11,29 @@ import "server-only";
  * em dois lugares e divergir com o tempo.
  */
 
+import { dbAdmin } from "@/lib/db/admin";
+import { usuarioAdmin } from "@/lib/db/admin-auth";
 import { dbServidor } from "@/lib/db/server";
 import { assinarFotos, assinarFotosDe } from "@/lib/db/fotos";
 import { CAMPOS, paraWatch, type LinhaPeca } from "@/lib/db/pecas";
 import type { Watch } from "@/lib/types";
 
+/**
+ * De onde ler o acervo: a sessão do cliente, ou a chave secret quando quem
+ * está olhando é o dono.
+ *
+ * O RLS libera `pecas`/`fotos` só para cliente ativo, e o admin não tem linha
+ * em `clientes` — pela sessão dele o acervo voltaria vazio. Em vez de afrouxar
+ * a política do banco para acomodar um caso de leitura, a exceção fica aqui,
+ * no servidor, onde dá para ver quem é.
+ */
+async function leitorDoAcervo() {
+  if (await usuarioAdmin()) return dbAdmin;
+  return dbServidor();
+}
+
 export async function listarPecasDoCliente(): Promise<Watch[]> {
-  const db = await dbServidor();
+  const db = await leitorDoAcervo();
   const { data, error } = await db
     .from("pecas")
     .select(CAMPOS)
@@ -31,7 +47,7 @@ export async function listarPecasDoCliente(): Promise<Watch[]> {
 export async function buscarPecaDoCliente(
   slug: string,
 ): Promise<Watch | undefined> {
-  const db = await dbServidor();
+  const db = await leitorDoAcervo();
   const { data, error } = await db
     .from("pecas")
     .select(CAMPOS)
@@ -49,7 +65,7 @@ export async function buscarPecaDoCliente(
  */
 export async function contarPecasDesde(desde: string | null): Promise<number> {
   if (!desde) return 0;
-  const db = await dbServidor();
+  const db = await leitorDoAcervo();
   const { count, error } = await db
     .from("pecas")
     .select("id", { count: "exact", head: true })

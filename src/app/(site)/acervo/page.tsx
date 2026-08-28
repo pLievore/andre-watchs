@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { CollectionGrid } from "@/components/collection/CollectionGrid";
+import { BarraPrevia } from "@/components/layout/BarraPrevia";
+import { usuarioAdmin } from "@/lib/db/admin-auth";
 import {
   contarPecasDesde,
   listarPecasDoCliente,
@@ -40,26 +42,36 @@ function horaEmSaoPaulo(agora: Date): number {
 export default async function AcervoPage() {
   // O middleware faz a primeira barreira; esta checagem mantém a página segura
   // mesmo se ela for chamada por outro caminho no futuro. O RLS é a terceira.
+  // O dono vê a própria vitrine. Ele não tem linha em `clientes`, então a
+  // checagem de cliente ativo não se aplica — e recusá-lo aqui deixaria o
+  // Andre sem nenhuma forma de conferir o que publicou.
+  const admin = await usuarioAdmin();
   const cliente = await clienteAtual();
-  if (!cliente || cliente.status !== "ativo") redirect("/acesso");
+  if (!admin && (!cliente || cliente.status !== "ativo")) redirect("/acesso");
 
   const [pecas, pecasNovas] = await Promise.all([
     listarPecasDoCliente(),
-    contarPecasDesde(cliente.ultimo_acesso),
+    cliente ? contarPecasDesde(cliente.ultimo_acesso) : Promise.resolve(0),
   ]);
 
   const agora = new Date();
-  const saudacao = montarSaudacao({
-    nome: cliente.nome,
-    primeiraVisita: cliente.ultimo_acesso === null,
-    pecasNovas,
-    diasAusente: diasDesde(cliente.ultimo_acesso, agora),
-    hora: horaEmSaoPaulo(agora),
-  });
+  // Saudação é peça de relacionamento com o cliente. Para o dono ela seria
+  // teatro — ele sabe quem é.
+  const saudacao = cliente
+    ? montarSaudacao({
+        nome: cliente.nome,
+        primeiraVisita: cliente.ultimo_acesso === null,
+        pecasNovas,
+        diasAusente: diasDesde(cliente.ultimo_acesso, agora),
+        hora: horaEmSaoPaulo(agora),
+      })
+    : "O acervo da casa.";
 
   return (
     <section className="mx-auto max-w-7xl px-6 pb-24 pt-32 md:px-16 md:pb-32 md:pt-44">
-      <AccessVisitRecorder />
+      {admin && <BarraPrevia />}
+      {/* Visita do dono não conta como acesso de cliente — sujaria o registro. */}
+      {cliente && <AccessVisitRecorder />}
 
       <header className="flex max-w-4xl flex-col gap-6">
         <h1
@@ -77,7 +89,9 @@ export default async function AcervoPage() {
           className="max-w-xl text-base leading-relaxed"
           style={{ color: "var(--color-muted)" }}
         >
-          Acervo privado e personalizado para você.
+          {cliente
+            ? "Acervo privado e personalizado para você."
+            : "Esta é a página que o cliente ativo enxerga."}
         </p>
       </header>
 

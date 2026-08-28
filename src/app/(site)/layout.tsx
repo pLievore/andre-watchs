@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
+import { usuarioAdmin } from "@/lib/db/admin-auth";
 import { clienteAtual } from "@/lib/db/server";
 
 import "../globals.css";
@@ -33,7 +34,9 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cliente = await clienteAtual();
+  // O header muda para o dono: ele vê "Painel" e "Acervo", não "Entrar".
+  const [cliente, admin] = await Promise.all([clienteAtual(), usuarioAdmin()]);
+  const ehAdmin = admin !== null;
 
   return (
     <html lang="pt-BR">
@@ -45,7 +48,10 @@ export default async function RootLayout({
           Pular para o conteúdo
         </a>
         <SmoothScroll>
-          <Header isClienteAtivo={cliente?.status === "ativo"} />
+          <Header
+            isClienteAtivo={cliente?.status === "ativo"}
+            isAdmin={ehAdmin}
+          />
           <div className="relative z-10">
             <main id="main">{children}</main>
             <Footer />

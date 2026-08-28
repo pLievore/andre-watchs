@@ -65,7 +65,13 @@ const FLIP_START = 0.62;
 /** Onde termina — pouco antes do hero sair, para não haver papel sobre o filme. */
 const FLIP_END = 0.98;
 
-export function Header({ isClienteAtivo }: { isClienteAtivo: boolean }) {
+export function Header({
+  isClienteAtivo,
+  isAdmin = false,
+}: {
+  isClienteAtivo: boolean;
+  isAdmin?: boolean;
+}) {
   const { scrollY } = useScroll();
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
@@ -120,13 +126,28 @@ export function Header({ isClienteAtivo }: { isClienteAtivo: boolean }) {
   const foreground = useTransform(progress, range, [STAGE.fg, PAPER.fg]);
   const muted = useTransform(progress, range, [STAGE.muted, PAPER.muted]);
   const border = useTransform(progress, range, [STAGE.border, PAPER.border]);
-  const navLinks = isClienteAtivo
+  /*
+   * Três públicos, três menus.
+   *
+   * O admin não é cliente: mandá-lo para `/acervo/conta` o levava a um beco —
+   * aquela rota exige `clientes.status = 'ativo'`, que ele não tem, e o
+   * middleware acabava despejando ele no painel sem explicação.
+   */
+  const navLinks = isAdmin
     ? [
+        { href: "/painel", label: "Painel" },
         { href: "/acervo", label: "Acervo" },
-        { href: "/acervo/conta", label: "Minha conta" },
         ...NAV_PUBLICA,
       ]
-    : NAV_PUBLICA;
+    : isClienteAtivo
+      ? [
+          { href: "/acervo", label: "Acervo" },
+          { href: "/acervo/conta", label: "Minha conta" },
+          ...NAV_PUBLICA,
+        ]
+      : NAV_PUBLICA;
+
+  const autenticado = isAdmin || isClienteAtivo;
 
   return (
     <motion.header
@@ -167,7 +188,7 @@ export function Header({ isClienteAtivo }: { isClienteAtivo: boolean }) {
         </nav>
 
         <div className="hidden md:block">
-          {isClienteAtivo ? (
+          {autenticado ? (
             <form action={sair}>
               <button type="submit" className="label link-quiet">
                 Sair
@@ -220,7 +241,7 @@ export function Header({ isClienteAtivo }: { isClienteAtivo: boolean }) {
               className="mt-2 border-t pt-4"
               style={{ borderColor: "var(--color-border)" }}
             >
-              {isClienteAtivo ? (
+              {autenticado ? (
                 <form action={sair}>
                   <button type="submit" className="label link-quiet py-3">
                     Sair

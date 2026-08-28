@@ -5,6 +5,8 @@ import { notFound } from "next/navigation";
 import { WhatsappCta } from "@/components/contact/WhatsappCta";
 import { WatchCard } from "@/components/watch/WatchCard";
 import { WatchGallery } from "@/components/watch/WatchGallery";
+import { BarraPrevia } from "@/components/layout/BarraPrevia";
+import { usuarioAdmin } from "@/lib/db/admin-auth";
 import {
   buscarPecaDoCliente,
   listarPecasDoCliente,
@@ -55,6 +57,7 @@ export default async function WatchPage({
   const watch = await buscarPecaDoCliente(slug);
   if (!watch) notFound();
 
+  const admin = await usuarioAdmin();
   const name = watchFullName(watch);
   const related = (await listarPecasDoCliente())
     .filter((w) => w.slug !== watch.slug && w.available)
@@ -106,6 +109,8 @@ export default async function WatchPage({
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
+
+      {admin && <BarraPrevia />}
 
       <article className="mx-auto max-w-7xl px-6 pb-24 pt-32 md:px-16 md:pb-32 md:pt-44">
         <nav aria-label="Você está em" className="mb-10">
