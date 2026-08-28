@@ -17,9 +17,15 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { WatchCard } from "@/components/watch/WatchCard";
-import { FEATURED_WATCHES } from "@/lib/data/watches";
+import type { Watch } from "@/lib/types";
 
 interface WatchShowcaseProps {
+  /**
+   * As peças vêm por prop, do Server Component que consultou o banco. Assim
+   * este componente segue client (precisa de scroll e animação) sem arrastar
+   * acesso a dados para o navegador.
+   */
+  watches: readonly Watch[];
   eyebrow?: string;
   title: string;
   viewAllHref?: string;
@@ -27,12 +33,12 @@ interface WatchShowcaseProps {
 }
 
 export function WatchShowcase({
+  watches,
   eyebrow = "No cofre agora",
   title,
   viewAllHref = "/colecao",
   viewAllLabel = "Ver toda a coleção",
 }: WatchShowcaseProps) {
-  const watches = FEATURED_WATCHES;
 
   // sectionRef apenas no layout desktop — sempre montado em md+.
   const sectionRef = useRef<HTMLElement | null>(null);

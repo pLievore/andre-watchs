@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { CollectionGrid } from "@/components/collection/CollectionGrid";
-import { MOCK_WATCHES } from "@/lib/data/watches";
+import { listarPecas } from "@/lib/db/pecas";
 
 export const metadata: Metadata = {
   title: "Acervo",
@@ -9,7 +9,9 @@ export const metadata: Metadata = {
     "Relógios de luxo disponíveis na Andre Watches. Rolex e outras maisons premium do mercado secundário, com referência, condição e o que acompanha declarados peça a peça.",
 };
 
-export default function CollectionPage() {
+export default async function CollectionPage() {
+  const pecas = await listarPecas();
+
   return (
     <section className="mx-auto max-w-7xl px-6 pb-24 pt-32 md:px-16 md:pb-32 md:pt-44">
       <header className="flex flex-col gap-6">
@@ -35,7 +37,7 @@ export default function CollectionPage() {
         </p>
       </header>
 
-      <CollectionGrid watches={MOCK_WATCHES} />
+      <CollectionGrid watches={pecas} />
     </section>
   );
 }

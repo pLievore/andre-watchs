@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { WhatsappCta } from "@/components/contact/WhatsappCta";
 import { WatchCard } from "@/components/watch/WatchCard";
 import { WatchGallery } from "@/components/watch/WatchGallery";
-import { MOCK_WATCHES, findWatchBySlug } from "@/lib/data/watches";
+import { buscarPecaPorSlug, listarPecas, listarSlugs } from "@/lib/db/pecas";
 import {
   formatBracelet,
   formatCompleteness,
@@ -16,8 +16,8 @@ import {
 } from "@/lib/format";
 import { specValue, watchFullName } from "@/lib/types";
 
-export function generateStaticParams() {
-  return MOCK_WATCHES.map((w) => ({ slug: w.slug }));
+export async function generateStaticParams() {
+  return (await listarSlugs()).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -26,7 +26,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const watch = findWatchBySlug(slug);
+  const watch = await buscarPecaPorSlug(slug);
   if (!watch) return { title: "Peça não encontrada" };
 
   const name = watchFullName(watch);
@@ -45,13 +45,13 @@ export default async function WatchPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const watch = findWatchBySlug(slug);
+  const watch = await buscarPecaPorSlug(slug);
   if (!watch) notFound();
 
   const name = watchFullName(watch);
-  const related = MOCK_WATCHES.filter(
-    (w) => w.slug !== watch.slug && w.available,
-  ).slice(0, 3);
+  const related = (await listarPecas())
+    .filter((w) => w.slug !== watch.slug && w.available)
+    .slice(0, 3);
 
   // SPEC §10 — Schema.org Product. `mpn` recebe a referência quando existe.
   const jsonLd = {
