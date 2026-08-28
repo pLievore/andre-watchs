@@ -13,9 +13,10 @@ Todas idempotentes: rodar de novo não quebra nada.
 | `supabase/schema.sql` | `pecas`, `fotos`, tipos, RLS ligado | ✅ |
 | `supabase/fase-2.sql` | `clientes`, `solicitacoes_acesso`, fecha o acervo | ✅ 2026-08-28 |
 | `supabase/fase-4.sql` | enum `estado_peca`, bucket `pecas`, ordem única de foto | ✅ 2026-08-28 |
+| `supabase/fase-5.sql` | função transacional para reordenar fotos | ✅ 2026-08-28 |
 
 ```bash
-node scripts/aplicar-sql.mjs supabase/fase-4.sql
+node scripts/aplicar-sql.mjs supabase/fase-5.sql
 ```
 
 Usa a `DIRECT_URL` (porta 5432, modo sessão) e envia o arquivo inteiro numa
@@ -109,9 +110,10 @@ exclui peça ou foto tem que remover os objetos do bucket na mesma operação �
 é o que `excluirPeca` e `excluirFoto` fazem. Sem isso o bucket vira depósito de
 imagem órfã que nenhuma tela consegue mais listar nem apagar.
 
-`fotos_ordem_unica (peca_id, ordem)` impede duas fotos disputando a capa. Como
-consequência, trocar duas de lugar precisa de um passo intermediário — o
-`moverFoto` desvia uma para `-1` antes de fazer a troca.
+`fotos_ordem_unica (peca_id, ordem)` impede duas fotos disputando a capa e é
+`DEFERRABLE`, para que duas posições possam trocar no mesmo statement. A função
+`mover_foto` de `fase-5.sql` faz essa troca em uma transação e usa advisory lock
+por peça: toques concorrentes são serializados e nunca deixam ordem temporária.
 
 ### Storage: bucket `pecas`
 
@@ -125,6 +127,13 @@ por peça faria dezenas de idas ao Storage só para montar o acervo.
 
 Limites no próprio bucket (10 MB, só imagem): validação que a aplicação não
 pode esquecer de fazer.
+
+No painel, upload usa URL assinada de escrita. Uma Server Action autenticada
+reserva caminhos aleatórios, o navegador envia os bytes diretamente ao bucket
+e outra ação verifica os objetos antes de inserir todas as linhas de `fotos`.
+Assim arquivos acima de 1 MB não atravessam o limite de payload das Server
+Actions. Falha parcial remove os objetos; upload abandonado é recolhido numa
+tentativa posterior após a janela de duas horas.
 
 ### `clientes`
 

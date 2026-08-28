@@ -102,8 +102,12 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
   foto remove os objetos do bucket na mesma operação, senão sobra imagem órfã
   que nenhuma tela alcança.
 - `ordem = 0` é a capa do card, `1` é o crossfade do hover, o resto é galeria.
-  A constraint `fotos_ordem_unica` impede empate, então trocar duas de lugar
-  exige o desvio por `-1` que o `moverFoto` faz.
+  A constraint `fotos_ordem_unica` é deferrable. A troca acontece na função
+  transacional `mover_foto` (`fase-5.sql`), com lock por peça; não recrie a
+  sequência de três updates nem use uma ordem temporária `-1`.
+- Os bytes de upload **não passam por Server Action** (limite padrão de 1 MB do
+  Next). Cadastro e edição usam o mesmo fluxo: ação autenticada assina os
+  caminhos, o navegador envia ao bucket e outra ação confirma e registra.
 
 ## Stack (travada — ver SPEC §2.1)
 

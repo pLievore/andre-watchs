@@ -17,18 +17,17 @@
 | 3.2 | Login e middleware reconhecem admin | ✅ |
 | 3.3 | `/painel` — aprovar/recusar pedidos de acesso | ✅ |
 | 3.4 | `/painel/clientes` — listar e mudar status | ✅ |
-| 3.5 | `/painel/pecas` — listar e editar (sem foto ainda) | ✅ validado com sessão de admin |
-| 3.6 | Upload de foto (recorte, WebP, tamanhos) | ⬜ |
-| 3.7 | Criar peça nova pelo painel | ⬜ |
+| 3.5 | `/painel/pecas` — listar e editar | ✅ validado com sessão de admin |
+| 3.6 | Upload de foto (bucket privado, até 10 MB) | ✅ validado com JPEG de 4,34 MB |
+| 3.7 | Criar peça nova pelo painel | ✅ já aceita fotos no cadastro |
 | 3.8 | Convites por link (uso único, 7 dias) | ⬜ |
 | 3.10 | Casca própria do painel (route groups) | ✅ |
-| 3.9 | Verificação | 🟡 porta, peças e clientes validados; falta fotos e convites |
+| 3.9 | Verificação | 🟡 porta, peças, clientes e fotos validados; falta convite |
 
 Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluído
 
-3.6 a 3.8 ficam para uma próxima entrega: cada um é um projeto à parte (upload
-pede bucket de Storage e pipeline de imagem; convite pede token com validade).
-Registrado aqui para não virar surpresa depois.
+O 3.8 fica para uma próxima entrega: convite pede token de uso único com
+validade e uma tabela própria. Registrado aqui para não virar surpresa depois.
 
 ---
 
@@ -60,10 +59,11 @@ admin, pula a checagem de `clientes` e manda pra `/painel`. Se não for, o
 fluxo é exatamente o de antes.
 
 **Middleware**: `/acervo` e `/painel` viraram checagens independentes.
-`/acervo` continua exatamente como na Fase 2 (cliente com status `ativo`,
-sem exceção nem para o admin — se ele quiser ver o acervo como cliente,
-precisa de cadastro como qualquer um). `/painel` exige sessão **e**
-`isAdminEmail()`, e não olha `clientes` nenhuma vez.
+`/acervo` continua exatamente como na Fase 2 para clientes, mas o admin também
+pode abrir o acervo a partir do painel sem ganhar uma linha falsa em
+`clientes`. `/painel` exige sessão **e** `isAdminEmail()`, e não olha
+`clientes` nenhuma vez. As portas são separadas: `/acesso` para cliente e
+`/painel/entrar` para o dono.
 
 `destinoSeguroAposLogin` (em `src/lib/rotas.ts`) ganhou um segundo parâmetro
 (destino padrão) e passou a aceitar `/painel` como área interna válida, além
@@ -93,28 +93,37 @@ painel pra ver a fila.
 
 ## 3.4 — `/painel/clientes`
 
-Lista nome, e-mail, telefone e último acesso. Cada linha tem um `<select>`
-com os quatro status e um botão de salvar — sem JavaScript de mais, é
-`<form>` com Server Action, igual ao resto do site.
-
-Não tem geração de convite nem cadastro direto por aqui ainda — cadastro
-direto continua sendo `scripts/criar-cliente.mjs` até o 3.8 decidir se convite
-substitui o script ou convive com ele.
+Lista nome, e-mail, telefone e último acesso, com busca e os quatro status. A
+ficha permite editar cadastro, trocar o e-mail de login nos dois lugares em que
+ele vive, redefinir senha e excluir cadastro errado. Também existe cadastro
+direto pelo painel. Só a geração de convite ainda não foi construída.
 
 ---
 
 ## 3.5 — `/painel/pecas`
 
-Lista todas as peças (`dbAdmin`, reaproveitando `CAMPOS`/`paraWatch` de
-`src/lib/db/pecas.ts` — a tradução banco↔`Watch` continua sendo só ali, o
-painel não reinventa). Cada peça abre em `/painel/pecas/[slug]` com um
-formulário para todos os campos de `pecas` (marca, modelo, condição,
-integralidade, specs, preço, disponível, consignada, história, notas).
+Lista todas as peças e deixa claro o estado comercial: disponível, em
+negociação ou vendida. Cada peça abre em `/painel/pecas/[slug]` com formulário
+completo, gerenciamento de fotos e exclusão coordenada entre banco e Storage.
 
-**Sem criar peça nova e sem upload de foto nesta entrega** (3.6/3.7). Editar
-o que já existe já tira o Andre de precisar pedir pra alguém rodar SQL a cada
-peça vendida ou reprecificada — que é o efeito mais imediato. Criar peça do
-zero sem conseguir subir foto seria uma tela pela metade.
+## 3.6 — Fotos
+
+O bucket `pecas` é privado, limitado a oito imagens por peça e 10 MB por
+arquivo. Cadastro e edição compartilham o mesmo fluxo de upload: uma Server
+Action autenticada cria os caminhos assinados, o navegador envia os bytes
+direto ao Storage e outra ação confirma os objetos antes de inserir as linhas.
+Isso evita o limite de 1 MB das Server Actions sem aumentar o limite global.
+
+A primeira foto é capa, a segunda é o hover e as demais são galeria. A tela
+troca a ordem imediatamente com `useOptimistic` e anima `layout`; a função SQL
+`mover_foto` consolida a troca em transação e serializa concorrência por peça.
+
+## 3.7 — Criar peça
+
+`/painel/pecas/nova` pede apenas o que está confirmado quando a peça chega e já
+aceita até oito fotos. A peça é criada primeiro; se a rede falhar durante as
+imagens, ela permanece cadastrada sem foto e a interface leva à tentativa de
+upload, sem duplicar o registro.
 
 ---
 
@@ -128,10 +137,14 @@ zero sem conseguir subir foto seria uma tela pela metade.
 - [x] Recusar pedido: some da fila de pendentes, some para a lista de recusados
 - [x] Mudar status de cliente em `/painel/clientes` reflete no acesso dele a `/acervo` (desativar tira o acesso)
 - [x] Editar peça em `/painel/pecas/[slug]` reflete no `/acervo` e na PDP
-- [x] `/acervo` continua exigindo `clientes.status = 'ativo'` mesmo para o e-mail do admin, sem exceção
+- [x] Cliente não ativo continua barrado; admin abre o acervo pelo caminho de leitura `secret`
+- [x] Criar peça com três JPEGs de 4,34 MB registra arquivos e ordens 0, 1, 2
+- [x] Oito toques no mesmo frame disparam só uma troca otimista
+- [x] 30 movimentos concorrentes mantêm ordens únicas e contínuas
+- [x] Excluir a peça de teste remove as linhas e os objetos do Storage
 
 Verificado em local em 2026-08-28 com o e-mail de teste já cadastrado
-(`ADMIN_EMAILS`) e um pedido/cliente descartáveis, removidos depois.
+(`ADMIN_EMAILS`), um pedido/cliente e uma peça descartáveis, removidos depois.
 
 ---
 

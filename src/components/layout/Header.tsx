@@ -28,7 +28,7 @@ import {
 } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 import { sair } from "@/app/(site)/acesso/actions";
 
@@ -76,16 +76,19 @@ export function Header({
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
   const [menuAberto, setMenuAberto] = useState(false);
-  /** 1 = papel. Sem palco na página, é onde fica e nunca sai. */
-  const progress = useMotionValue(1);
+  /**
+   * 1 = papel. A home já nasce em 0 para o HTML inicial não piscar claro antes
+   * de o efeito encontrar o palco; a medição do DOM continua sendo a verdade.
+   */
+  const progress = useMotionValue(pathname === "/" ? 0 : 1);
 
   // Trocar de rota fecha o menu do celular — sem isso ele ficaria aberto por
   // cima da página nova depois de um clique num link.
-  useEffect(() => {
+  useLayoutEffect(() => {
     setMenuAberto(false);
   }, [pathname]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const hero = document.querySelector<HTMLElement>("[data-stage-hero]");
     if (!hero) {
       progress.set(1);
@@ -105,11 +108,11 @@ export function Header({
     const update = () => {
       const rect = hero.getBoundingClientRect();
       const consumed = hero.offsetHeight - window.innerHeight;
-      if (consumed <= 0) {
-        progress.set(1);
-        return;
-      }
-      progress.set(Math.min(1, Math.max(0, -rect.top / consumed)));
+      // No desktop, `consumed` é ~150vh e continua exatamente como antes. No
+      // mobile o hero tem uma tela e não sobra distância de scroll; 60vh evita
+      // que diferenças do viewport do iOS comprimam a virada em um degrau.
+      const alcance = Math.max(consumed, window.innerHeight * 0.6);
+      progress.set(Math.min(1, Math.max(0, -rect.top / alcance)));
     };
 
     update();

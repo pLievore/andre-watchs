@@ -12,17 +12,28 @@
  * sempre.
  */
 
+import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
-import { useActionState, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
+import {
+  type FormEvent,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 
 import {
-  enviarFotos,
   excluirFoto,
   moverFoto,
   salvarAlt,
   type EstadoFoto,
 } from "../fotos-actions";
+import { MAX_FOTOS } from "../fotos-config";
+import {
+  enviarArquivosDaPeca,
+  type ProgressoUpload,
+} from "../upload-client";
 
 export interface FotoPainel {
   id: string;
@@ -30,8 +41,6 @@ export interface FotoPainel {
   alt: string;
   ordem: number;
 }
-
-const MAX_FOTOS = 8;
 
 function papelDa(indice: number): string {
   return indice === 0
@@ -41,8 +50,24 @@ function papelDa(indice: number): string {
       : "Galeria";
 }
 
-function Enviar({ vazio }: { vazio: boolean }) {
-  const { pending } = useFormStatus();
+function Enviar({
+  vazio,
+  pending,
+  progresso,
+}: {
+  vazio: boolean;
+  pending: boolean;
+  progresso: ProgressoUpload | null;
+}) {
+  const texto =
+    progresso?.etapa === "registrando"
+      ? "Registrando fotos…"
+      : progresso?.etapa === "enviando"
+        ? `Enviando ${progresso.concluidas} de ${progresso.total}…`
+        : pending
+          ? "Preparando fotos…"
+          : "Enviar fotos";
+
   return (
     <button
       type="submit"
@@ -50,9 +75,27 @@ function Enviar({ vazio }: { vazio: boolean }) {
       className="btn btn-primary"
       style={{ opacity: vazio && !pending ? 0.5 : 1 }}
     >
-      {pending ? "Enviando…" : "Enviar fotos"}
+      {texto}
     </button>
   );
+}
+
+type MovimentoOtimista = { id: string; direcao: "cima" | "baixo" };
+
+function reordenar(
+  fotos: FotoPainel[],
+  { id, direcao }: MovimentoOtimista,
+): FotoPainel[] {
+  const atual = fotos.findIndex((foto) => foto.id === id);
+  const destino = direcao === "cima" ? atual - 1 : atual + 1;
+  if (atual < 0 || destino < 0 || destino >= fotos.length) return fotos;
+
+  const proximas = [...fotos];
+  [proximas[atual], proximas[destino]] = [
+    proximas[destino]!,
+    proximas[atual]!,
+  ];
+  return proximas;
 }
 
 export function GerenciadorFotos({
@@ -62,21 +105,72 @@ export function GerenciadorFotos({
   slug: string;
   fotos: FotoPainel[];
 }) {
-  const [estado, acao] = useActionState<EstadoFoto, FormData>(enviarFotos, {});
+  const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const [fotosOtimistas, moverOtimista] = useOptimistic(fotos, reordenar);
+  const [movendo, iniciarMovimento] = useTransition();
+  const [estado, setEstado] = useState<EstadoFoto>({});
+  const [enviando, setEnviando] = useState(false);
+  const [progresso, setProgresso] = useState<ProgressoUpload | null>(null);
   const [escolhidas, setEscolhidas] = useState(0);
   const entrada = useRef<HTMLInputElement>(null);
-  const restam = MAX_FOTOS - fotos.length;
+  const movimentoEmCurso = useRef(false);
+  const restam = MAX_FOTOS - fotosOtimistas.length;
+
+  async function aoEnviar(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (enviando) return;
+
+    const arquivos = Array.from(entrada.current?.files ?? []);
+    setEstado({});
+    setProgresso(null);
+    setEnviando(true);
+
+    const resultado = await enviarArquivosDaPeca({
+      slug,
+      arquivos,
+      jaTem: fotos.length,
+      onProgresso: setProgresso,
+    });
+
+    setEstado(resultado);
+    setEnviando(false);
+    if (resultado.sucesso) {
+      setEscolhidas(0);
+      setProgresso(null);
+      if (entrada.current) entrada.current.value = "";
+      router.refresh();
+    }
+  }
+
+  function aoMover(id: string, direcao: "cima" | "baixo") {
+    // O ref fecha também a janela entre dois toques no mesmo frame, antes de o
+    // React redesenhar os botões com `disabled`.
+    if (movendo || movimentoEmCurso.current) return;
+    movimentoEmCurso.current = true;
+
+    iniciarMovimento(async () => {
+      moverOtimista({ id, direcao });
+      try {
+        const resultado = await moverFoto(id, slug, direcao);
+        if (resultado.erro) setEstado({ erro: resultado.erro });
+        router.refresh();
+      } finally {
+        movimentoEmCurso.current = false;
+      }
+    });
+  }
 
   return (
     <section className="flex flex-col gap-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="label">Fotos</h2>
         <span className="meta">
-          {fotos.length} de {MAX_FOTOS}
+          {fotosOtimistas.length} de {MAX_FOTOS}
         </span>
       </div>
 
-      {fotos.length === 0 && (
+      {fotosOtimistas.length === 0 && (
         <p
           className="border px-5 py-4 text-sm"
           style={{
@@ -89,11 +183,18 @@ export function GerenciadorFotos({
         </p>
       )}
 
-      {fotos.length > 0 && (
+      {fotosOtimistas.length > 0 && (
         <ul className="flex flex-col gap-4">
-          {fotos.map((f, i) => (
-            <li
+          {fotosOtimistas.map((f, i) => (
+            <motion.li
               key={f.id}
+              layout={!reduceMotion}
+              transition={{
+                layout: {
+                  duration: reduceMotion ? 0 : 0.32,
+                  ease: [0.22, 1, 0.36, 1],
+                },
+              }}
               className="flex flex-col gap-4 border p-4 sm:flex-row"
               style={{ borderColor: "var(--color-border)" }}
             >
@@ -162,13 +263,11 @@ export function GerenciadorFotos({
                 </form>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <form action={moverFoto}>
-                    <input type="hidden" name="id" value={f.id} />
-                    <input type="hidden" name="slug" value={slug} />
-                    <input type="hidden" name="direcao" value="cima" />
+                  <div>
                     <button
-                      type="submit"
-                      disabled={i === 0}
+                      type="button"
+                      onClick={() => aoMover(f.id, "cima")}
+                      disabled={i === 0 || movendo}
                       aria-label="Mover para cima"
                       className="label border px-3 disabled:opacity-30"
                       style={{
@@ -178,15 +277,13 @@ export function GerenciadorFotos({
                     >
                       ↑
                     </button>
-                  </form>
+                  </div>
 
-                  <form action={moverFoto}>
-                    <input type="hidden" name="id" value={f.id} />
-                    <input type="hidden" name="slug" value={slug} />
-                    <input type="hidden" name="direcao" value="baixo" />
+                  <div>
                     <button
-                      type="submit"
-                      disabled={i === fotos.length - 1}
+                      type="button"
+                      onClick={() => aoMover(f.id, "baixo")}
+                      disabled={i === fotosOtimistas.length - 1 || movendo}
                       aria-label="Mover para baixo"
                       className="label border px-3 disabled:opacity-30"
                       style={{
@@ -196,7 +293,7 @@ export function GerenciadorFotos({
                     >
                       ↓
                     </button>
-                  </form>
+                  </div>
 
                   <form
                     action={excluirFoto}
@@ -219,20 +316,17 @@ export function GerenciadorFotos({
                   </form>
                 </div>
               </div>
-            </li>
+            </motion.li>
           ))}
         </ul>
       )}
 
       {restam > 0 ? (
         <form
-          action={acao}
+          onSubmit={aoEnviar}
           className="flex flex-col gap-4 border border-dashed p-5"
           style={{ borderColor: "var(--color-border)" }}
-          onSubmit={() => setEscolhidas(0)}
         >
-          <input type="hidden" name="slug" value={slug} />
-
           <div className="flex flex-col gap-1.5">
             <label htmlFor="fotos" className="label">
               Adicionar fotos
@@ -244,18 +338,24 @@ export function GerenciadorFotos({
               type="file"
               accept="image/jpeg,image/png,image/webp,image/avif"
               multiple
+              disabled={enviando}
               onChange={(e) => setEscolhidas(e.target.files?.length ?? 0)}
               className="text-sm"
               style={{ color: "var(--color-foreground)" }}
             />
             <span className="meta">
               JPG, PNG, WebP ou AVIF, até 10 MB cada. Cabem mais {restam}.
-              {fotos.length === 0 && " A primeira que entrar vira a capa."}
+              {fotosOtimistas.length === 0 &&
+                " A primeira que entrar vira a capa."}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <Enviar vazio={escolhidas === 0} />
+            <Enviar
+              vazio={escolhidas === 0}
+              pending={enviando}
+              progresso={progresso}
+            />
             {escolhidas > 0 && (
               <span className="meta">
                 {escolhidas} selecionada{escolhidas === 1 ? "" : "s"}

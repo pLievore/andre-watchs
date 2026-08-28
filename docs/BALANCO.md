@@ -15,24 +15,25 @@
 O **clube funciona**: cliente entra, vê o acervo, e ninguém de fora vê nada.
 Isso está validado ponta a ponta, inclusive pela API.
 
-O **painel está pela metade**. Ele gerencia acesso de pessoas, mas quase não
-gerencia o negócio: não cria peça, não troca foto, e não mostra nada sobre
-quem olhou o quê — que é a parte que o PLANO chamava de "a que mais vale
-dinheiro".
+O **núcleo operacional do painel funciona**: cria e edita peças, gerencia suas
+fotos e mantém o cadastro completo de clientes. O que ainda não existe é a
+camada de inteligência — saber quem olhou o quê e transformar a ida ao
+WhatsApp em negociação —, que o PLANO chamava de "a que mais vale dinheiro".
 
 ---
 
 ## Peças
 
-> **Atualizado em 2026-08-28**: esta seção foi resolvida. Ver `supabase/fase-4.sql`.
+> **Atualizado em 2026-08-28**: esta seção foi resolvida. Ver
+> `supabase/fase-4.sql` e `supabase/fase-5.sql`.
 
 | Prometido (§7) | Existe? |
 |---|---|
 | Editar peça | ✅ formulário completo · botão "Editar" explícito na lista |
 | Estado da peça | ✅ **três** estados: disponível, em negociação, vendida |
 | Marcar consignada | ✅ no formulário |
-| **Criar peça nova** | ✅ `/painel/pecas/nova` |
-| **Upload de foto** | ✅ múltiplas, ordem, alt, exclusão — bucket privado |
+| **Criar peça nova** | ✅ `/painel/pecas/nova`, já com seleção de fotos |
+| **Upload de foto** | ✅ múltiplas, até 10 MB cada, ordem, alt automático e exclusão — bucket privado |
 | Excluir peça | ✅ com confirmação por digitação do nome |
 | Arquivar | ⚠️ "vendida" cobre o caso; arquivar de fato não existe |
 
@@ -44,6 +45,12 @@ trigger, para que nenhuma consulta ainda não migrada passe a mentir.
 **Fotos ficam em bucket privado.** Se fossem públicas, bastaria compartilhar o
 endereço da imagem para furar o clube inteiro sem login. As URLs chegam ao
 cliente como link assinado de uma hora, gerado no servidor (`src/lib/db/fotos.ts`).
+
+No painel, os bytes seguem do navegador direto ao Storage por URL assinada;
+não passam pela Server Action de 1 MB. O mesmo fluxo atende cadastro e edição,
+limpa falhas parciais e só registra a foto depois de confirmar o objeto. A
+ordem muda imediatamente na tela e é consolidada pela função transacional
+`mover_foto`, que serializa toques concorrentes por peça.
 
 ---
 
@@ -121,17 +128,14 @@ Os tipos enum de todas já estão no `schema.sql`.
 
 ## O que falta, em ordem de valor para o dono
 
-**1. Criar peça + upload de foto** — sem isso o painel não cumpre a promessa
-básica: o Andre continua dependente para cada peça nova. É o maior buraco.
-
-**2. Eventos e funil identificado** — a informação que o clube tornou possível
+**1. Eventos e funil identificado** — a informação que o clube tornou possível
 e que nenhum concorrente dele tem. Precisa da tabela `eventos`, do registro na
 PDP e no clique de WhatsApp, e das telas de leitura.
 
-**3. Interesses** — transforma o funil em pipeline de venda. Depende de 2.
+**2. Interesses** — transforma o funil em pipeline de venda. Depende de 1.
 
-**4. Convites por link** — completa o terceiro caminho de entrada. Menor valor
+**3. Convites por link** — completa o terceiro caminho de entrada. Menor valor
 imediato: os outros dois já resolvem o cadastro.
 
-**5. Arquivar peça** — hoje "vendida" cobre; só vira necessário se ele quiser
+**4. Arquivar peça** — hoje "vendida" cobre; só vira necessário se ele quiser
 tirar do registro sem apagar.

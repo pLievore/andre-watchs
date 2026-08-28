@@ -19,13 +19,13 @@ export default async function EditarPecaPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ nova?: string }>;
+  searchParams: Promise<{ nova?: string; fotos?: string }>;
 }) {
   const admin = await usuarioAdmin();
   if (!admin) redirect("/painel/entrar");
 
   const { slug } = await params;
-  const { nova } = await searchParams;
+  const { nova, fotos: fotosEnviadas } = await searchParams;
 
   // Lê pela chave secret: o RLS só libera leitura para cliente ativo, e o
   // admin não é cliente. Ver docs/BANCO.md.
@@ -80,7 +80,9 @@ export default async function EditarPecaPage({
             color: "var(--color-foreground)",
           }}
         >
-          Peça cadastrada. Agora as fotos — e o que faltar de especificação.
+          {fotosEnviadas
+            ? `Peça cadastrada com ${fotosEnviadas} foto${fotosEnviadas === "1" ? "" : "s"}. Complete o que faltar de especificação.`
+            : "Peça cadastrada. Agora adicione as fotos e complete o que faltar de especificação."}
         </p>
       )}
 

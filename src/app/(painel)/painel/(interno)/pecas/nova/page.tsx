@@ -29,9 +29,9 @@ export default async function NovaPecaPage() {
           Cadastrar peça
         </h1>
         <p className="meta max-w-prose">
-          O básico agora; especificações e fotos na tela seguinte. Campo que
-          você não tem confirmado fica vazio — a vitrine mostra travessão, e
-          isso é melhor do que um dado errado.
+          O básico e as fotos agora; os detalhes podem ser completados na tela
+          seguinte. Campo que você não tem confirmado fica vazio — a vitrine
+          mostra travessão, e isso é melhor do que um dado errado.
         </p>
       </div>
 

@@ -4,8 +4,9 @@
 > seguir" em uma página. É o único documento que muda a cada entrega — se ele
 > discordar de outro, ele está certo e o outro está velho.
 >
-> **Última atualização**: 2026-08-28 (gestão de peças e de clientes completas,
-> portas de acesso separadas, fluxo do dono no site corrigido; falta o deploy)
+> **Última atualização**: 2026-08-28 (foto já entra no cadastro por upload
+> direto, reordenação ficou otimista e atômica, Header mobile corrigido; falta
+> o deploy)
 
 ---
 
@@ -42,6 +43,14 @@ nome e telefone, e troca a própria senha. É a mitigação do risco D24
 header, que ganhou também um menu de celular — não existia navegação nenhuma
 em tela pequena antes disso.
 
+O painel local também cobre o núcleo da Fase 3: cadastro e edição completos de
+peças e clientes. Foto pode ser escolhida já na criação da peça e vai direto ao
+bucket privado por URL assinada, sem atravessar o limite de 1 MB da Server
+Action. Cadastro e edição compartilham o fluxo. A ordenação é otimista na tela
+e transacional no banco (`supabase/fase-5.sql`). Testado no Chrome com três
+JPEGs de 4,34 MB, rajada de oito toques e 30 movimentos concorrentes; o cadastro
+descartável e seus objetos foram removidos ao fim.
+
 ### ⚠️ Estado inconsistente entre banco e produção
 
 O Supabase é um projeto só, compartilhado por local e produção — não há
@@ -72,21 +81,19 @@ deploy.
 | **Fotos são do Unsplash** | Não são peças da casa. Bloqueiam publicação real | SPEC D8 |
 | **WhatsApp cai no Instagram** | `NEXT_PUBLIC_WHATSAPP_NUMBER` vazio; o CTA usa o Instagram como alternativa | SPEC D7 |
 | **Produção com RLS de Fase 2 e código de Fase 1** | Deploy pendente após a migração já aplicada | ver acima |
-| **`fase-4.sql` já aplicada no banco** | Mesma situação da Fase 2: o banco tem `estado` e o bucket `pecas`, a produção ainda não tem o código que os usa | ver acima |
+| **`fase-4.sql` e `fase-5.sql` já aplicadas no banco** | Mesma situação da Fase 2: o banco tem `estado`, o bucket `pecas` e a troca atômica de ordem; produção ainda não tem o código que os usa | ver acima |
 
 ---
 
 ## Fase atual
 
-**Fase 2 — Porta.** Autenticação, middleware, `/acesso`. O acervo fica privado
-e a home vira landing institucional. **É aqui que o produto vira clube.**
+**Fase 3 — Painel, em local.** A Porta da Fase 2 está implementada e verificada;
+o núcleo do painel de peças e clientes também. Falta o convite por link para
+fechar todos os caminhos previstos da Fase 3 e falta publicar o conjunto com
+`git push` + `npx vercel --prod` (o banco já está migrado; é só o código que
+continua local).
 
-Implementada e verificada em local. Falta: `git push` + `npx vercel --prod` (o
-banco já está migrado, é só o código que falta subir), e o Andre cadastrar os
-primeiros clientes reais com `scripts/criar-cliente.mjs` — o painel de
-cadastro é Fase 3.
-
-Progresso: ver [FASE-2.md](FASE-2.md).
+Detalhes do painel: ver [FASE-3.md](FASE-3.md).
 
 ## Fases
 

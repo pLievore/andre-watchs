@@ -4,8 +4,9 @@
  * Fotos das peças — envio, ordem, legenda e exclusão.
  *
  * Arquivo separado de `actions.ts` porque a mecânica é outra: aqui se lida com
- * bytes, com o Storage e com a consistência entre dois lugares (o bucket e a
- * tabela `fotos`), que podem divergir se um dos dois falhar.
+ * Storage e com a consistência entre dois lugares (o bucket e a tabela
+ * `fotos`), que podem divergir se um dos dois falhar. Os bytes seguem direto
+ * do navegador ao bucket por URL assinada; as ações só autorizam e registram.
  *
  * **A ordem é o contrato com a vitrine.** `ordem = 0` é a capa do card; `1` é a
  * foto do crossfade no hover; o resto é galeria. Quem reordena aqui está
@@ -18,13 +19,13 @@ import { revalidatePath } from "next/cache";
 import { dbAdmin } from "@/lib/db/admin";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
 
-export type EstadoFoto = { erro?: string; sucesso?: string };
+import {
+  MAX_FOTOS,
+  validarArquivosFoto,
+  type MetadadosArquivoFoto,
+} from "./fotos-config";
 
-/** O bucket já recusa o resto, mas errar cedo dá mensagem melhor que erro 400. */
-const TIPOS = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-const TAMANHO_MAX = 10 * 1024 * 1024;
-/** Oito fotos já contam a peça inteira; além disso a PDP vira rolagem infinita. */
-const MAX_FOTOS = 8;
+export type EstadoFoto = { erro?: string; sucesso?: string };
 
 function extensaoDe(tipo: string): string {
   return tipo === "image/png"
@@ -39,7 +40,7 @@ function extensaoDe(tipo: string): string {
 async function pecaPorSlug(slug: string) {
   const { data } = await dbAdmin
     .from("pecas")
-    .select("id, slug, marca, modelo")
+    .select("id, slug, marca, modelo, referencia")
     .eq("slug", slug)
     .maybeSingle();
   return data;
@@ -53,39 +54,34 @@ function revalidar(slug: string) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Enviar
+// Autorizar, enviar direto ao Storage e registrar
 // ─────────────────────────────────────────────────────────────────────────────
 
+export type UploadAssinado = {
+  caminho: string;
+  token: string;
+};
+
+export type PreparacaoUpload = {
+  erro?: string;
+  uploads?: UploadAssinado[];
+};
+
 /**
- * Recebe uma ou mais fotos e as anexa ao fim da ordem.
+ * Cria URLs assinadas sem receber os bytes da foto.
  *
- * Aceita várias de uma vez porque o Andre fotografa a peça inteira numa sessão
- * só — obrigá-lo a repetir o fluxo oito vezes seria o tipo de atrito que faz
- * alguém deixar de cadastrar direito.
+ * A autenticação de admin aqui é indispensável: a URL dá poder de escrita no
+ * bucket privado durante duas horas, mesmo para quem não tem sessão Supabase.
  */
-export async function enviarFotos(
-  _anterior: EstadoFoto,
-  form: FormData,
-): Promise<EstadoFoto> {
+export async function prepararEnvioFotos(
+  slug: string,
+  arquivos: MetadadosArquivoFoto[],
+): Promise<PreparacaoUpload> {
   const admin = await usuarioAdmin();
   if (!admin) return { erro: "Sessão expirada. Entre novamente." };
 
-  const slug = String(form.get("slug") ?? "").trim();
   const peca = await pecaPorSlug(slug);
   if (!peca) return { erro: "Peça não encontrada." };
-
-  const arquivos = form
-    .getAll("fotos")
-    .filter((f): f is File => f instanceof File && f.size > 0);
-
-  if (arquivos.length === 0) return { erro: "Escolha ao menos uma foto." };
-
-  const { data: existentes } = await dbAdmin
-    .from("fotos")
-    .select("ordem")
-    .eq("peca_id", peca.id)
-    .order("ordem", { ascending: false })
-    .limit(1);
 
   const { count } = await dbAdmin
     .from("fotos")
@@ -93,64 +89,129 @@ export async function enviarFotos(
     .eq("peca_id", peca.id);
 
   const jaTem = count ?? 0;
-  if (jaTem + arquivos.length > MAX_FOTOS) {
-    return {
-      erro: `A peça aceita ${MAX_FOTOS} fotos. Já tem ${jaTem} — cabem mais ${MAX_FOTOS - jaTem}.`,
-    };
-  }
+  const erroValidacao = validarArquivosFoto(arquivos, jaTem);
+  if (erroValidacao) return { erro: erroValidacao };
 
-  let proximaOrdem = (existentes?.[0]?.ordem ?? -1) + 1;
-  const enviados: string[] = [];
+  // Se uma aba foi fechada depois do PUT e antes do registro, a próxima
+  // tentativa recolhe o objeto. Duas horas protegem uploads ainda em curso.
+  await limparOrfaosAntigos(peca.slug, peca.id);
+
+  const uploads: UploadAssinado[] = [];
 
   for (const arquivo of arquivos) {
-    if (!TIPOS.includes(arquivo.type)) {
-      await limpar(enviados);
-      return { erro: `"${arquivo.name}" não é JPG, PNG, WebP nem AVIF.` };
-    }
-    if (arquivo.size > TAMANHO_MAX) {
-      await limpar(enviados);
-      return { erro: `"${arquivo.name}" passa de 10 MB.` };
-    }
-
     // Nome aleatório, nunca o do arquivo original: nome de origem carrega
     // acento, espaço e às vezes o nome do cliente que mandou a foto.
-    const caminho = `${peca.slug}/${crypto.randomUUID()}.${extensaoDe(arquivo.type)}`;
-
-    const { error: erroUpload } = await dbAdmin.storage
+    const caminho = `${peca.slug}/${crypto.randomUUID()}.${extensaoDe(arquivo.tipo)}`;
+    const { data, error } = await dbAdmin.storage
       .from("pecas")
-      .upload(caminho, arquivo, {
-        contentType: arquivo.type,
-        cacheControl: "3600",
-        upsert: false,
-      });
+      .createSignedUploadUrl(caminho, { upsert: false });
 
-    if (erroUpload) {
-      console.error("Falha no upload", erroUpload.message);
-      await limpar(enviados);
-      return { erro: "Não foi possível enviar. Tente de novo." };
+    if (error || !data) {
+      console.error("Falha ao assinar upload", error?.message);
+      return { erro: "Não foi possível preparar o envio. Tente de novo." };
     }
-    enviados.push(caminho);
-
-    const { error: erroLinha } = await dbAdmin.from("fotos").insert({
-      peca_id: peca.id,
-      url: caminho,
-      // Alt provisório, honesto e útil no leitor de tela; a UI deixa editar.
-      alt: `${peca.marca} ${peca.modelo}`,
-      ordem: proximaOrdem++,
+    uploads.push({
+      caminho,
+      token: data.token,
     });
+  }
 
-    if (erroLinha) {
-      console.error("Falha ao registrar foto", erroLinha.message);
-      // O arquivo subiu mas a linha não entrou: sem isto o bucket ficaria com
-      // uma imagem que nenhuma tela consegue mais alcançar nem apagar.
-      await limpar(enviados);
-      return { erro: "Não foi possível registrar a foto. Tente de novo." };
-    }
+  return { uploads };
+}
+
+/**
+ * Depois dos PUTs, confirma que os objetos existem e grava todas as linhas em
+ * um único INSERT. Se o banco recusar, remove os objetos antes de responder.
+ */
+export async function registrarFotosEnviadas(
+  slug: string,
+  caminhos: string[],
+): Promise<EstadoFoto> {
+  const admin = await usuarioAdmin();
+  if (!admin) return { erro: "Sessão expirada. Entre novamente." };
+
+  const peca = await pecaPorSlug(slug);
+  if (!peca) return { erro: "Peça não encontrada." };
+
+  const unicos = Array.from(new Set(caminhos));
+  if (
+    unicos.length === 0 ||
+    unicos.length !== caminhos.length ||
+    unicos.length > MAX_FOTOS ||
+    unicos.some(
+      (caminho) =>
+        !caminho.startsWith(`${peca.slug}/`) ||
+        caminho.includes("..") ||
+        !/\.(?:jpe?g|png|webp|avif)$/i.test(caminho),
+    )
+  ) {
+    return { erro: "O conjunto de fotos é inválido. Selecione novamente." };
+  }
+
+  const verificacoes = await Promise.all(
+    unicos.map((caminho) => dbAdmin.storage.from("pecas").info(caminho)),
+  );
+  if (verificacoes.some(({ error }) => error)) {
+    await limpar(unicos);
+    return { erro: "Uma das fotos não chegou inteira. Tente de novo." };
+  }
+
+  const [{ data: existentes }, { count }] = await Promise.all([
+    dbAdmin
+      .from("fotos")
+      .select("ordem")
+      .eq("peca_id", peca.id)
+      .order("ordem", { ascending: false })
+      .limit(1),
+    dbAdmin
+      .from("fotos")
+      .select("id", { count: "exact", head: true })
+      .eq("peca_id", peca.id),
+  ]);
+
+  const jaTem = count ?? 0;
+  if (jaTem + unicos.length > MAX_FOTOS) {
+    await limpar(unicos);
+    return { erro: "A peça atingiu o limite de fotos durante o envio." };
+  }
+
+  const proximaOrdem = (existentes?.[0]?.ordem ?? -1) + 1;
+  const total = jaTem + unicos.length;
+  const linhas = unicos.map((caminho, indice) => ({
+    peca_id: peca.id,
+    url: caminho,
+    alt: altAutomatico(peca, proximaOrdem + indice + 1, total),
+    ordem: proximaOrdem + indice,
+  }));
+
+  const { error } = await dbAdmin.from("fotos").insert(linhas);
+
+  if (error) {
+    console.error("Falha ao registrar fotos", error.message);
+    await limpar(unicos);
+    return { erro: "Não foi possível registrar as fotos. Tente de novo." };
   }
 
   revalidar(slug);
-  const n = arquivos.length;
+  const n = unicos.length;
   return { sucesso: n === 1 ? "Foto enviada." : `${n} fotos enviadas.` };
+}
+
+/** Limpeza chamada pelo navegador quando um PUT ou o registro falha. */
+export async function descartarUploads(
+  slug: string,
+  caminhos: string[],
+): Promise<void> {
+  const admin = await usuarioAdmin();
+  if (!admin) return;
+
+  const validos = caminhos.filter(
+    (caminho) =>
+      caminho.startsWith(`${slug}/`) &&
+      !caminho.includes("..") &&
+      /\.(?:jpe?g|png|webp|avif)$/i.test(caminho),
+  );
+  await limpar(validos);
 }
 
 /** Desfaz uploads parciais para não deixar arquivo órfão no bucket. */
@@ -158,6 +219,42 @@ async function limpar(caminhos: string[]) {
   if (caminhos.length === 0) return;
   await dbAdmin.storage.from("pecas").remove(caminhos);
   await dbAdmin.from("fotos").delete().in("url", caminhos);
+}
+
+function altAutomatico(
+  peca: { marca: string; modelo: string; referencia: string | null },
+  posicao: number,
+  total: number,
+): string {
+  const referencia = peca.referencia ? ` ref. ${peca.referencia}` : "";
+  return `${peca.marca} ${peca.modelo}${referencia} — foto ${posicao} de ${total}`;
+}
+
+/** Recolhe upload abandonado por aba fechada, sem tocar em envio ainda válido. */
+async function limparOrfaosAntigos(slug: string, pecaId: string) {
+  const [{ data: objetos }, { data: linhas }] = await Promise.all([
+    dbAdmin.storage.from("pecas").list(slug, { limit: 100 }),
+    dbAdmin.from("fotos").select("url").eq("peca_id", pecaId),
+  ]);
+
+  const registrados = new Set((linhas ?? []).map((linha) => linha.url));
+  const limite = Date.now() - 2 * 60 * 60 * 1000;
+  const orfaos = (objetos ?? [])
+    .filter((objeto) => {
+      const caminho = `${slug}/${objeto.name}`;
+      const criadoEm = Date.parse(objeto.created_at ?? "");
+      return (
+        objeto.id &&
+        !registrados.has(caminho) &&
+        Number.isFinite(criadoEm) &&
+        criadoEm < limite
+      );
+    })
+    .map((objeto) => `${slug}/${objeto.name}`);
+
+  if (orfaos.length > 0) {
+    await dbAdmin.storage.from("pecas").remove(orfaos);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -170,46 +267,50 @@ async function limpar(caminhos: string[]) {
  * Troca de pares em vez de arrastar: o painel é usado no celular, com uma mão,
  * e drag-and-drop em tela sensível ao toque erra mais do que acerta.
  */
-export async function moverFoto(form: FormData): Promise<void> {
+export async function moverFoto(
+  id: string,
+  slug: string,
+  direcao: "cima" | "baixo",
+): Promise<EstadoFoto> {
   const admin = await usuarioAdmin();
-  if (!admin) return;
+  if (!admin) return { erro: "Sessão expirada. Entre novamente." };
 
-  const id = String(form.get("id") ?? "");
-  const slug = String(form.get("slug") ?? "");
-  const direcao = String(form.get("direcao") ?? "");
-  if (!id || !slug) return;
+  if (!id || !slug || !["cima", "baixo"].includes(direcao)) {
+    return { erro: "Movimento inválido." };
+  }
 
   const peca = await pecaPorSlug(slug);
-  if (!peca) return;
+  if (!peca) return { erro: "Peça não encontrada." };
 
-  const { data: fotos } = await dbAdmin
+  const { data: foto } = await dbAdmin
     .from("fotos")
-    .select("id, ordem")
-    .eq("peca_id", peca.id)
-    .order("ordem", { ascending: true });
+    .select("peca_id")
+    .eq("id", id)
+    .maybeSingle();
+  if (!foto || foto.peca_id !== peca.id) {
+    return { erro: "Foto não encontrada nesta peça." };
+  }
 
-  if (!fotos) return;
-  const i = fotos.findIndex((f) => f.id === id);
-  const j = direcao === "cima" ? i - 1 : i + 1;
+  /*
+   * Uma função SQL faz a troca numa transação e trava a peça. Além de não
+   * deixar uma foto presa em `ordem = -1` se o segundo UPDATE falhar, isso
+   * serializa dois cliques concorrentes sobre a mesma galeria.
+   */
+  const { error } = await dbAdmin.rpc("mover_foto", {
+    p_foto_id: id,
+    p_direcao: direcao,
+  });
 
-  const atual = fotos[i];
-  const vizinha = fotos[j];
-  if (!atual || !vizinha) return;
-
-  // A constraint de ordem é única por peça, então as duas linhas não podem
-  // ocupar o mesmo número nem por um instante. O desvio por -1 abre a vaga
-  // antes da troca — o supabase-js não expõe transação para adiar a checagem.
-  await dbAdmin.from("fotos").update({ ordem: -1 }).eq("id", atual.id);
-  await dbAdmin
-    .from("fotos")
-    .update({ ordem: atual.ordem })
-    .eq("id", vizinha.id);
-  await dbAdmin
-    .from("fotos")
-    .update({ ordem: vizinha.ordem })
-    .eq("id", atual.id);
+  if (error) {
+    console.error("Falha ao mover foto", {
+      code: error.code,
+      message: error.message,
+    });
+    return { erro: "Não foi possível reordenar. Tente de novo." };
+  }
 
   revalidar(slug);
+  return { sucesso: "Ordem atualizada." };
 }
 
 /**

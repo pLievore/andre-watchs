@@ -18,7 +18,7 @@ import { dbAdmin } from "@/lib/db/admin";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
 import type { WatchState } from "@/lib/types";
 
-export type EstadoPeca = { erro?: string; sucesso?: string };
+export type EstadoPeca = { erro?: string; sucesso?: string; slug?: string };
 
 const ESTADOS: readonly WatchState[] = ["disponivel", "reservada", "vendida"];
 
@@ -130,14 +130,16 @@ function camposDoForm(form: FormData) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Cria a peça e leva direto para a edição dela.
+ * Cria a peça e devolve o slug para o navegador enviar as fotos direto ao
+ * Storage. A navegação só acontece depois desse segundo passo.
  *
  * O formulário de criação pede só o mínimo — marca, modelo, preço, estado —
  * porque o momento de cadastrar é o momento em que a peça chegou na mão e o
  * Andre ainda não conferiu calibre nem ano de cartão. Exigir tudo de uma vez
  * empurraria para o palpite, que é exatamente o que o SPEC §1.3 proíbe.
  *
- * Depois de criada, a tela de edição já traz o envio de fotos.
+ * O arquivo nunca entra neste FormData: fotos de celular excedem o limite de
+ * corpo da Server Action. Ver `upload-client.ts`.
  */
 export async function criarPeca(
   _anterior: EstadoPeca,
@@ -171,8 +173,7 @@ export async function criarPeca(
   }
 
   revalidar(slug);
-  // `redirect` lança por dentro — tem que ser a última linha.
-  redirect(`/painel/pecas/${slug}?nova=1`);
+  return { sucesso: "Peça cadastrada.", slug };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
