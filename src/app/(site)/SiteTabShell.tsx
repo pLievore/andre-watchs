@@ -305,9 +305,7 @@ export function SiteTabShell({
       }
 
       if (targetIdx !== activeIdx) {
-        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-          try { navigator.vibrate(10); } catch {}
-        }
+        vibrar(12);
       }
 
       navegarParaAba(targetIdx, true);
