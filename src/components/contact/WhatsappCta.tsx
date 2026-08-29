@@ -12,10 +12,12 @@
 
 import Link from "next/link";
 
-/** Formato E.164 sem "+", como a wa.me exige. Ex.: "5511999999999". */
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
+export const STORE_WHATSAPP_NUMBER = "5542988706221";
+export const STORE_WHATSAPP_DISPLAY = "+55 42 98870-6221";
 
-const INSTAGRAM_URL = "https://instagram.com/andrewatchesbr";
+/** Formato E.164 sem "+", como a wa.me exige. */
+const WHATSAPP_NUMBER =
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || STORE_WHATSAPP_NUMBER;
 
 const SIGNATURE = "— enviado pelo site da Andre Watches";
 
@@ -30,15 +32,14 @@ interface WhatsappCtaProps {
   onClick?: () => void;
 }
 
-/** Monta a URL de destino: WhatsApp quando há número, Instagram como fallback. */
+/** Monta a URL de destino direta para o WhatsApp oficial da loja. */
 export function contactHref(context?: string): string {
   const message = [context, SIGNATURE].filter(Boolean).join("\n\n");
-  if (!WHATSAPP_NUMBER) return INSTAGRAM_URL;
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
 }
 
-/** Rótulo do canal ativo — usado onde o texto precisa nomear o canal. */
-export const CONTACT_CHANNEL = WHATSAPP_NUMBER ? "WhatsApp" : "Instagram";
+/** Rótulo do canal ativo oficial */
+export const CONTACT_CHANNEL = "WhatsApp";
 
 const VARIANT_CLASS: Record<WhatsappCtaVariant, string> = {
   primary: "btn btn-primary",

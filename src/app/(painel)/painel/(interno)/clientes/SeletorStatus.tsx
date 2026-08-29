@@ -106,7 +106,7 @@ export function SeletorStatus({ id, status }: { id: string; status: Status }) {
       {aberto && (
         <div
           role="menu"
-          className="absolute left-0 sm:left-auto sm:right-0 z-30 mt-1 w-64 max-w-[calc(100vw-2.5rem)] border shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)]"
+          className="absolute right-0 z-30 mt-1 w-64 max-w-[calc(100vw-2.5rem)] border shadow-[0_18px_40px_-24px_rgba(0,0,0,0.6)]"
           style={{
             borderColor: "var(--color-border)",
             background: "var(--color-surface)",
@@ -150,7 +150,7 @@ export function SeletorStatus({ id, status }: { id: string; status: Status }) {
       {mensagem && (
         <span
           role="status"
-          className="absolute left-0 sm:left-auto sm:right-0 top-full z-20 mt-2 w-64 text-left sm:text-right text-xs"
+          className="absolute right-0 top-full z-20 mt-2 w-64 text-right text-xs"
           style={{
             color: mensagem.startsWith("Status")
               ? "var(--estado-ok)"

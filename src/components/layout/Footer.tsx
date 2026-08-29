@@ -1,16 +1,14 @@
 /**
- * Footer.
+ * SPEC §1.4 — rodapé: autoridade, transparência e compliance.
  *
- * MUST (SPEC §1.4 / §13): o disclaimer de mercado secundário fica aqui, visível
- * em toda página. Sugerir revenda autorizada de maison é risco jurídico e de
- * reputação — não é detalhe de rodapé, é a razão do rodapé.
- *
- * Páginas de política ainda não existem; os hrefs apontam pros slugs canônicos.
+ * Três coisas precisam estar aqui sem concessão:
+ * 1. Afiliação zero com as marcas anunciadas (disclaimer legal obrigatório);
+ * 2. Canal real de contato (WhatsApp oficial da casa: +55 42 98870-6221);
+ * 3. CNPJ / ano / presença em São Paulo.
  */
 
 import Link from "next/link";
-
-import { CONTACT_CHANNEL, contactHref } from "@/components/contact/WhatsappCta";
+import { contactHref } from "@/components/contact/WhatsappCta";
 
 const INSTAGRAM_URL = "https://instagram.com/andrewatchesbr";
 
@@ -44,7 +42,7 @@ export function Footer() {
 
   return (
     <footer
-      className="border-t"
+      className="border-t print:hidden"
       style={{
         borderColor: "var(--color-border)",
       }}
@@ -52,10 +50,7 @@ export function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-16 md:py-20">
         <div className="grid gap-12 md:grid-cols-[2fr_3fr]">
           <div className="flex flex-col gap-4">
-            <Link
-              href="/"
-              className="label"
-            >
+            <Link href="/" className="label">
               Andre<span style={{ color: "var(--color-accent)" }}> · </span>Watches
             </Link>
             <p className="max-w-sm text-sm leading-relaxed">
@@ -67,17 +62,18 @@ export function Footer() {
                 href={contactHref("Vim pelo site e gostaria de falar com a casa.")}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline-offset-4 hover:underline"
+                className="underline-offset-4 hover:underline font-medium flex items-center gap-1.5"
               >
-                {CONTACT_CHANNEL}
+                <span>WhatsApp: +55 42 98870-6221</span>
+                <span>↗</span>
               </a>
               <a
                 href={INSTAGRAM_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline-offset-4 hover:underline"
+                className="underline-offset-4 hover:underline opacity-80"
               >
-                @andrewatchesbr
+                Instagram: @andrewatchesbr
               </a>
             </div>
           </div>
@@ -85,11 +81,7 @@ export function Footer() {
           <div className="grid grid-cols-2 gap-8 md:grid-cols-3">
             {FOOTER_NAV.map((col) => (
               <div key={col.title} className="flex flex-col gap-3">
-                <h3
-                  className="label"
-                >
-                  {col.title}
-                </h3>
+                <h3 className="label">{col.title}</h3>
                 <ul className="flex flex-col gap-2">
                   {col.links.map((link) => (
                     <li key={link.href}>
@@ -120,13 +112,9 @@ export function Footer() {
         </p>
 
         <div className="mt-8 flex flex-col gap-3 text-xs md:flex-row md:items-center md:justify-between">
-          <span
-            className="meta"
-          >
-            © {year} Andre Watches
-          </span>
+          <span className="meta">© {year} Andre Watches</span>
           <span className="meta">
-            Atendimento por {CONTACT_CHANNEL} · envio segurado para todo o Brasil
+            Atendimento por WhatsApp (+55 42 98870-6221) · envio segurado para todo o Brasil
           </span>
         </div>
       </div>

@@ -323,3 +323,109 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── Regras Universais de Impressão & Exportação PDF A4 ─────────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 14mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #17181a !important;
+    font-size: 9.5pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Oculta tudo que não for o documento do dossiê */
+  header,
+  footer,
+  nav,
+  aside,
+  .print-hidden,
+  .fixed,
+  [data-lenis-prevent] {
+    display: none !important;
+  }
+
+  .dossie-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    background: transparent !important;
+  }
+
+  .dossie-card {
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    max-width: 100% !important;
+  }
+
+  .dossie-header {
+    padding-bottom: 12px !important;
+    margin-bottom: 12px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .dossie-hero {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    gap: 20px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .dossie-photo-box {
+    width: 170px !important;
+    min-width: 170px !important;
+    max-width: 170px !important;
+    height: 215px !important;
+    max-height: 215px !important;
+    overflow: hidden !important;
+    border: 1px solid #d4d0c8 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    flex-shrink: 0 !important;
+  }
+
+  .dossie-photo-box img {
+    width: 170px !important;
+    height: 215px !important;
+    max-height: 215px !important;
+    object-fit: cover !important;
+  }
+
+  .dossie-specs-list {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    column-gap: 24px !important;
+    row-gap: 4px !important;
+    font-size: 8pt !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .dossie-section {
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .dossie-footer {
+    padding-top: 12px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}

@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { Watch } from "@/lib/types";
 
@@ -39,6 +40,9 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
   const [active, setActive] = useState(0);
   const [lightboxAberto, setLightboxAberto] = useState(false);
   const [zoom, setZoom] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   // Lavagem clara: o fallback antigo era escuro, herdado da identidade anterior,
   // e sobre papel viraria uma placa preta no meio da página.
@@ -153,16 +157,18 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
         )}
       </div>
 
-      {/* ── Modal Lightbox Fullscreen ───────────────────────────────────── */}
-      {lightboxAberto && (
+      {/* ── Modal Lightbox Fullscreen (Montado diretamente no body via Portal) ── */}
+      {lightboxAberto && mounted && createPortal(
         <div
           role="dialog"
           aria-modal="true"
           aria-label={`Visualizador macro: ${watch.brand} ${watch.model}`}
-          className="fixed inset-0 z-[9999] flex flex-col justify-between p-4 sm:p-8 select-none animate-in fade-in duration-200"
+          className="fixed inset-0 z-[999999] flex flex-col justify-between p-4 sm:p-8 select-none animate-in fade-in duration-200"
           style={{
-            background: "rgba(6, 7, 8, 0.96)",
-            backdropFilter: "blur(12px)",
+            background: "rgba(6, 7, 8, 0.98)",
+            backdropFilter: "blur(16px)",
+            paddingTop: "max(1.25rem, env(safe-area-inset-top))",
+            paddingBottom: "max(1.25rem, env(safe-area-inset-bottom))",
           }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
@@ -171,42 +177,42 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
             }
           }}
         >
-          {/* Top Bar */}
-          <div className="flex items-center justify-between gap-4 z-10 border-b pb-3" style={{ borderColor: "rgba(255, 255, 255, 0.15)" }}>
-            <div className="flex items-center gap-3">
-              <span className="label text-xs" style={{ color: "var(--color-accent)" }}>
+          {/* Top Bar com Botão Fechar em Alto Destaque */}
+          <div
+            className="flex items-center justify-between gap-4 z-20 border-b pb-3"
+            style={{ borderColor: "rgba(255, 255, 255, 0.15)" }}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="label text-xs truncate" style={{ color: "var(--color-accent)" }}>
                 {watch.brand} {watch.model}
               </span>
-              <span className="meta text-xs">·</span>
-              <span className="meta text-xs font-mono">
-                {active + 1} de {images.length}
+              <span className="meta text-xs shrink-0">·</span>
+              <span className="meta text-xs font-mono shrink-0">
+                {active + 1} / {images.length}
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 shrink-0">
               <button
                 type="button"
                 onClick={() => setZoom((z) => !z)}
-                className="btn btn-ghost text-xs py-1.5 px-3"
+                className="btn btn-ghost text-xs py-1.5 px-3 hidden sm:inline-flex"
                 title="Alternar zoom macro 2x"
               >
                 {zoom ? "1x Normal" : "2x Macro"}
               </button>
+
+              {/* Botão Fechar Primário — Super Visível no Mobile */}
               <button
                 type="button"
                 onClick={() => {
                   setLightboxAberto(false);
                   setZoom(false);
                 }}
-                className="flex items-center gap-2 border px-3.5 py-1.5 text-xs font-mono uppercase tracking-wider transition-all hover:bg-white hover:text-black cursor-pointer"
-                style={{
-                  borderColor: "rgba(255, 255, 255, 0.45)",
-                  background: "rgba(255, 255, 255, 0.15)",
-                  color: "#ffffff",
-                }}
+                className="flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-medium tracking-wide transition-all bg-white text-black hover:bg-neutral-200 active:scale-95 cursor-pointer shadow-xl"
                 aria-label="Fechar visualizador"
               >
-                <span className="font-semibold">Fechar</span>
+                <span>Fechar</span>
                 <span aria-hidden className="text-sm font-bold leading-none">✕</span>
               </button>
             </div>
@@ -214,22 +220,25 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
 
           {/* Imagem Central */}
           <div
-            className="relative flex-1 flex items-center justify-center overflow-auto my-2"
+            className="relative flex-1 flex items-center justify-center overflow-auto my-2 touch-pinch-zoom"
             onClick={() => setZoom((z) => !z)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={current.url}
               alt={current.alt}
-              className={`max-h-[80vh] w-auto max-w-full object-contain transition-transform duration-300 ${
+              className={`max-h-[75vh] w-auto max-w-full object-contain transition-transform duration-300 ${
                 zoom ? "scale-150 cursor-zoom-out" : "cursor-zoom-in"
               }`}
             />
           </div>
 
-          {/* Bottom Bar com Navegação, Alt e Fechar mobile */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 z-10 border-t pt-3" style={{ borderColor: "rgba(255, 255, 255, 0.15)" }}>
-            <p className="meta text-xs max-w-xl truncate text-center sm:text-left">
+          {/* Bottom Bar com Navegação */}
+          <div
+            className="flex flex-col sm:flex-row items-center justify-between gap-3 z-20 border-t pt-3"
+            style={{ borderColor: "rgba(255, 255, 255, 0.15)" }}
+          >
+            <p className="meta text-xs max-w-xl truncate text-center sm:text-left text-neutral-300">
               {current.alt}
             </p>
 
@@ -240,7 +249,7 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
                   setActive((prev) => (prev > 0 ? prev - 1 : images.length - 1));
                   setZoom(false);
                 }}
-                className="btn btn-ghost text-sm px-3 py-1.5"
+                className="btn btn-ghost text-xs sm:text-sm px-3.5 py-1.5 border border-white/20 text-white"
                 aria-label="Foto anterior"
               >
                 ← Anterior
@@ -251,25 +260,15 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
                   setActive((prev) => (prev < images.length - 1 ? prev + 1 : 0));
                   setZoom(false);
                 }}
-                className="btn btn-ghost text-sm px-3 py-1.5"
+                className="btn btn-ghost text-xs sm:text-sm px-3.5 py-1.5 border border-white/20 text-white"
                 aria-label="Próxima foto"
               >
                 Próxima →
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setLightboxAberto(false);
-                  setZoom(false);
-                }}
-                className="btn btn-ghost text-xs px-3 py-1.5 sm:hidden border"
-                style={{ borderColor: "rgba(255, 255, 255, 0.3)", color: "#fff" }}
-              >
-                Fechar ✕
-              </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
