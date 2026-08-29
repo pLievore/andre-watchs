@@ -305,10 +305,19 @@ export function SiteTabShell({
       }
 
       if (targetIdx !== activeIdx) {
-        vibrar(12);
+        const targetLabel = document.getElementById(`cliente-tab-label-${targetIdx}`);
+        const targetInput = document.getElementById(`cliente-tab-input-${targetIdx}`);
+        if (targetLabel) {
+          targetLabel.click();
+        } else if (targetInput) {
+          targetInput.click();
+        } else {
+          vibrar(12);
+          navegarParaAba(targetIdx, true);
+        }
+      } else {
+        navegarParaAba(activeIdx, true);
       }
-
-      navegarParaAba(targetIdx, true);
     }
 
     window.addEventListener("click", onClickCapture, { capture: true });

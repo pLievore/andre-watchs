@@ -133,7 +133,7 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
         </div>
       )}
 
-      {destinos.map(({ href, rotulo, icone: Icone }) => {
+      {destinos.map(({ href, rotulo, icone: Icone }, index) => {
         const ativo = estaAtivo(href, rotaAtiva);
         const carregandoEstaAba = otimista === href && otimista !== atual;
 
@@ -151,19 +151,30 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
               transitionTimingFunction: "var(--ease-editorial)",
             }}
           >
-            {/* Gatilho físico da Taptic Engine no iPhone (acionado pelo toque direto do polegar) */}
-            <input
-              type="checkbox"
-              aria-hidden="true"
-              tabIndex={-1}
-              {...({ switch: "" } as any)}
-              className="absolute inset-0 z-10 h-full w-full opacity-0 cursor-pointer"
+            {/* Gatilho físico da Taptic Engine no iPhone (acionado no clique ou no término do deslize) */}
+            <label
+              htmlFor={`cliente-tab-input-${index}`}
+              id={`cliente-tab-label-${index}`}
+              className="absolute inset-0 z-10 block h-full w-full cursor-pointer"
               style={{
                 WebkitTapHighlightColor: "transparent",
                 touchAction: "manipulation",
               }}
-              onClick={(e) => handleNavegar(e, href)}
-            />
+            >
+              <input
+                type="checkbox"
+                id={`cliente-tab-input-${index}`}
+                aria-hidden="true"
+                tabIndex={-1}
+                {...({ switch: "" } as any)}
+                className="absolute inset-0 h-full w-full opacity-0 cursor-pointer pointer-events-auto"
+                style={{
+                  WebkitTapHighlightColor: "transparent",
+                  touchAction: "manipulation",
+                }}
+                onClick={(e) => handleNavegar(e, href)}
+              />
+            </label>
 
             {!estaNoShell && ativo && (
               <motion.span

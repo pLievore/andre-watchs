@@ -248,7 +248,7 @@ export function PainelNav({ email }: { email: string }) {
         )}
 
         {[...SECOES, { href: "/painel/conta", rotulo: "Conta", icone: IconeConta }].map(
-          ({ href, rotulo, icone: Icone }) => {
+          ({ href, rotulo, icone: Icone }, index) => {
             const ativo = estaAtivo(href, rotaAtiva);
             const carregandoEstaAba = otimista === href && otimista !== atual;
 
@@ -265,19 +265,30 @@ export function PainelNav({ email }: { email: string }) {
                   color: ativo ? "var(--color-accent)" : "var(--color-muted)",
                 }}
               >
-                {/* Gatilho físico da Taptic Engine no iPhone (acionado pelo toque direto do polegar) */}
-                <input
-                  type="checkbox"
-                  aria-hidden="true"
-                  tabIndex={-1}
-                  {...({ switch: "" } as any)}
-                  className="absolute inset-0 z-10 h-full w-full opacity-0 cursor-pointer"
+                {/* Gatilho físico da Taptic Engine no iPhone (acionado no clique ou no término do deslize) */}
+                <label
+                  htmlFor={`painel-tab-input-${index}`}
+                  id={`painel-tab-label-${index}`}
+                  className="absolute inset-0 z-10 block h-full w-full cursor-pointer"
                   style={{
                     WebkitTapHighlightColor: "transparent",
                     touchAction: "manipulation",
                   }}
-                  onClick={(e) => handleNavegar(e, href)}
-                />
+                >
+                  <input
+                    type="checkbox"
+                    id={`painel-tab-input-${index}`}
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    {...({ switch: "" } as any)}
+                    className="absolute inset-0 h-full w-full opacity-0 cursor-pointer pointer-events-auto"
+                    style={{
+                      WebkitTapHighlightColor: "transparent",
+                      touchAction: "manipulation",
+                    }}
+                    onClick={(e) => handleNavegar(e, href)}
+                  />
+                </label>
 
                 {!estaNoShell && ativo && (
                   <motion.span

@@ -316,10 +316,19 @@ export function PainelTabShell({
       }
 
       if (targetIdx !== activeIdx) {
-        vibrar(12);
+        const targetLabel = document.getElementById(`painel-tab-label-${targetIdx}`);
+        const targetInput = document.getElementById(`painel-tab-input-${targetIdx}`);
+        if (targetLabel) {
+          targetLabel.click();
+        } else if (targetInput) {
+          targetInput.click();
+        } else {
+          vibrar(12);
+          navegarParaAba(targetIdx, true);
+        }
+      } else {
+        navegarParaAba(activeIdx, true);
       }
-
-      navegarParaAba(targetIdx, true);
     }
 
     window.addEventListener("click", onClickCapture, { capture: true });
