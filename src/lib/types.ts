@@ -69,6 +69,7 @@ export interface WatchSpecs {
 export type WatchState = "disponivel" | "reservada" | "vendida";
 
 export interface Watch {
+  id?: string;
   /** SPEC §10 — `rolex-submariner-date-126610ln`. */
   slug: string;
   brand: string;

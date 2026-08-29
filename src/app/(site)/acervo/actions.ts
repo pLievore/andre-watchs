@@ -2,6 +2,7 @@
 
 import { dbAdmin } from "@/lib/db/admin";
 import { dbServidor } from "@/lib/db/server";
+import { detectarOrigem } from "@/lib/geo";
 
 /**
  * Registra a visita somente depois que a página já leu o timestamp anterior e
@@ -16,13 +17,22 @@ export async function registrarVisitaAoAcervo(): Promise<void> {
 
   if (!user) return;
 
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase());
+  const isAdmin = user.email && adminEmails.includes(user.email.toLowerCase());
+
+  if (isAdmin) return; // Não contabiliza visitas do administrador
+
   const { data: cliente } = await db
     .from("clientes")
-    .select("status")
+    .select("status, telefone")
     .eq("id", user.id)
     .maybeSingle();
 
   if (cliente?.status !== "ativo") return;
+
+  const { cidade, dispositivo } = await detectarOrigem(cliente?.telefone);
 
   const { error } = await dbAdmin
     .from("clientes")
@@ -35,4 +45,12 @@ export async function registrarVisitaAoAcervo(): Promise<void> {
       message: error.message,
     });
   }
+
+  // Registra o evento no funil identificado com geo e dispositivo
+  await dbAdmin.from("eventos").insert({
+    cliente_id: user.id,
+    tipo: "acesso",
+    cidade,
+    dispositivo,
+  });
 }

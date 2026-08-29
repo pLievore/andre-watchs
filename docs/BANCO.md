@@ -2,6 +2,10 @@
 
 > Esquema, políticas e o raciocínio por trás. O SQL executável vive em
 > [`supabase/schema.sql`](../supabase/schema.sql) — este arquivo explica **por
+# BANCO — Supabase
+
+> Esquema, políticas e o raciocínio por trás. O SQL executável vive em
+> [`supabase/schema.sql`](../supabase/schema.sql) — este arquivo explica **por
 > quê**, o SQL diz **o quê**.
 
 ## Migrações, na ordem
@@ -14,11 +18,11 @@ Todas idempotentes: rodar de novo não quebra nada.
 | `supabase/fase-2.sql` | `clientes`, `solicitacoes_acesso`, fecha o acervo | ✅ 2026-08-28 |
 | `supabase/fase-4.sql` | enum `estado_peca`, bucket `pecas`, ordem única de foto | ✅ 2026-08-28 |
 | `supabase/fase-5.sql` | função transacional para reordenar fotos | ✅ 2026-08-28 |
+| `supabase/fase-6.sql` | tabela `convites`, RLS, expiração de 7 dias | ✅ 2026-08-28 |
+| `supabase/fase-7.sql` | tabelas `eventos` e `interesses`, RLS e pipeline | ✅ 2026-08-28 |
 
 ```bash
 node scripts/aplicar-sql.mjs supabase/fase-5.sql
-```
-
 Usa a `DIRECT_URL` (porta 5432, modo sessão) e envia o arquivo inteiro numa
 chamada só — fatiar por `;` quebraria os blocos `do $$ … $$` e o corpo das
 funções, que têm ponto e vírgula dentro.

@@ -21,7 +21,7 @@ import type {
 
 /** Colunas pedidas em toda consulta. Explícito para não trazer lixo. */
 export const CAMPOS = `
-  slug, marca, modelo, condicao, integralidade,
+  id, slug, marca, modelo, condicao, integralidade,
   referencia, calibre, diametro_mm, material_caixa, pulseira, mostrador, ano_cartao,
   preco_centavos, estado, disponivel, consignada, historia, notas_estado,
   fotos ( url, alt, ordem )
@@ -34,6 +34,7 @@ interface LinhaFoto {
 }
 
 export interface LinhaPeca {
+  id: string;
   slug: string;
   marca: string;
   modelo: string;
@@ -65,6 +66,7 @@ export function paraWatch(l: LinhaPeca): Watch {
   const [primeira, segunda, ...resto] = fotos;
 
   return {
+    id: l.id,
     slug: l.slug,
     brand: l.marca,
     model: l.modelo,

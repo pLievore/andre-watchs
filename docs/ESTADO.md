@@ -63,6 +63,13 @@ O Supabase é um projeto só, compartilhado por local e produção — não há
 ambiente de staging (docs/BANCO.md). A migração `supabase/fase-2.sql` **já foi
 aplicada nesse banco** em 2026-08-28, o que já fechou `pecas`/`fotos` para
 qualquer leitura sem sessão de cliente ativo. O `/colecao` público que ainda
+
+### ⚠️ Estado inconsistente entre banco e produção
+
+O Supabase é um projeto só, compartilhado por local e produção — não há
+ambiente de staging (docs/BANCO.md). A migração `supabase/fase-2.sql` **já foi
+aplicada nesse banco** em 2026-08-28, o que já fechou `pecas`/`fotos` para
+qualquer leitura sem sessão de cliente ativo. O `/colecao` público que ainda
 está de pé na Vercel só continua mostrando peças porque a página ficou em
 cache estático de antes da troca — qualquer revalidação ou rebuild sem o
 deploy desta fase o deixa vazio. A correção é publicar o código desta fase, não
@@ -74,10 +81,9 @@ deploy.
 - ~~Banco de dados~~ — **feito**: Supabase, 10 peças migradas. `watches.ts`
   segue como semente de referência
 - ~~Autenticação~~ — **feito na Fase 2**, em local. Falta publicar
-- **Funil e eventos** — nada é registrado: não se sabe quem viu qual peça nem
-  quem foi ao WhatsApp (Fase 4). Ver [BALANCO.md](BALANCO.md)
-- **Interesses** — o clique no WhatsApp não vira registro de negociação
-- **Convite por link** — terceiro caminho de entrada do D25, nunca construído
+- ~~Convite por link~~ — **feito na Fase 3**: `convites`, gerador no painel com texto para WhatsApp, resgate em `/convite/[token]`
+- ~~Funil e eventos~~ — **feito na Fase 4**: `eventos` (acesso, visualização de peça, cliques no WhatsApp), métricas de 30 dias e ranking das mais vistas
+- ~~Interesses~~ — **feito na Fase 4**: pipeline comercial `/painel/negociacoes`, 4 status, histórico na ficha do cliente e na peça
 - **Gateway de pagamento** — fora de escopo por decisão (a venda fecha no WhatsApp)
 
 ## Bloqueios conhecidos
@@ -86,20 +92,18 @@ deploy.
 |---|---|---|
 | **Fotos são do Unsplash** | Não são peças da casa. Bloqueiam publicação real | SPEC D8 |
 | **WhatsApp cai no Instagram** | `NEXT_PUBLIC_WHATSAPP_NUMBER` vazio; o CTA usa o Instagram como alternativa | SPEC D7 |
-| **Produção com RLS de Fase 2 e código de Fase 1** | Deploy pendente após a migração já aplicada | ver acima |
-| **`fase-4.sql` e `fase-5.sql` já aplicadas no banco** | Mesma situação da Fase 2: o banco tem `estado`, o bucket `pecas` e a troca atômica de ordem; produção ainda não tem o código que os usa | ver acima |
+| **Produção com RLS de Fase 2 e código de Fase 1** | Deploy pendente após as migrações já aplicadas | ver acima |
+| **`fase-4.sql`, `fase-5.sql`, `fase-6.sql` e `fase-7.sql` já aplicadas no banco** | O banco tem `estado`, bucket `pecas`, troca atômica, `convites`, `eventos` e `interesses`; produção ainda não tem o código que os usa | ver acima |
 
 ---
 
 ## Fase atual
 
-**Fase 3 — Painel, em local.** A Porta da Fase 2 está implementada e verificada;
-o núcleo do painel de peças e clientes também. Falta o convite por link para
-fechar todos os caminhos previstos da Fase 3 e falta publicar o conjunto com
-`git push` + `npx vercel --prod` (o banco já está migrado; é só o código que
-continua local).
+**Fase 4 — Inteligência, concluída em local.** As Fases 2 (Porta), 3 (Painel
+operacional completo com convites por link) e 4 (Eventos, funil e pipeline de
+negociações) estão implementadas e validadas em local.
 
-Detalhes do painel: ver [FASE-3.md](FASE-3.md).
+Falta publicar o conjunto completo com `git push` + `npx vercel --prod`.
 
 ## Fases
 
@@ -107,14 +111,9 @@ Detalhes do painel: ver [FASE-3.md](FASE-3.md).
 |---|---|---|
 | 1 | **Fundação** — Supabase, RLS, catálogo no banco | ✅ em produção |
 | 2 | **Porta** — auth, acervo privado, home institucional | ✅ em local · ⬜ deploy |
-| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | 🟡 peças ✅ · clientes ✅ · convite por link ⬜ |
-| 4 | **Inteligência** — eventos, funil identificado, saudação | ⬜ |
+| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | ✅ em local · ⬜ deploy |
+| 4 | **Inteligência** — eventos, funil identificado, interesses | ✅ em local · ⬜ deploy |
 | 5 | **Acabamento** — mobile, estados vazios, a11y, desempenho | ⬜ |
-
----
-
-## Vitrine e painel são produtos separados
-
 `src/app/(site)` e `src/app/(painel)` são **route groups irmãos**, com layouts
 raiz próprios. Não compartilham header, rodapé nem Lenis — só os tokens de CSS.
 

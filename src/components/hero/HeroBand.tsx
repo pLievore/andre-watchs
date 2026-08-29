@@ -168,7 +168,7 @@ const COAST = {
   restDelta: 0.0002,
 } as const;
 
-export function HeroBand() {
+export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
   const reduce = useReducedMotion();
   const containerRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -662,7 +662,10 @@ export function HeroBand() {
             </p>
 
             <div className="pointer-events-auto mt-2 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link href="/acesso" className="btn btn-primary group">
+              <Link
+                href={podeAbrirAcervo ? "/acervo" : "/acesso"}
+                className="btn btn-primary group"
+              >
                 Acessar o acervo
                 <span
                   aria-hidden

@@ -7,14 +7,18 @@ import Link from "next/link";
  * isso esta seção é deliberadamente tipográfica: nenhuma foto pode sugerir que
  * uma peça específica está anunciada fora do acervo reservado.
  */
-export function HouseInvitation() {
+export function HouseInvitation({
+  podeAbrirAcervo,
+}: {
+  podeAbrirAcervo: boolean;
+}) {
   return (
     <section
       className="border-t"
       style={{ borderColor: "var(--color-border)" }}
       aria-labelledby="house-title"
     >
-      <div className="mx-auto grid max-w-6xl gap-16 px-6 py-24 md:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)] md:gap-24 md:px-16 md:py-36">
+      <div className="mx-auto grid max-w-6xl gap-12 px-6 py-12 sm:py-16 md:gap-24 md:px-16 md:py-36 md:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
         <div>
           <p className="eyebrow">A casa</p>
           <h2
@@ -64,11 +68,15 @@ export function HouseInvitation() {
             className="mt-6 max-w-md text-base leading-relaxed"
             style={{ color: "var(--color-muted)" }}
           >
-            Se ainda não tem acesso, envie seu pedido. A casa avalia cada um e
-            entra em contato. Clientes já cadastrados entram pelo mesmo caminho.
+            {podeAbrirAcervo
+              ? "Seu acesso está pronto. Entre para ver as peças disponíveis, reservadas e o histórico da casa."
+              : "Se ainda não tem acesso, envie seu pedido. A casa avalia cada um e entra em contato. Clientes já cadastrados entram pelo mesmo caminho."}
           </p>
-          <Link href="/acesso" className="btn btn-primary group mt-8">
-            Solicitar acesso
+          <Link
+            href={podeAbrirAcervo ? "/acervo" : "/acesso"}
+            className="btn btn-primary group mt-8"
+          >
+            {podeAbrirAcervo ? "Abrir acervo" : "Solicitar acesso"}
             <span
               aria-hidden
               className="transition-transform duration-300 group-hover:translate-x-1"

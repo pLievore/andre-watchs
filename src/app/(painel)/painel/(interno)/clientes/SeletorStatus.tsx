@@ -11,7 +11,8 @@
  * "não é mais".
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { mudarStatusCliente } from "./actions";
 
@@ -25,8 +26,14 @@ import {
 export type { Status };
 
 export function SeletorStatus({ id, status }: { id: string; status: Status }) {
+  const router = useRouter();
   const [aberto, setAberto] = useState(false);
+  const [atual, setAtual] = useState(status);
+  const [mensagem, setMensagem] = useState("");
+  const [pendente, iniciarTransicao] = useTransition();
   const caixa = useRef<HTMLDivElement>(null);
+
+  useEffect(() => setAtual(status), [status]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -44,13 +51,40 @@ export function SeletorStatus({ id, status }: { id: string; status: Status }) {
     };
   }, [aberto]);
 
+  function escolher(proximo: Status) {
+    if (proximo === atual || pendente) return;
+
+    const anterior = atual;
+    setAtual(proximo);
+    setMensagem("");
+    setAberto(false);
+
+    iniciarTransicao(async () => {
+      try {
+        const resultado = await mudarStatusCliente(id, proximo);
+        if (resultado.erro) {
+          setAtual(anterior);
+          setMensagem(resultado.erro);
+          return;
+        }
+        setMensagem(resultado.sucesso ?? "Status atualizado.");
+        router.refresh();
+      } catch {
+        setAtual(anterior);
+        setMensagem("Não foi possível mudar o status. Tente de novo.");
+      }
+    });
+  }
+
   return (
     <div ref={caixa} className="relative">
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
+        disabled={pendente}
         aria-haspopup="menu"
         aria-expanded={aberto}
+        aria-busy={pendente}
         className="label flex items-center gap-2 border px-3 py-2"
         style={{
           minHeight: 40,
@@ -61,9 +95,9 @@ export function SeletorStatus({ id, status }: { id: string; status: Status }) {
         <span
           aria-hidden
           className="inline-block h-2 w-2 rounded-full"
-          style={{ background: corDoStatus(status) }}
+          style={{ background: corDoStatus(atual) }}
         />
-        {rotuloDoStatus(status)}
+        {pendente ? "Salvando…" : rotuloDoStatus(atual)}
         <span aria-hidden style={{ color: "var(--color-muted)" }}>
           ▾
         </span>
@@ -79,41 +113,52 @@ export function SeletorStatus({ id, status }: { id: string; status: Status }) {
           }}
         >
           {OPCOES.map((o) => {
-            const atual = o.valor === status;
+            const selecionado = o.valor === atual;
             return (
-              <form key={o.valor} action={mudarStatusCliente}>
-                <input type="hidden" name="id" value={id} />
-                <input type="hidden" name="status" value={o.valor} />
-                <button
-                  type="submit"
-                  role="menuitem"
-                  disabled={atual}
-                  onClick={() => setAberto(false)}
-                  className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left hover:bg-[var(--color-surface-2)] disabled:cursor-default"
-                  style={{ minHeight: 52 }}
+              <button
+                key={o.valor}
+                type="button"
+                role="menuitem"
+                disabled={selecionado || pendente}
+                onClick={() => escolher(o.valor)}
+                className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left hover:bg-[var(--color-surface-2)] disabled:cursor-default"
+                style={{ minHeight: 52 }}
+              >
+                <span
+                  className="flex items-center gap-2 text-sm"
+                  style={{
+                    color: selecionado
+                      ? "var(--color-muted)"
+                      : "var(--color-foreground)",
+                  }}
                 >
                   <span
-                    className="flex items-center gap-2 text-sm"
-                    style={{
-                      color: atual
-                        ? "var(--color-muted)"
-                        : "var(--color-foreground)",
-                    }}
-                  >
-                    <span
-                      aria-hidden
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: corDoStatus(o.valor) }}
-                    />
-                    {o.rotulo}
-                    {atual && " · atual"}
-                  </span>
-                  <span className="meta pl-4">{o.nota}</span>
-                </button>
-              </form>
+                    aria-hidden
+                    className="inline-block h-2 w-2 rounded-full"
+                    style={{ background: corDoStatus(o.valor) }}
+                  />
+                  {o.rotulo}
+                  {selecionado && " · atual"}
+                </span>
+                <span className="meta pl-4">{o.nota}</span>
+              </button>
             );
           })}
         </div>
+      )}
+
+      {mensagem && (
+        <span
+          role="status"
+          className="absolute right-0 top-full z-20 mt-2 w-64 text-right text-xs"
+          style={{
+            color: mensagem.startsWith("Status")
+              ? "var(--estado-ok)"
+              : "var(--estado-erro)",
+          }}
+        >
+          {mensagem}
+        </span>
       )}
     </div>
   );

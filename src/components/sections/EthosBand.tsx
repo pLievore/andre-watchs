@@ -66,9 +66,9 @@ type Pillar = (typeof PILLARS)[number];
 
 function SlideContent({ pillar }: { pillar: Pillar }) {
   return (
-    <div className="mx-auto grid w-full max-w-5xl items-center gap-8 md:grid-cols-2 md:gap-16">
+    <div className="mx-auto grid w-full max-w-5xl items-center gap-5 sm:gap-8 md:grid-cols-2 md:gap-16">
       <div
-        className="relative aspect-[4/3] w-full overflow-hidden border"
+        className="relative aspect-[4/3] max-h-[36vh] sm:max-h-[42vh] md:max-h-none w-full overflow-hidden border shadow-lg"
         style={{ borderColor: "var(--color-border)" }}
       >
         <Image
@@ -80,9 +80,9 @@ function SlideContent({ pillar }: { pillar: Pillar }) {
           draggable={false}
         />
       </div>
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3 sm:gap-5">
         <span
-          className="meta"
+          className="meta text-xs"
           style={{ fontFamily: "var(--font-mono)", color: "var(--color-accent)" }}
         >
           {pillar.n} / {String(PILLARS.length).padStart(2, "0")}
@@ -90,7 +90,7 @@ function SlideContent({ pillar }: { pillar: Pillar }) {
         <h3
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: "clamp(2.25rem, 5vw, 4rem)",
+            fontSize: "clamp(1.85rem, 5vw, 4rem)",
             lineHeight: 1.02,
             letterSpacing: "-0.02em",
           }}
@@ -98,7 +98,7 @@ function SlideContent({ pillar }: { pillar: Pillar }) {
           {pillar.title}
         </h3>
         <p
-          className="max-w-md text-base leading-relaxed md:text-lg"
+          className="max-w-md text-sm sm:text-base leading-relaxed md:text-lg"
           style={{ color: "var(--color-muted)" }}
         >
           {pillar.body}
@@ -144,7 +144,7 @@ function PillarSlide({
   return (
     <motion.div
       style={{ x, scale, rotate, opacity }}
-      className="absolute inset-0 flex items-center justify-center px-6 will-change-transform md:px-16"
+      className="absolute inset-0 z-10 flex items-center justify-center px-6 will-change-transform md:px-16"
     >
       <SlideContent pillar={pillar} />
     </motion.div>
@@ -163,14 +163,22 @@ export function EthosBand() {
   if (reduce) {
     return (
       <section
-        className="border-t"
-        style={{ borderColor: "var(--color-border)" }}
+        className="relative"
         aria-labelledby="ethos-title"
       >
+        {/* Transição gradiente: acinzentado abaixo do vídeo, esbranquecendo sobre a seção */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 z-0 h-44 sm:h-56 md:h-72"
+          style={{
+            background:
+              "linear-gradient(to bottom, #08090a 0%, #17181c 15%, #2b2e34 32%, #50545e 50%, #858993 68%, #c3c6cb 84%, #eceee9 94%, var(--color-background) 100%)",
+          }}
+        />
         <h2 id="ethos-title" className="sr-only">
           Por que a Andre Watches
         </h2>
-        <div className="mx-auto flex max-w-5xl flex-col gap-20 px-6 py-24 md:px-16">
+        <div className="relative z-10 mx-auto flex max-w-5xl flex-col gap-20 px-6 py-20 md:px-16">
           {PILLARS.map((p) => (
             <SlideContent key={p.n} pillar={p} />
           ))}
@@ -182,9 +190,8 @@ export function EthosBand() {
   return (
     <section
       ref={sectionRef}
-      className="relative border-t"
+      className="relative"
       style={{
-        borderColor: "var(--color-border)",
         height: `${PILLARS.length * SCROLL_PER_CARD_VH}vh`,
       }}
       aria-labelledby="ethos-title"
@@ -193,14 +200,24 @@ export function EthosBand() {
         Por que a Andre Watches
       </h2>
       <div className="sticky top-0 h-screen overflow-hidden">
+        {/* Transição gradiente: acinzentado abaixo do vídeo, esbranquecendo sobre a seção */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 z-0 h-44 sm:h-56 md:h-72"
+          style={{
+            background:
+              "linear-gradient(to bottom, #08090a 0%, #17181c 15%, #2b2e34 32%, #50545e 50%, #858993 68%, #c3c6cb 84%, #eceee9 94%, var(--color-background) 100%)",
+          }}
+        />
+
         {/* Pista de progresso (1/2/3) */}
-        <div className="pointer-events-none absolute left-1/2 top-[18%] z-10 flex -translate-x-1/2 gap-2 md:left-16 md:translate-x-0">
+        <div className="pointer-events-none absolute left-1/2 top-4 sm:top-6 md:top-8 z-20 flex -translate-x-1/2 gap-2 md:left-16 md:translate-x-0">
           {PILLARS.map((p, idx) => (
             <ProgressTick key={p.n} idx={idx} total={PILLARS.length} progress={scrollYProgress} />
           ))}
         </div>
 
-        <div className="relative h-full">
+        <div className="relative z-10 h-full">
           {PILLARS.map((p, idx) => (
             <PillarSlide
               key={p.n}

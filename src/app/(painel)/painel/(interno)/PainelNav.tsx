@@ -4,14 +4,8 @@
  * Navegação do painel.
  *
  * Duas formas, mesma fonte de verdade:
- *  - **desktop**: barra lateral fixa, sempre visível. Quem trabalha o dia
- *    inteiro não deve precisar abrir menu para trocar de seção.
- *  - **celular**: barra inferior, ao alcance do polegar. O Andre usa em pé,
- *    muitas vezes com uma peça na outra mão — navegação no topo obrigaria a
- *    reposicionar a mão a cada troca.
- *
- * Sem menu sanduíche: são quatro seções, cabem à vista. Esconder navegação atrás
- * de um toque só se justifica quando ela não cabe.
+ *  - **desktop**: barra lateral fixa, sempre visível.
+ *  - **celular**: barra inferior, ao alcance do polegar.
  */
 
 import Link from "next/link";
@@ -20,14 +14,17 @@ import { usePathname } from "next/navigation";
 import { sairDoPainel } from "@/app/(painel)/painel/entrar/actions";
 
 const SECOES = [
-  { href: "/painel", rotulo: "Pedidos", icone: IconePedidos },
-  { href: "/painel/clientes", rotulo: "Clientes", icone: IconeClientes },
+  { href: "/painel", rotulo: "Clientes", icone: IconeClientes },
+  { href: "/painel/dashboard", rotulo: "Dashboard", icone: IconeDashboard },
+  { href: "/painel/negociacoes", rotulo: "Negociações", icone: IconeNegociacoes },
   { href: "/painel/pecas", rotulo: "Peças", icone: IconePecas },
 ] as const;
 
-/** Ativo por prefixo, mas `/painel` só no exato — senão acende em tudo. */
+/** A ficha continua em `/painel/clientes/:id`, mas pertence à central. */
 function estaAtivo(href: string, atual: string) {
-  return href === "/painel" ? atual === href : atual.startsWith(href);
+  return href === "/painel"
+    ? atual === href || atual.startsWith("/painel/clientes")
+    : atual.startsWith(href);
 }
 
 export function PainelNav({ email }: { email: string }) {
@@ -67,8 +64,6 @@ export function PainelNav({ email }: { email: string }) {
                   color: ativo
                     ? "var(--color-foreground)"
                     : "var(--color-muted)",
-                  // A barra à esquerda dá a forma do estado ativo, para não
-                  // depender só de cor.
                   boxShadow: ativo
                     ? "inset 2px 0 0 0 var(--color-accent)"
                     : "none",
@@ -114,55 +109,44 @@ export function PainelNav({ email }: { email: string }) {
         style={{
           borderColor: "var(--color-border)",
           background: "var(--color-surface)",
-          // Não fica embaixo da barra de gestos do iPhone.
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
-        {[...SECOES, { href: "/painel/conta", rotulo: "Conta", icone: IconeConta }].map(({ href, rotulo, icone: Icone }) => {
-          const ativo = estaAtivo(href, atual);
-          return (
-            <Link
-              key={href}
-              href={href}
-              aria-current={ativo ? "page" : undefined}
-              className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5"
-              style={{
-                minHeight: 56,
-                color: ativo ? "var(--color-accent)" : "var(--color-muted)",
-              }}
-            >
-              <Icone />
-              <span style={{ fontSize: "0.7rem" }}>{rotulo}</span>
-            </Link>
-          );
-        })}
+        {[...SECOES, { href: "/painel/conta", rotulo: "Conta", icone: IconeConta }].map(
+          ({ href, rotulo, icone: Icone }) => {
+            const ativo = estaAtivo(href, atual);
+            return (
+              <Link
+                key={href}
+                href={href}
+                aria-current={ativo ? "page" : undefined}
+                className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5"
+                style={{
+                  minHeight: 56,
+                  color: ativo ? "var(--color-accent)" : "var(--color-muted)",
+                }}
+              >
+                <Icone />
+                <span style={{ fontSize: "0.7rem" }}>{rotulo}</span>
+              </Link>
+            );
+          },
+        )}
       </nav>
     </>
   );
 }
 
-/* Ícones desenhados aqui: são cinco traços cada, e uma dependência de biblioteca
-   custaria mais que o próprio painel. Todos herdam `currentColor`. */
-
 const svg = {
-  width: 18,
-  height: 18,
   viewBox: "0 0 24 24",
+  className: "h-4 w-4 shrink-0",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 1.6,
+  strokeWidth: 1.8,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
   "aria-hidden": true,
 };
-
-function IconePedidos() {
-  return (
-    <svg {...svg}>
-      <path d="M4 6h16M4 12h16M4 18h10" />
-    </svg>
-  );
-}
 
 function IconeClientes() {
   return (
@@ -171,6 +155,26 @@ function IconeClientes() {
       <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
       <path d="M16 11a3 3 0 1 0-1.5-5.6" />
       <path d="M17 19a5.4 5.4 0 0 0-1.6-3.9" />
+    </svg>
+  );
+}
+
+function IconeDashboard() {
+  return (
+    <svg {...svg}>
+      <rect x="3" y="3" width="7" height="9" />
+      <rect x="14" y="3" width="7" height="5" />
+      <rect x="14" y="12" width="7" height="9" />
+      <rect x="3" y="16" width="7" height="5" />
+    </svg>
+  );
+}
+
+function IconeNegociacoes() {
+  return (
+    <svg {...svg}>
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      <path d="M8 10h.01M12 10h.01M16 10h.01" />
     </svg>
   );
 }

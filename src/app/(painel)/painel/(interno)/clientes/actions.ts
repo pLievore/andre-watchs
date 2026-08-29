@@ -35,6 +35,7 @@ function emailValido(email: string): boolean {
 }
 
 function revalidar(id?: string) {
+  revalidatePath("/painel");
   revalidatePath("/painel/clientes");
   if (id) revalidatePath(`/painel/clientes/${id}`);
   // A saudação e o header leem o nome do cliente.
@@ -275,28 +276,34 @@ export async function redefinirSenhaCliente(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Os quatro status, num lugar só. Ativar/desativar viraram casos deste. */
-export async function mudarStatusCliente(form: FormData): Promise<void> {
+export async function mudarStatusCliente(
+  idRecebido: string,
+  statusRecebido: StatusCliente,
+): Promise<EstadoCliente> {
   const admin = await usuarioAdmin();
-  if (!admin) return;
+  if (!admin) return { erro: "Sessão expirada. Entre novamente." };
 
-  const id = String(form.get("id") ?? "").trim();
-  const status = statusValido(form.get("status"));
-  if (!id || !status) return;
+  const id = idRecebido.trim();
+  const status = statusValido(statusRecebido);
+  if (!id || !status) return { erro: "Status inválido." };
 
-  const { error } = await dbAdmin
+  const { data: alterado, error } = await dbAdmin
     .from("clientes")
     .update({ status })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
-  if (error) {
+  if (error || !alterado) {
     console.error("Falha ao mudar status de cliente", {
-      code: error.code,
-      message: error.message,
+      code: error?.code,
+      message: error?.message,
     });
-    return;
+    return { erro: "Não foi possível mudar o status. Tente de novo." };
   }
 
   revalidar(id);
+  return { sucesso: "Status atualizado." };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -330,5 +337,5 @@ export async function excluirCliente(form: FormData): Promise<void> {
   await dbAdmin.from("clientes").delete().eq("id", id);
 
   revalidar();
-  redirect("/painel/clientes");
+  redirect("/painel");
 }

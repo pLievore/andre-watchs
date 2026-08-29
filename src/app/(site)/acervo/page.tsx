@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { CollectionGrid } from "@/components/collection/CollectionGrid";
+import { ModalEncomenda } from "@/components/collection/ModalEncomenda";
 import { BarraPrevia } from "@/components/layout/BarraPrevia";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
 import {
@@ -71,7 +72,7 @@ export default async function AcervoPage() {
     <section className="mx-auto max-w-7xl px-6 pb-24 pt-32 md:px-16 md:pb-32 md:pt-44">
       {admin && <BarraPrevia />}
       {/* Visita do dono não conta como acesso de cliente — sujaria o registro. */}
-      {cliente && <AccessVisitRecorder />}
+      {cliente && !admin && <AccessVisitRecorder />}
 
       <header className="flex max-w-4xl flex-col gap-6">
         <h1
@@ -100,6 +101,7 @@ export default async function AcervoPage() {
           Peças no acervo
         </h2>
         <CollectionGrid watches={pecas} />
+        <ModalEncomenda />
       </section>
     </section>
   );

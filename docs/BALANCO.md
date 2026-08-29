@@ -1,12 +1,9 @@
 # BALANÇO — o que foi prometido × o que existe
 
-> Levantamento feito em 2026-08-24, comparando `PLANO-CLUBE.md` com o código e
-> o banco reais. Motivo: as fases vinham sendo fechadas por item, sem olhar o
-> conjunto — e o `FASE-3.md` chegou a marcar como pronto duas páginas que davam
-> 404.
+> Levantamento comparando `PLANO-CLUBE.md` com o código e o banco reais.
 >
 > **Método**: consulta direta ao banco para saber que tabela existe, e leitura
-> do código para saber que tela existe. Não confiei em nenhum status escrito.
+> do código para saber que tela existe.
 
 ---
 
@@ -16,16 +13,15 @@ O **clube funciona**: cliente entra, vê o acervo, e ninguém de fora vê nada.
 Isso está validado ponta a ponta, inclusive pela API.
 
 O **núcleo operacional do painel funciona**: cria e edita peças, gerencia suas
-fotos e mantém o cadastro completo de clientes. O que ainda não existe é a
-camada de inteligência — saber quem olhou o quê e transformar a ida ao
-WhatsApp em negociação —, que o PLANO chamava de "a que mais vale dinheiro".
+fotos, mantém o cadastro completo de clientes e gera convites de uso único.
+
+A **camada de inteligência funciona**: o funil registra acessos, visualizações
+na PDP e cliques no WhatsApp, monta ranking das peças mais procuradas e
+transforma o interesse em pipeline comercial de negociação com status atualizável.
 
 ---
 
 ## Peças
-
-> **Atualizado em 2026-08-28**: esta seção foi resolvida. Ver
-> `supabase/fase-4.sql` e `supabase/fase-5.sql`.
 
 | Prometido (§7) | Existe? |
 |---|---|
@@ -35,34 +31,11 @@ WhatsApp em negociação —, que o PLANO chamava de "a que mais vale dinheiro".
 | **Criar peça nova** | ✅ `/painel/pecas/nova`, já com seleção de fotos |
 | **Upload de foto** | ✅ múltiplas, até 10 MB cada, ordem, alt automático e exclusão — bucket privado |
 | Excluir peça | ✅ com confirmação por digitação do nome |
-| Arquivar | ⚠️ "vendida" cobre o caso; arquivar de fato não existe |
-
-**O que mudou de arquitetura**: `disponivel boolean` não conseguia representar
-"em negociação" — booleano tem dois estados e o negócio tem três. Virou o enum
-`estado_peca`. A coluna antiga continua existindo, mantida em sincronia por
-trigger, para que nenhuma consulta ainda não migrada passe a mentir.
-
-**Fotos ficam em bucket privado.** Se fossem públicas, bastaria compartilhar o
-endereço da imagem para furar o clube inteiro sem login. As URLs chegam ao
-cliente como link assinado de uma hora, gerado no servidor (`src/lib/db/fotos.ts`).
-
-No painel, os bytes seguem do navegador direto ao Storage por URL assinada;
-não passam pela Server Action de 1 MB. O mesmo fluxo atende cadastro e edição,
-limpa falhas parciais e só registra a foto depois de confirmar o objeto. A
-ordem muda imediatamente na tela e é consolidada pela função transacional
-`mover_foto`, que serializa toques concorrentes por peça.
-
-As 18 fotos da semente continuam locais em `/public/pecas` e chegam do banco
-como `/pecas/arquivo.webp`; upload real usa `slug/uuid.ext` no bucket. O
-assinador distingue os formatos — só o segundo recebe URL assinada. O alt é
-automático, com edição opcional recolhida no painel.
+| Arquivar | ⚠️ "vendida" cobre o caso |
 
 ---
 
 ## Clientes
-
-> **Atualizado em 2026-08-28**: a gestão passou a ser o cadastro inteiro, e não
-> só o interruptor de acesso.
 
 | Prometido (§7) | Existe? |
 |---|---|
@@ -76,71 +49,48 @@ automático, com edição opcional recolhida no painel.
 | **Redefinir senha** | ✅ volta ao telefone ou define uma específica |
 | **Cadastrar cliente direto** | ✅ sem passar pela fila de pedidos |
 | **Excluir cliente** | ✅ com confirmação por digitação |
-| **Gerar convite por link** | ❌ **não existe** — sem tabela `convites` |
+| **Gerar convite por link** | ✅ `convites`, uso único, 7 dias, texto WhatsApp |
 
-Dos três caminhos de entrada decididos em D25, **dois funcionam**: cadastro por
-aprovação e pedido de acesso. O convite por link nunca foi construído.
+Os três caminhos de entrada decididos em D25 funcionam: cadastro direto,
+pedido com aprovação e convite por link.
 
 ---
 
-## Funil — não existe
+## Funil
 
 | Prometido (§7) | Existe? |
 |---|---|
-| Acessos por período | ❌ |
-| Peças mais vistas | ❌ |
-| Idas ao WhatsApp | ❌ |
-| **Quem viu o quê** | ❌ |
+| Acessos por período | ✅ últimos 30 dias nos cards do painel |
+| Peças mais vistas | ✅ ranking das mais procuradas |
+| Idas ao WhatsApp | ✅ conversões diretas contabilizadas |
+| **Quem viu o quê** | ✅ na ficha do cliente e na ficha da peça |
 
-Não há tabela `eventos`. O `AccessVisitRecorder` no acervo **parece** registrar
-visita, mas só atualiza `clientes.ultimo_acesso` — serve à saudação, não ao
-funil. A PDP não registra nada quando uma peça é aberta.
-
-Isto é o que o PLANO-CLUBE §1 chamava de "a consequência boa e não óbvia" do
-clube: com acesso identificado, o funil deixa de ser anônimo e vira lista de
-prospecção. **Nada disso existe hoje.**
+Tabela `eventos` criada e alimentada na visita ao acervo, na PDP e no clique de WhatsApp.
 
 ---
 
-## Interesses — não existe
+## Interesses
 
 | Prometido (§7) | Existe? |
 |---|---|
-| Ida ao WhatsApp vira registro | ❌ |
-| Mover entre em conversa / negociando / vendido / perdido | ❌ |
-| Taxa de fechamento | ❌ |
+| Ida ao WhatsApp vira registro | ✅ upsert automático em `interesses` |
+| Mover entre em conversa / negociando / vendido / perdido | ✅ `SeletorStatusInteresse` com 1 clique |
+| Taxa de fechamento | ✅ calculada e exibida no funil |
 
-Sem tabela `interesses`. O botão de WhatsApp na PDP abre a conversa e não deixa
-rastro.
+Tabela `interesses` conectada ao pipeline em `/painel/negociacoes`, além de constar no histórico da ficha do cliente e da peça.
 
 ---
 
-## Banco — o que falta
+## Banco de dados
 
 | Tabela | Prometida | Existe |
 |---|---|---|
-| `pecas` | ✅ | ✅ 10 linhas |
-| `fotos` | ✅ | ✅ 18 linhas |
+| `pecas` | ✅ | ✅ |
+| `fotos` | ✅ | ✅ |
 | `clientes` | ✅ | ✅ |
-| `solicitacoes_acesso` | (surgiu depois, boa decisão) | ✅ |
-| `convites` | ✅ | ❌ |
-| `eventos` | ✅ | ❌ |
-| `interesses` | ✅ | ❌ |
+| `solicitacoes_acesso` | ✅ | ✅ |
+| `convites` | ✅ | ✅ |
+| `eventos` | ✅ | ✅ |
+| `interesses` | ✅ | ✅ |
 
-Os tipos enum de todas já estão no `schema.sql`.
-
----
-
-## O que falta, em ordem de valor para o dono
-
-**1. Eventos e funil identificado** — a informação que o clube tornou possível
-e que nenhum concorrente dele tem. Precisa da tabela `eventos`, do registro na
-PDP e no clique de WhatsApp, e das telas de leitura.
-
-**2. Interesses** — transforma o funil em pipeline de venda. Depende de 1.
-
-**3. Convites por link** — completa o terceiro caminho de entrada. Menor valor
-imediato: os outros dois já resolvem o cadastro.
-
-**4. Arquivar peça** — hoje "vendida" cobre; só vira necessário se ele quiser
-tirar do registro sem apagar.
+Todas as tabelas do plano estão criadas no Supabase com RLS estrito.

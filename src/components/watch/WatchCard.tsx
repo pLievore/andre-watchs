@@ -51,7 +51,7 @@ export function WatchCard({ watch }: WatchCardProps) {
   return (
     <Link
       href={watchHref(watch)}
-      className="group block w-[18rem] shrink-0 transition-transform duration-300 will-change-transform hover:-translate-y-2 md:w-[23rem]"
+      className="group block w-full max-w-[21rem] sm:w-[18rem] md:w-[23rem] shrink-0 transition-transform duration-300 will-change-transform hover:-translate-y-2"
       style={{ transitionTimingFunction: "var(--ease-editorial)" }}
     >
       <div
@@ -171,43 +171,41 @@ export function WatchCard({ watch }: WatchCardProps) {
         )}
       </div>
 
-      <div className="mt-5 flex items-start justify-between gap-6">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <span
-            className="label"
-          >
+      <div className="mt-4 flex flex-col gap-1.5">
+        {/* Linha 1: Marca e Preço */}
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="label text-xs uppercase tracking-wider">
             {watch.brand}
           </span>
-          <h3
-            className="truncate text-lg leading-tight md:text-xl"
-            style={{
-              fontFamily: "var(--font-display)",
-              letterSpacing: "-0.01em",
-            }}
-          >
-            {watch.model}
-          </h3>
           <span
-            className="meta"
-          >
-            {formatReferenceLine(watch)}
-          </span>
-        </div>
-
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <span
-            className="whitespace-nowrap text-sm md:text-base"
+            className="text-sm md:text-base font-mono font-medium whitespace-nowrap"
             style={{
               color: sold ? "var(--color-muted)" : "var(--color-foreground)",
             }}
           >
             {formatPrice(watch.priceCents)}
           </span>
-          <span
-            className="whitespace-nowrap meta"
-          >
-            {formatCondition(watch.condition)} ·{" "}
-            {formatCompleteness(watch.completeness)}
+        </div>
+
+        {/* Linha 2: Nome do Modelo (Largura total, sem cortar) */}
+        <h3
+          className="text-base sm:text-lg md:text-xl leading-snug"
+          style={{
+            fontFamily: "var(--font-display)",
+            letterSpacing: "-0.01em",
+            color: "var(--color-foreground)",
+          }}
+        >
+          {watch.model}
+        </h3>
+
+        {/* Linha 3: Referência e Integralidade / Estado */}
+        <div className="flex items-center justify-between gap-3 text-xs meta flex-wrap pt-0.5">
+          <span className="font-mono">
+            {formatReferenceLine(watch)}
+          </span>
+          <span className="text-[11px] uppercase tracking-wider text-right">
+            {formatCondition(watch.condition)} · {formatCompleteness(watch.completeness)}
           </span>
         </div>
       </div>

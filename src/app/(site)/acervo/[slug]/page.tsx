@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { WhatsappCta } from "@/components/contact/WhatsappCta";
+import { PdpWhatsappCta } from "./PdpWhatsappCta";
+import { WatchViewRecorder } from "./WatchViewRecorder";
 import { WatchCard } from "@/components/watch/WatchCard";
 import { WatchGallery } from "@/components/watch/WatchGallery";
 import { BarraPrevia } from "@/components/layout/BarraPrevia";
@@ -111,6 +112,7 @@ export default async function WatchPage({
       />
 
       {admin && <BarraPrevia />}
+      {watch.id && !admin && <WatchViewRecorder pecaId={watch.id} />}
 
       <article className="mx-auto max-w-7xl px-6 pb-24 pt-32 md:px-16 md:pb-32 md:pt-44">
         <nav aria-label="Você está em" className="mb-10">
@@ -179,8 +181,9 @@ export default async function WatchPage({
                     </p>
                   </div>
                 )}
-                <WhatsappCta
+                <PdpWhatsappCta
                   variant="primary"
+                  pecaId={watch.id}
                   label={
                     watch.state === "reservada"
                       ? "Avise-me se não fechar"
@@ -192,11 +195,37 @@ export default async function WatchPage({
                       : `Olá! Tenho interesse na peça: ${name} (${formatCondition(watch.condition)}, ${formatCompleteness(watch.completeness)}) — ${formatPrice(watch.priceCents)}.`
                   }
                 />
-                <WhatsappCta
+                <PdpWhatsappCta
                   variant="secondary"
+                  pecaId={watch.id}
                   label="Tenho um relógio para trocar"
                   context={`Olá! Tenho interesse em trocar meu relógio por: ${name}.`}
                 />
+                <Link
+                  href={`/acervo/${watch.slug}/dossie`}
+                  target="_blank"
+                  className="link-quiet text-xs flex items-center justify-center gap-1.5 py-2.5 border transition-colors hover:border-white"
+                  style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                    <polyline points="10 9 9 9 8 9" />
+                  </svg>
+                  <span>Dossiê Técnico & Laudo (PDF)</span>
+                  <span aria-hidden>↗</span>
+                </Link>
               </div>
             ) : (
               <div
@@ -213,8 +242,9 @@ export default async function WatchPage({
                   semelhantes — dá pra avisar quando entrar um.
                 </p>
                 <div className="mt-5">
-                  <WhatsappCta
+                  <PdpWhatsappCta
                     variant="secondary"
+                    pecaId={watch.id}
                     label="Quero um parecido"
                     context={`Olá! Vi que o ${name} já foi vendido. Gostaria de ser avisado quando entrar um parecido.`}
                   />

@@ -15,7 +15,7 @@ export default async function NovoClientePage() {
   return (
     <div className="flex max-w-2xl flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <Link href="/painel/clientes" className="meta link-quiet">
+        <Link href="/painel" className="meta link-quiet">
           ← Clientes
         </Link>
         <h1

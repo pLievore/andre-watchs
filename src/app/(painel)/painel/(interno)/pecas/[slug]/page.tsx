@@ -39,13 +39,33 @@ export default async function EditarPecaPage({
 
   if (!peca) notFound();
 
-  const { data: linhas } = await dbAdmin
-    .from("fotos")
-    .select("id, url, alt, ordem")
-    .eq("peca_id", peca.id)
-    .order("ordem", { ascending: true });
+  const [
+    { data: linhas },
+    { data: interessesRaw },
+    { data: visualizacoesRaw },
+  ] = await Promise.all([
+    dbAdmin
+      .from("fotos")
+      .select("id, url, alt, ordem")
+      .eq("peca_id", peca.id)
+      .order("ordem", { ascending: true }),
+    dbAdmin
+      .from("interesses")
+      .select("id, status, observacao, atualizado_em, clientes ( id, nome, email, telefone )")
+      .eq("peca_id", peca.id)
+      .order("atualizado_em", { ascending: false }),
+    dbAdmin
+      .from("eventos")
+      .select("id, criado_em, clientes ( id, nome, email )")
+      .eq("peca_id", peca.id)
+      .eq("tipo", "viu_peca")
+      .order("criado_em", { ascending: false })
+      .limit(15),
+  ]);
 
   const fotos = await comPrevia((linhas ?? []) as FotoPainel[]);
+  const interesses = (interessesRaw ?? []) as any[];
+  const visualizacoes = (visualizacoesRaw ?? []) as any[];
 
   return (
     <div className="flex flex-col gap-10">
@@ -63,9 +83,20 @@ export default async function EditarPecaPage({
         >
           {peca.marca} {peca.modelo}
         </h1>
-        <Link href={`/acervo/${peca.slug}`} className="meta link-quiet">
-          Ver como o cliente vê →
-        </Link>
+        <div className="flex items-center gap-4 flex-wrap">
+          <Link href={`/acervo/${peca.slug}`} className="meta link-quiet">
+            Ver como o cliente vê →
+          </Link>
+          <span className="meta">·</span>
+          <Link
+            href={`/acervo/${peca.slug}/dossie`}
+            target="_blank"
+            className="meta link-quiet font-medium"
+            style={{ color: "var(--color-accent)" }}
+          >
+            📄 Gerar Dossiê Executivo (PDF) ↗
+          </Link>
+        </div>
       </div>
 
       {/*
@@ -87,6 +118,79 @@ export default async function EditarPecaPage({
       )}
 
       <GerenciadorFotos slug={peca.slug} fotos={fotos} />
+
+      {/* ── Inteligência da Peça ────────────────────────────────────────── */}
+      <section
+        className="border p-5 sm:p-6 flex flex-col gap-4"
+        style={{
+          borderColor: "var(--color-border)",
+          background: "var(--color-surface-2)",
+        }}
+      >
+        <div className="flex flex-col gap-1">
+          <h2 className="label">Inteligência & Prospecção</h2>
+          <p className="meta">
+            Interesse e movimentação desta peça entre os clientes autorizados da
+            casa.
+          </p>
+        </div>
+
+        <div
+          className="grid grid-cols-2 gap-4 border-y py-4"
+          style={{ borderColor: "var(--color-border)" }}
+        >
+          <div>
+            <span className="label text-xs">Visualizações no acervo</span>
+            <p
+              className="mt-1 text-2xl font-light font-mono"
+              style={{ color: "var(--color-foreground)" }}
+            >
+              {visualizacoes.length}
+            </p>
+          </div>
+          <div>
+            <span className="label text-xs">Contatos no WhatsApp</span>
+            <p
+              className="mt-1 text-2xl font-light font-mono"
+              style={{ color: "var(--color-accent)" }}
+            >
+              {interesses.length}
+            </p>
+          </div>
+        </div>
+
+        {interesses.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <span className="label text-xs">Clientes interessados:</span>
+            <ul
+              className="divide-y border-t"
+              style={{ borderColor: "var(--color-border)" }}
+            >
+              {interesses.map((item) => (
+                <li
+                  key={item.id}
+                  className="py-2.5 flex items-center justify-between text-sm"
+                >
+                  {item.clientes ? (
+                    <Link
+                      href={`/painel/clientes/${item.clientes.id}`}
+                      className="link-quiet font-medium"
+                      style={{ color: "var(--color-foreground)" }}
+                    >
+                      {item.clientes.nome}
+                    </Link>
+                  ) : (
+                    <span>Cliente</span>
+                  )}
+                  <span className="meta text-xs">
+                    Status: {item.status.replace("_", " ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
 
       <div
         className="border-t pt-10"
@@ -122,7 +226,8 @@ export default async function EditarPecaPage({
 async function comPrevia(fotos: FotoPainel[]): Promise<FotoPainel[]> {
   const caminhos = fotos
     .map((f) => f.url)
-    .filter((u) => u && !/^https?:\/\//i.test(u));
+    // Legado em `/public` começa com `/`; só o caminho sem barra vive no bucket.
+    .filter((u) => u && !/^https?:\/\//i.test(u) && !u.startsWith("/"));
 
   if (caminhos.length === 0) return fotos;
 

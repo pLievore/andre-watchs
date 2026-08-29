@@ -51,11 +51,9 @@ function papelDa(indice: number): string {
 }
 
 function Enviar({
-  vazio,
   pending,
   progresso,
 }: {
-  vazio: boolean;
   pending: boolean;
   progresso: ProgressoUpload | null;
 }) {
@@ -71,9 +69,8 @@ function Enviar({
   return (
     <button
       type="submit"
-      disabled={pending || vazio}
+      disabled={pending}
       className="btn btn-primary"
-      style={{ opacity: vazio && !pending ? 0.5 : 1 }}
     >
       {texto}
     </button>
@@ -122,6 +119,10 @@ export function GerenciadorFotos({
     if (enviando) return;
 
     const arquivos = Array.from(entrada.current?.files ?? []);
+    if (arquivos.length === 0) {
+      setEstado({ erro: "Escolha ao menos uma foto." });
+      return;
+    }
     setEstado({});
     setProgresso(null);
     setEnviando(true);
@@ -337,10 +338,8 @@ export function GerenciadorFotos({
           className="flex flex-col gap-4 border border-dashed p-5"
           style={{ borderColor: "var(--color-border)" }}
         >
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="fotos" className="label">
-              Adicionar fotos
-            </label>
+          <div className="flex flex-col gap-2">
+            <span className="label">Adicionar fotos</span>
             <input
               ref={entrada}
               id="fotos"
@@ -350,8 +349,7 @@ export function GerenciadorFotos({
               multiple
               disabled={enviando}
               onChange={(e) => setEscolhidas(e.target.files?.length ?? 0)}
-              className="text-sm"
-              style={{ color: "var(--color-foreground)" }}
+              className="sr-only"
             />
             <span className="meta">
               JPG, PNG, WebP ou AVIF, até 10 MB cada. Cabem mais {restam}.
@@ -360,16 +358,21 @@ export function GerenciadorFotos({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <Enviar
-              vazio={escolhidas === 0}
-              pending={enviando}
-              progresso={progresso}
-            />
+          <div className="flex flex-wrap items-center gap-3">
+            <label
+              htmlFor="fotos"
+              aria-disabled={enviando}
+              className={`btn btn-ghost cursor-pointer ${enviando ? "pointer-events-none opacity-50" : ""}`}
+            >
+              {escolhidas > 0 ? "Trocar seleção" : "Escolher fotos"}
+            </label>
             {escolhidas > 0 && (
-              <span className="meta">
-                {escolhidas} selecionada{escolhidas === 1 ? "" : "s"}
-              </span>
+              <>
+                <Enviar pending={enviando} progresso={progresso} />
+                <span className="meta">
+                  {escolhidas} selecionada{escolhidas === 1 ? "" : "s"}
+                </span>
+              </>
             )}
             {(estado.erro || estado.sucesso) && (
               <span

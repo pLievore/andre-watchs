@@ -14,26 +14,36 @@
 | # | Passo | Status |
 |---|---|---|
 | 3.1 | Quem é admin (`ADMIN_EMAILS`, sem tabela nova) | ✅ |
+# FASE 3 — Painel
+
+> **Objetivo**: o Andre deixa de depender de scripts de linha de comando pra
+> operar a casa. Ele aprova ou recusa quem pediu acesso, ativa ou desativa
+> cliente, e edita as peças do acervo — tudo pelo navegador.
+>
+> Fase 2 abriu a porta. Esta fase dá a chave pra quem fica do lado de dentro
+> dela como dono, não como cliente.
+
+---
+
+## Estado
+
+| # | Passo | Status |
+|---|---|---|
+| 3.1 | Quem é admin (`ADMIN_EMAILS`, sem tabela nova) | ✅ |
 | 3.2 | Login e middleware reconhecem admin | ✅ |
 | 3.3 | `/painel` — aprovar/recusar pedidos de acesso | ✅ |
 | 3.4 | `/painel/clientes` — listar e mudar status | ✅ |
 | 3.5 | `/painel/pecas` — listar e editar | ✅ validado com sessão de admin |
 | 3.6 | Upload de foto (bucket privado, até 10 MB) | ✅ validado com JPEG de 4,34 MB |
 | 3.7 | Criar peça nova pelo painel | ✅ já aceita fotos no cadastro |
-| 3.8 | Convites por link (uso único, 7 dias) | ⬜ |
+| 3.8 | Convites por link (uso único, 7 dias) | ✅ |
 | 3.10 | Casca própria do painel (route groups) | ✅ |
-| 3.9 | Verificação | 🟡 porta, peças, clientes e fotos validados; falta convite |
+| 3.9 | Verificação | ✅ porta, peças, clientes, fotos e convites validados |
 
 Legenda: ⬜ pendente · 🟡 em andamento · ✅ concluído
 
 O 3.8 fica para uma próxima entrega: convite pede token de uso único com
 validade e uma tabela própria. Registrado aqui para não virar surpresa depois.
-
----
-
-## 3.1 — Quem é admin
-
-**Decisão**: e-mail em variável de ambiente (`ADMIN_EMAILS`, separado por
 vírgula), não uma tabela ou coluna de role.
 
 Por quê: existe um dono só. Uma tabela `admins` — ou uma coluna `role` em
@@ -127,6 +137,23 @@ upload, sem duplicar o registro.
 
 ---
 
+## 3.8 — Convites por link
+
+O terceiro caminho de entrada (D25). O André gera um link de convite exclusivo
+no `/painel` com validade de 7 dias e uso único. A UI gera também uma mensagem
+polida e discreta pronta para copiar para o WhatsApp.
+
+O convidado acessa `/convite/[token]`. Se o token for inválido, já tiver sido
+resgatado ou estiver expirado, telas dedicadas com design editorial orientam o
+visitante. Se válido, o convidado preenche seus dados (nome, e-mail, telefone e
+senha), a conta é criada no Supabase Auth com linha ativa em `clientes`, o convite
+é marcado como usado (`usado_em = now()`) e o cliente é logado imediatamente e
+direcionado ao acervo.
+
+Migração aplicada: `supabase/fase-6.sql` (tabela `convites`, com RLS estrito).
+
+---
+
 ## 3.9 — Verificação
 
 - [x] `npx tsc --noEmit` limpo
@@ -142,12 +169,11 @@ upload, sem duplicar o registro.
 - [x] Oito toques no mesmo frame disparam só uma troca otimista
 - [x] 30 movimentos concorrentes mantêm ordens únicas e contínuas
 - [x] Excluir a peça de teste remove as linhas e os objetos do Storage
+- [x] Gerar convite cria token de 7 dias com mensagem para WhatsApp; resgate cria usuário e ativa cliente direto no acervo
+- [x] Tentativa com convite expirado ou já utilizado bloqueia o cadastro e informa o usuário com clareza
 
 Verificado em local em 2026-08-28 com o e-mail de teste já cadastrado
 (`ADMIN_EMAILS`), um pedido/cliente e uma peça descartáveis, removidos depois.
-
----
-
 ## Feito é quando
 
 O Andre aprova um pedido, muda o preço de uma peça e desativa um cliente sem

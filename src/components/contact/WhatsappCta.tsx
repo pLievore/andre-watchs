@@ -27,6 +27,7 @@ interface WhatsappCtaProps {
   context?: string;
   variant?: WhatsappCtaVariant;
   className?: string;
+  onClick?: () => void;
 }
 
 /** Monta a URL de destino: WhatsApp quando há número, Instagram como fallback. */
@@ -50,6 +51,7 @@ export function WhatsappCta({
   context,
   variant = "primary",
   className = "",
+  onClick,
 }: WhatsappCtaProps) {
   const href = contactHref(context);
 
@@ -58,6 +60,7 @@ export function WhatsappCta({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={onClick}
       className={`${VARIANT_CLASS[variant]} ${className}`}
     >
       {label}
