@@ -24,12 +24,12 @@ export function dispararVibracao(padrao: number | number[] = 12) {
       container.setAttribute("id", "ios-haptic-container");
       container.setAttribute(
         "style",
-        "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden;"
+        "position:fixed;bottom:0;right:0;width:1px;height:1px;opacity:0.001;pointer-events:auto;overflow:hidden;z-index:-1;"
       );
       container.setAttribute("aria-hidden", "true");
       container.innerHTML = `
         <input type="checkbox" id="ios-haptic-switch" switch />
-        <label for="ios-haptic-switch" id="ios-haptic-label"></label>
+        <label for="ios-haptic-switch" id="ios-haptic-label" style="display:block;width:100%;height:100%;cursor:pointer;"></label>
       `;
       document.body.appendChild(container);
       label = document.getElementById("ios-haptic-label") as HTMLLabelElement | null;

@@ -265,6 +265,20 @@ export function PainelNav({ email }: { email: string }) {
                   color: ativo ? "var(--color-accent)" : "var(--color-muted)",
                 }}
               >
+                {/* Gatilho físico da Taptic Engine no iPhone (acionado pelo toque direto do polegar) */}
+                <input
+                  type="checkbox"
+                  aria-hidden="true"
+                  tabIndex={-1}
+                  {...({ switch: "" } as any)}
+                  className="absolute inset-0 z-10 h-full w-full opacity-0 cursor-pointer"
+                  style={{
+                    WebkitTapHighlightColor: "transparent",
+                    touchAction: "manipulation",
+                  }}
+                  onClick={(e) => handleNavegar(e, href)}
+                />
+
                 {!estaNoShell && ativo && (
                   <motion.span
                     layoutId={reduceMotion ? undefined : "painel-nav-indicator"}

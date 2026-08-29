@@ -46,13 +46,14 @@ export default function PainelRootLayout({
           aria-hidden="true"
           style={{
             position: "fixed",
-            top: -9999,
-            left: -9999,
+            bottom: 0,
+            right: 0,
             width: 1,
             height: 1,
-            opacity: 0,
-            pointerEvents: "none",
+            opacity: 0.001,
+            pointerEvents: "auto",
             overflow: "hidden",
+            zIndex: -1,
           }}
         >
           <input
@@ -60,7 +61,7 @@ export default function PainelRootLayout({
             id="ios-haptic-switch"
             {...({ switch: "" } as any)}
           />
-          <label htmlFor="ios-haptic-switch" id="ios-haptic-label" />
+          <label htmlFor="ios-haptic-switch" id="ios-haptic-label" style={{ display: "block", width: "100%", height: "100%", cursor: "pointer" }} />
         </div>
         <Analytics />
       </body>
