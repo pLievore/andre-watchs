@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
-import "../globals.css";
+import "./painel.css";
 
 /**
  * Layout RAIZ do painel — irmão do layout da vitrine, não filho.
