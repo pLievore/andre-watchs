@@ -183,6 +183,11 @@ export function PainelTabShell({
   // Listener de toque para arraste 1:1 real estilo Instagram (permite arrastar sobre tabelas e cards)
   useEffect(() => {
     function onClickCapture(e: MouseEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("label[id*='tab-label-'], input[id*='tab-input-']")) {
+        return;
+      }
+
       if (hasSwipedRef.current) {
         e.preventDefault();
         e.stopPropagation();
@@ -316,19 +321,14 @@ export function PainelTabShell({
       }
 
       if (targetIdx !== activeIdx) {
-        const targetLabel = document.getElementById(`painel-tab-label-${targetIdx}`);
-        const targetInput = document.getElementById(`painel-tab-input-${targetIdx}`);
-        if (targetLabel) {
-          targetLabel.click();
-        } else if (targetInput) {
-          targetInput.click();
-        } else {
-          vibrar(12);
-          navegarParaAba(targetIdx, true);
-        }
-      } else {
-        navegarParaAba(activeIdx, true);
+        vibrar(12);
+        try {
+          const targetLabel = document.getElementById(`painel-tab-label-${targetIdx}`);
+          targetLabel?.click();
+        } catch {}
       }
+
+      navegarParaAba(targetIdx, true);
     }
 
     window.addEventListener("click", onClickCapture, { capture: true });

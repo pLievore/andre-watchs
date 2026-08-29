@@ -175,6 +175,11 @@ export function SiteTabShell({
   // Gesto 1:1 de toque idêntico ao Instagram (permite arrastar sobre fotos de relógios)
   useEffect(() => {
     function onClickCapture(e: MouseEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("label[id*='tab-label-'], input[id*='tab-input-']")) {
+        return;
+      }
+
       // Se o usuário realizou um gesto de swipe horizontal, cancela o clique do link/foto
       if (hasSwipedRef.current) {
         e.preventDefault();
@@ -305,19 +310,14 @@ export function SiteTabShell({
       }
 
       if (targetIdx !== activeIdx) {
-        const targetLabel = document.getElementById(`cliente-tab-label-${targetIdx}`);
-        const targetInput = document.getElementById(`cliente-tab-input-${targetIdx}`);
-        if (targetLabel) {
-          targetLabel.click();
-        } else if (targetInput) {
-          targetInput.click();
-        } else {
-          vibrar(12);
-          navegarParaAba(targetIdx, true);
-        }
-      } else {
-        navegarParaAba(activeIdx, true);
+        vibrar(12);
+        try {
+          const targetLabel = document.getElementById(`cliente-tab-label-${targetIdx}`);
+          targetLabel?.click();
+        } catch {}
       }
+
+      navegarParaAba(targetIdx, true);
     }
 
     window.addEventListener("click", onClickCapture, { capture: true });
