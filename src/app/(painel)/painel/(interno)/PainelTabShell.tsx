@@ -63,6 +63,7 @@ export function PainelTabShell({
 
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const gestureLockRef = useRef<"horizontal" | "vertical" | null>(null);
+  const hasSwipedRef = useRef(false);
   const currentTabRef = useRef(initialTab);
   currentTabRef.current = currentTab;
 
@@ -139,8 +140,16 @@ export function PainelTabShell({
     return () => window.removeEventListener("popstate", onPopState);
   }, [navegarParaAba]);
 
-  // Listener de toque para arraste 1:1 real estilo Instagram
+  // Listener de toque para arraste 1:1 real estilo Instagram (permite arrastar sobre tabelas e cards)
   useEffect(() => {
+    function onClickCapture(e: MouseEvent) {
+      if (hasSwipedRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        hasSwipedRef.current = false;
+      }
+    }
+
     function onTouchStart(e: TouchEvent) {
       if (e.touches.length !== 1) return;
       const touch = e.touches[0];
@@ -148,16 +157,16 @@ export function PainelTabShell({
 
       const target = e.target as HTMLElement | null;
 
-      // Não dispara swipe se tocou em inputs, sliders, seletores, botões interativos
+      // Não bloqueia links, cards ou botões: apenas campos de texto para digitação
       if (
         target?.closest(
-          "input, textarea, select, button, a, [data-no-swipe], [role='slider'], .no-swipe"
+          "input:not([type='button']):not([type='submit']), textarea, select, [role='slider'], [data-no-swipe], .no-swipe"
         )
       ) {
         return;
       }
 
-      // Ignora containers com scroll horizontal próprio (ex: gráfico ou tabela)
+      // Ignora containers com scroll horizontal próprio (ex: gráfico ou tabela interna)
       const horizontalScroll = target?.closest(".overflow-x-auto, .overflow-x-scroll");
       if (horizontalScroll && horizontalScroll.scrollWidth > horizontalScroll.clientWidth) {
         return;
@@ -190,6 +199,7 @@ export function PainelTabShell({
 
         if (absX > absY && absX > 8) {
           gestureLockRef.current = "horizontal";
+          hasSwipedRef.current = true;
         }
       }
 
@@ -197,6 +207,7 @@ export function PainelTabShell({
 
       if (gestureLockRef.current === "horizontal") {
         if (e.cancelable) e.preventDefault();
+        hasSwipedRef.current = true;
 
         const screenWidth = window.innerWidth || 400;
         // Cada tela inteira arrastada corresponde a 20% do container de 500%
@@ -238,6 +249,12 @@ export function PainelTabShell({
       touchStartRef.current = null;
       gestureLockRef.current = null;
 
+      // Mantém a flag de swipe ativa brevemente para engolir o evento click gerado pelo navegador
+      hasSwipedRef.current = true;
+      setTimeout(() => {
+        hasSwipedRef.current = false;
+      }, 150);
+
       // Limiar: 16% da largura da tela ou flick rápido (> 0.35px/ms)
       const limiarPx = screenWidth * 0.16;
       const foiRapido = Math.abs(velocity) > 0.35;
@@ -267,12 +284,14 @@ export function PainelTabShell({
       navegarParaAba(targetIdx, true);
     }
 
+    window.addEventListener("click", onClickCapture, { capture: true });
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: false });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
     window.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     return () => {
+      window.removeEventListener("click", onClickCapture, { capture: true });
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);

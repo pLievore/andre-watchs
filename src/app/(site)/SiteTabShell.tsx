@@ -44,6 +44,7 @@ export function SiteTabShell({
 
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const gestureLockRef = useRef<"horizontal" | "vertical" | null>(null);
+  const hasSwipedRef = useRef(false);
   const currentTabRef = useRef(initialTab);
   currentTabRef.current = currentTab;
 
@@ -131,8 +132,17 @@ export function SiteTabShell({
     return () => window.removeEventListener("popstate", onPopState);
   }, [navegarParaAba]);
 
-  // Gesto 1:1 de toque idêntico ao Instagram
+  // Gesto 1:1 de toque idêntico ao Instagram (permite arrastar sobre fotos de relógios)
   useEffect(() => {
+    function onClickCapture(e: MouseEvent) {
+      // Se o usuário realizou um gesto de swipe horizontal, cancela o clique do link/foto
+      if (hasSwipedRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        hasSwipedRef.current = false;
+      }
+    }
+
     function onTouchStart(e: TouchEvent) {
       if (e.touches.length !== 1) return;
       const touch = e.touches[0];
@@ -140,9 +150,10 @@ export function SiteTabShell({
 
       const target = e.target as HTMLElement | null;
 
+      // Não bloqueia links ou fotos de relógios: apenas campos de digitação
       if (
         target?.closest(
-          "input, textarea, select, button, a, [data-no-swipe], [role='slider'], .no-swipe"
+          "input:not([type='button']):not([type='submit']), textarea, select, [role='slider'], [data-no-swipe], .no-swipe"
         )
       ) {
         return;
@@ -180,6 +191,7 @@ export function SiteTabShell({
 
         if (absX > absY && absX > 8) {
           gestureLockRef.current = "horizontal";
+          hasSwipedRef.current = true;
         }
       }
 
@@ -187,6 +199,7 @@ export function SiteTabShell({
 
       if (gestureLockRef.current === "horizontal") {
         if (e.cancelable) e.preventDefault();
+        hasSwipedRef.current = true;
 
         const screenWidth = window.innerWidth || 400;
         const deltaPercent = (deltaX / screenWidth) * 25;
@@ -226,6 +239,12 @@ export function SiteTabShell({
       touchStartRef.current = null;
       gestureLockRef.current = null;
 
+      // Mantém a flag de swipe ativa brevemente para engolir o evento click gerado pelo navegador
+      hasSwipedRef.current = true;
+      setTimeout(() => {
+        hasSwipedRef.current = false;
+      }, 150);
+
       const limiarPx = screenWidth * 0.16;
       const foiRapido = Math.abs(velocity) > 0.35;
 
@@ -254,12 +273,14 @@ export function SiteTabShell({
       navegarParaAba(targetIdx, true);
     }
 
+    window.addEventListener("click", onClickCapture, { capture: true });
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: false });
     window.addEventListener("touchend", onTouchEnd, { passive: true });
     window.addEventListener("touchcancel", onTouchEnd, { passive: true });
 
     return () => {
+      window.removeEventListener("click", onClickCapture, { capture: true });
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
