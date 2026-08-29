@@ -33,6 +33,7 @@ const CONDICOES = [
 const INTEGRALIDADES = [
   ["full-set", "Full set"],
   ["caixa-e-papeis", "Caixa e papéis"],
+  ["relogio-e-caixa", "Relógio e caixa"],
   ["somente-relogio", "Somente relógio"],
 ] as const;
 

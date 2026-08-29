@@ -20,6 +20,7 @@ Todas idempotentes: rodar de novo não quebra nada.
 | `supabase/fase-5.sql` | função transacional para reordenar fotos | ✅ 2026-08-28 |
 | `supabase/fase-6.sql` | tabela `convites`, RLS, expiração de 7 dias | ✅ 2026-08-28 |
 | `supabase/fase-7.sql` | tabelas `eventos` e `interesses`, RLS e pipeline | ✅ 2026-08-28 |
+| `supabase/fase-11-integralidade-relogio-caixa.sql` | enum `integralidade` com `relogio-e-caixa` e `diametro_mm` numeric | ✅ 2026-08-29 |
 
 ```bash
 node scripts/aplicar-sql.mjs supabase/fase-5.sql

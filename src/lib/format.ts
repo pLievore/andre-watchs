@@ -38,11 +38,12 @@ export function formatCondition(condition: WatchCondition): string {
 const COMPLETENESS_LABELS: Record<WatchCompleteness, string> = {
   "full-set": "FULL SET",
   "caixa-e-papeis": "CAIXA E PAPÉIS",
+  "relogio-e-caixa": "RELÓGIO E CAIXA",
   "somente-relogio": "SOMENTE RELÓGIO",
 };
 
 export function formatCompleteness(value: WatchCompleteness): string {
-  return COMPLETENESS_LABELS[value];
+  return COMPLETENESS_LABELS[value] ?? value;
 }
 
 const MATERIAL_LABELS: Record<CaseMaterial, string> = {
@@ -57,8 +58,9 @@ const MATERIAL_LABELS: Record<CaseMaterial, string> = {
   ceramica: "Cerâmica",
 };
 
-export function formatMaterial(value: CaseMaterial | undefined): string {
-  return value ? MATERIAL_LABELS[value] : NO_DATA;
+export function formatMaterial(value: CaseMaterial | string | undefined): string {
+  if (!value) return NO_DATA;
+  return (MATERIAL_LABELS as Record<string, string>)[value] ?? value;
 }
 
 const BRACELET_LABELS: Record<BraceletType, string> = {
@@ -71,8 +73,9 @@ const BRACELET_LABELS: Record<BraceletType, string> = {
   integrada: "Pulseira integrada",
 };
 
-export function formatBracelet(value: BraceletType | undefined): string {
-  return value ? BRACELET_LABELS[value] : NO_DATA;
+export function formatBracelet(value: BraceletType | string | undefined): string {
+  if (!value) return NO_DATA;
+  return (BRACELET_LABELS as Record<string, string>)[value] ?? value;
 }
 
 export function formatDiameter(mm: number | undefined): string {

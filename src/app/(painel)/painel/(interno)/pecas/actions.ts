@@ -16,11 +16,18 @@ import { redirect } from "next/navigation";
 
 import { dbAdmin } from "@/lib/db/admin";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
-import type { WatchState } from "@/lib/types";
+import type { WatchCompleteness, WatchCondition, WatchState } from "@/lib/types";
 
 export type EstadoPeca = { erro?: string; sucesso?: string; slug?: string };
 
 const ESTADOS: readonly WatchState[] = ["disponivel", "reservada", "vendida"];
+const CONDICOES_VALIDAS: readonly WatchCondition[] = ["novo", "seminovo", "pre-owned"];
+const INTEGRALIDADES_VALIDAS: readonly WatchCompleteness[] = [
+  "full-set",
+  "caixa-e-papeis",
+  "relogio-e-caixa",
+  "somente-relogio",
+];
 
 /** Campo vazio vira `null`: no banco, ausência é `null`, nunca string vazia. */
 function ouNulo(v: FormDataEntryValue | null): string | null {
@@ -28,12 +35,18 @@ function ouNulo(v: FormDataEntryValue | null): string | null {
   return s === "" ? null : s;
 }
 
-/** Número opcional. Texto não-numérico vira `null` em vez de `NaN`. */
+/** Número opcional (aceita vírgula ou ponto como decimal). Texto não-numérico vira `null`. */
 function numeroOuNulo(v: FormDataEntryValue | null): number | null {
-  const s = String(v ?? "").trim();
+  const s = String(v ?? "").trim().replace(",", ".");
   if (s === "") return null;
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
+}
+
+/** Ano opcional arredondado para inteiro. */
+function anoOuNulo(v: FormDataEntryValue | null): number | null {
+  const n = numeroOuNulo(v);
+  return n !== null ? Math.round(n) : null;
 }
 
 /**
@@ -47,20 +60,48 @@ function precoParaCentavos(v: FormDataEntryValue | null): number | null {
   if (bruto === "") return null;
 
   const limpo = bruto.replace(/[^\d,.]/g, "");
-  // Separador decimal é o último símbolo, se houver exatamente 2 dígitos depois.
-  const decimal = /[.,]\d{2}$/.test(limpo);
+  if (!limpo) return null;
+
+  // Se tem separador decimal com 1 dígito no fim (ex: "215000,5"):
+  if (/[.,]\d{1}$/.test(limpo)) {
+    const digitos = limpo.replace(/\D/g, "");
+    const centavos = Number(digitos) * 10;
+    return Number.isFinite(centavos) && centavos >= 0 ? centavos : null;
+  }
+
+  // Se tem separador decimal com 2 dígitos no fim (ex: "215000,50" ou "215.000,00"):
+  if (/[.,]\d{2}$/.test(limpo)) {
+    const digitos = limpo.replace(/\D/g, "");
+    const centavos = Number(digitos);
+    return Number.isFinite(centavos) && centavos >= 0 ? centavos : null;
+  }
+
+  // Sem decimais (ex: "215000" ou "215.000"):
   const digitos = limpo.replace(/\D/g, "");
   if (digitos === "") return null;
-
-  const centavos = decimal ? Number(digitos) : Number(digitos) * 100;
+  const centavos = Number(digitos) * 100;
   return Number.isFinite(centavos) && centavos >= 0 ? centavos : null;
 }
 
 function estadoValido(v: FormDataEntryValue | null): WatchState {
-  const s = String(v ?? "");
+  const s = String(v ?? "").trim();
   return (ESTADOS as readonly string[]).includes(s)
     ? (s as WatchState)
     : "disponivel";
+}
+
+function condicaoValida(v: FormDataEntryValue | null): WatchCondition {
+  const s = String(v ?? "").trim();
+  return (CONDICOES_VALIDAS as readonly string[]).includes(s)
+    ? (s as WatchCondition)
+    : "seminovo";
+}
+
+function integralidadeValida(v: FormDataEntryValue | null): WatchCompleteness {
+  const s = String(v ?? "").trim();
+  return (INTEGRALIDADES_VALIDAS as readonly string[]).includes(s)
+    ? (s as WatchCompleteness)
+    : "caixa-e-papeis";
 }
 
 /**
@@ -112,15 +153,15 @@ function camposDoForm(form: FormData) {
   return {
     marca: String(form.get("marca") ?? "").trim(),
     modelo: String(form.get("modelo") ?? "").trim(),
-    condicao: String(form.get("condicao") ?? "seminovo"),
-    integralidade: String(form.get("integralidade") ?? "caixa-e-papeis"),
+    condicao: condicaoValida(form.get("condicao")),
+    integralidade: integralidadeValida(form.get("integralidade")),
     referencia: ouNulo(form.get("referencia")),
     calibre: ouNulo(form.get("calibre")),
     diametro_mm: numeroOuNulo(form.get("diametro_mm")),
     material_caixa: ouNulo(form.get("material_caixa")),
     pulseira: ouNulo(form.get("pulseira")),
     mostrador: ouNulo(form.get("mostrador")),
-    ano_cartao: numeroOuNulo(form.get("ano_cartao")),
+    ano_cartao: anoOuNulo(form.get("ano_cartao")),
     estado: estadoValido(form.get("estado")),
     consignada: form.get("consignada") === "on",
     historia: ouNulo(form.get("historia")),

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { dbAdmin } from "@/lib/db/admin";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
 import { formatPrice } from "@/lib/format";
+import { GraficoTendencia } from "./GraficoTendencia";
 
 export const dynamic = "force-dynamic";
 
@@ -59,9 +60,11 @@ export default async function DashboardPage() {
   const estoqueTotalCentavos = pecasAtivas.reduce((acc, p) => acc + (p.preco_centavos ?? 0), 0);
 
   // 3. Agrupamento diário dos últimos 14 dias (Série Temporal)
+  const DIAS_SEMANA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
   const diasSérie: {
     dataIso: string;
     rotulo: string;
+    diaSemana: string;
     acessos: number;
     visualizacoes: number;
     whatsapps: number;
@@ -74,10 +77,12 @@ export default async function DashboardPage() {
     const dia = String(d.getDate()).padStart(2, "0");
     const dataIso = `${ano}-${mes}-${dia}`;
     const rotulo = `${dia}/${mes}`;
+    const diaSemana = DIAS_SEMANA[d.getDay()] ?? "Seg";
 
     diasSérie.push({
       dataIso,
       rotulo,
+      diaSemana,
       acessos: 0,
       visualizacoes: 0,
       whatsapps: 0,
@@ -306,68 +311,8 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* ── Gráfico Temporal: Acessos Diários (14 Dias) ─────────────────── */}
-      <section
-        className="border p-6 flex flex-col gap-6"
-        style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 className="label text-sm uppercase tracking-wider">
-              Tendência Diária de Interações (Últimos 14 Dias)
-            </h2>
-            <p className="meta text-xs mt-0.5">
-              Volume comparativo por dia entre visitas ao acervo, relógios abertos e chamadas no WhatsApp.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 text-xs font-mono">
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 block" style={{ background: "var(--color-foreground)" }} />
-              <span className="meta">Acessos</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 block" style={{ background: "#737887" }} />
-              <span className="meta">Fichas Vistas</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-3 h-3 block" style={{ background: "var(--color-accent)" }} />
-              <span className="meta">WhatsApp</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-end gap-2 sm:gap-3 h-56 pt-8 border-b pb-2 overflow-x-auto" style={{ borderColor: "var(--color-border)" }}>
-          {diasSérie.map((dia) => {
-            const hAcessos = Math.max(4, Math.round((dia.acessos / maxTotalDia) * 160));
-            const hViews = Math.max(4, Math.round((dia.visualizacoes / maxTotalDia) * 160));
-            const hWhats = Math.max(4, Math.round((dia.whatsapps / maxTotalDia) * 160));
-
-            return (
-              <div key={dia.dataIso} className="flex-1 min-w-9 flex flex-col items-center gap-1.5 group">
-                <div className="flex items-end gap-1 w-full justify-center h-44">
-                  <div
-                    title={`${dia.rotulo}: ${dia.acessos} acessos`}
-                    className="w-2.5 sm:w-3 transition-all duration-300 group-hover:brightness-125 cursor-pointer"
-                    style={{ height: `${hAcessos}px`, background: "var(--color-foreground)" }}
-                  />
-                  <div
-                    title={`${dia.rotulo}: ${dia.visualizacoes} fichas vistas`}
-                    className="w-2.5 sm:w-3 transition-all duration-300 group-hover:brightness-125 cursor-pointer"
-                    style={{ height: `${hViews}px`, background: "#737887" }}
-                  />
-                  <div
-                    title={`${dia.rotulo}: ${dia.whatsapps} idas ao WhatsApp`}
-                    className="w-2.5 sm:w-3 transition-all duration-300 group-hover:brightness-125 cursor-pointer"
-                    style={{ height: `${hWhats}px`, background: "var(--color-accent)" }}
-                  />
-                </div>
-                <span className="meta text-[10px] font-mono whitespace-nowrap">{dia.rotulo}</span>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      {/* ── Gráfico Temporal: Acessos Diários com visualização otimizada para Mobile & Desktop ── */}
+      <GraficoTendencia dias={diasSérie} />
 
       {/* ── Grid: Cidades & Dispositivos ─────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6">

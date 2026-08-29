@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 
 import { usuarioAdmin } from "@/lib/db/admin-auth";
 
+import { NavigationProgressBar } from "@/components/layout/NavigationProgressBar";
+
 import { PainelNav } from "./PainelNav";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +20,7 @@ export default async function PainelLayout({
 
   return (
     <div className="min-h-dvh">
+      <NavigationProgressBar cor="var(--color-accent)" />
       <PainelNav email={admin.email ?? ""} />
 
       {/*
@@ -25,7 +28,7 @@ export default async function PainelLayout({
         barra inferior. `pb-24` no mobile evita que a última linha da tabela
         fique atrás da navegação.
       */}
-      <main id="conteudo" className="px-5 pb-24 pt-8 md:ml-56 md:px-10 md:pb-16 md:pt-10">
+      <main id="conteudo" className="overflow-x-clip px-5 pb-24 pt-8 md:ml-56 md:px-10 md:pb-16 md:pt-10">
         <div className="mx-auto max-w-5xl">{children}</div>
       </main>
     </div>

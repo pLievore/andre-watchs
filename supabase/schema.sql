@@ -15,7 +15,7 @@ do $$ begin
 exception when duplicate_object then null; end $$;
 
 do $$ begin
-  create type integralidade as enum ('full-set', 'caixa-e-papeis', 'somente-relogio');
+  create type integralidade as enum ('full-set', 'caixa-e-papeis', 'relogio-e-caixa', 'somente-relogio');
 exception when duplicate_object then null; end $$;
 
 do $$ begin
@@ -50,7 +50,7 @@ create table if not exists pecas (
   -- Especificações: tudo opcional, ver comentário acima
   referencia      text,
   calibre         text,
-  diametro_mm     smallint,
+  diametro_mm     numeric,
   material_caixa  text,
   pulseira        text,
   mostrador       text,

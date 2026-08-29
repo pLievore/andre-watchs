@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { NavigationProgressBar } from "@/components/layout/NavigationProgressBar";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
 import { clienteAtual } from "@/lib/db/server";
@@ -37,6 +38,7 @@ export default async function RootLayout({
   // O header muda para o dono: ele vê "Painel" e "Acervo", não "Entrar".
   const [cliente, admin] = await Promise.all([clienteAtual(), usuarioAdmin()]);
   const ehAdmin = admin !== null;
+  const temBarraMobile = cliente?.status === "ativo" || ehAdmin;
 
   return (
     <html lang="pt-BR">
@@ -48,16 +50,17 @@ export default async function RootLayout({
           Pular para o conteúdo
         </a>
         <SmoothScroll>
+          <NavigationProgressBar cor="var(--color-foreground)" />
           <Header
             isClienteAtivo={cliente?.status === "ativo"}
             isAdmin={ehAdmin}
           />
           <div
             className={`relative z-10 ${
-              cliente?.status === "ativo" && !ehAdmin ? "pb-20 md:pb-0" : ""
+              temBarraMobile ? "pb-20 md:pb-0" : ""
             }`}
           >
-            <main id="main">{children}</main>
+            <main id="main" className="overflow-x-clip">{children}</main>
             <Footer />
           </div>
         </SmoothScroll>

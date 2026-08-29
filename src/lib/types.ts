@@ -10,7 +10,11 @@
 export type WatchCondition = "novo" | "seminovo" | "pre-owned";
 
 /** O que acompanha a peça. `full-set` exige caixa + cartão + manuais + selo. */
-export type WatchCompleteness = "full-set" | "caixa-e-papeis" | "somente-relogio";
+export type WatchCompleteness =
+  | "full-set"
+  | "caixa-e-papeis"
+  | "relogio-e-caixa"
+  | "somente-relogio";
 
 /** Material da caixa. `two-tone` = Rolesor (aço + ouro) — libera o acento dourado. */
 export type CaseMaterial =

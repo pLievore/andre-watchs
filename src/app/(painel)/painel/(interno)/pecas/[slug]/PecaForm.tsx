@@ -27,6 +27,7 @@ const CONDICOES = [
 const INTEGRALIDADES = [
   ["full-set", "Full set"],
   ["caixa-e-papeis", "Caixa e papéis"],
+  ["relogio-e-caixa", "Relógio e caixa"],
   ["somente-relogio", "Somente relógio"],
 ] as const;
 
@@ -56,17 +57,11 @@ export interface PecaEditavel {
   notas_estado: string | null;
 }
 
-const entrada =
-  "border bg-transparent px-3 py-2.5 text-base";
-const estiloEntrada = {
-  borderColor: "var(--color-border)",
-  color: "var(--color-foreground)",
-};
-
 function Campo({
   id,
   rotulo,
   dica,
+  className,
   ...props
 }: {
   id: string;
@@ -78,7 +73,7 @@ function Campo({
       <label htmlFor={id} className="label">
         {rotulo}
       </label>
-      <input id={id} name={id} className={entrada} style={estiloEntrada} {...props} />
+      <input id={id} name={id} className={`campo ${className ?? ""}`.trim()} {...props} />
       {dica && <span className="meta">{dica}</span>}
     </div>
   );
@@ -99,6 +94,7 @@ function Selecao({
   valor?: string;
   aoMudar?: (v: string) => void;
 }) {
+  const isControlled = valor !== undefined;
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="label">
@@ -107,10 +103,10 @@ function Selecao({
       <select
         id={id}
         name={id}
-        value={valor !== undefined ? valor : padrao}
+        value={isControlled ? valor : undefined}
+        defaultValue={!isControlled ? padrao : undefined}
         onChange={(e) => aoMudar?.(e.target.value)}
-        className={entrada}
-        style={estiloEntrada}
+        className="campo"
       >
         {opcoes.map(([v, r]) => (
           <option key={v} value={v} style={{ background: "var(--color-surface)" }}>
@@ -134,12 +130,16 @@ function Salvar() {
 export function PecaForm({ peca }: { peca: PecaEditavel }) {
   const router = useRouter();
   const [estado, acao] = useActionState<EstadoPeca, FormData>(salvarPeca, {});
+  const [condicao, setCondicao] = useState(peca.condicao);
+  const [integralidade, setIntegralidade] = useState(peca.integralidade);
   const [estadoComercial, setEstadoComercial] = useState(peca.estado);
 
   // Sincroniza se a peça for recarregada do servidor
   useEffect(() => {
+    setCondicao(peca.condicao);
+    setIntegralidade(peca.integralidade);
     setEstadoComercial(peca.estado);
-  }, [peca.estado]);
+  }, [peca.condicao, peca.integralidade, peca.estado]);
 
   // Força revalidação do cache local no Next.js assim que salvar
   useEffect(() => {
@@ -162,12 +162,19 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2">
-        <Selecao id="condicao" rotulo="Condição" opcoes={CONDICOES} padrao={peca.condicao} />
+        <Selecao
+          id="condicao"
+          rotulo="Condição"
+          opcoes={CONDICOES}
+          valor={condicao}
+          aoMudar={setCondicao}
+        />
         <Selecao
           id="integralidade"
           rotulo="O que acompanha"
           opcoes={INTEGRALIDADES}
-          padrao={peca.integralidade}
+          valor={integralidade}
+          aoMudar={setIntegralidade}
         />
       </div>
 
@@ -196,7 +203,8 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
             id="diametro_mm"
             rotulo="Diâmetro (mm)"
             type="number"
-            inputMode="numeric"
+            step="any"
+            inputMode="decimal"
             defaultValue={peca.diametro_mm ?? ""}
             placeholder="41"
           />
@@ -238,6 +246,7 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
           id="preco"
           rotulo="Preço"
           defaultValue={precoInicial}
+          inputMode="decimal"
           dica="Pode digitar como preferir: 215000, 215.000 ou 215.000,00"
           required
         />
@@ -274,8 +283,7 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
             name="historia"
             rows={4}
             defaultValue={peca.historia ?? ""}
-            className={`${entrada} leading-relaxed`}
-            style={estiloEntrada}
+            className="campo leading-relaxed"
           />
         </div>
 
@@ -288,8 +296,7 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
             name="notas_estado"
             rows={3}
             defaultValue={peca.notas_estado ?? ""}
-            className={`${entrada} leading-relaxed`}
-            style={estiloEntrada}
+            className="campo leading-relaxed"
           />
         </div>
       </div>

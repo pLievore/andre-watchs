@@ -9,7 +9,9 @@
  */
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { sairDoPainel } from "@/app/(painel)/painel/entrar/actions";
 
@@ -29,6 +31,22 @@ function estaAtivo(href: string, atual: string) {
 
 export function PainelNav({ email }: { email: string }) {
   const atual = usePathname();
+  const router = useRouter();
+  const reduceMotion = useReducedMotion();
+  const [otimista, setOtimista] = useState<string | null>(null);
+
+  // Pré-carrega ativamente todas as abas em cache do navegador para transição instantânea
+  useEffect(() => {
+    SECOES.forEach(({ href }) => router.prefetch(href));
+    router.prefetch("/painel/conta");
+  }, [router]);
+
+  // Sincroniza e reseta o clique otimista assim que a rota é confirmada
+  useEffect(() => {
+    setOtimista(null);
+  }, [atual]);
+
+  const rotaAtiva = otimista ?? atual;
 
   return (
     <>
@@ -57,20 +75,33 @@ export function PainelNav({ email }: { email: string }) {
               <Link
                 key={href}
                 href={href}
+                prefetch={true}
                 aria-current={ativo ? "page" : undefined}
-                className="flex items-center gap-3 px-3 py-2.5 text-sm transition-colors duration-200"
+                className="relative flex items-center gap-3 px-3 py-2.5 text-sm transition-colors duration-200"
                 style={{
-                  background: ativo ? "var(--color-surface-2)" : "transparent",
                   color: ativo
                     ? "var(--color-foreground)"
                     : "var(--color-muted)",
-                  boxShadow: ativo
-                    ? "inset 2px 0 0 0 var(--color-accent)"
-                    : "none",
                 }}
               >
+                {ativo && (
+                  <motion.div
+                    layoutId={reduceMotion ? undefined : "painel-desktop-nav-indicator"}
+                    aria-hidden
+                    className="absolute inset-0 -z-10 rounded"
+                    style={{
+                      background: "var(--color-surface-2)",
+                      borderLeft: "2px solid var(--color-accent)",
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 450,
+                      damping: 32,
+                    }}
+                  />
+                )}
                 <Icone />
-                {rotulo}
+                <span className="relative z-10">{rotulo}</span>
               </Link>
             );
           })}
@@ -82,6 +113,7 @@ export function PainelNav({ email }: { email: string }) {
         >
           <Link
             href="/painel/conta"
+            prefetch={true}
             className="meta link-quiet truncate px-3"
             title={email}
             aria-current={atual === "/painel/conta" ? "page" : undefined}
@@ -114,20 +146,85 @@ export function PainelNav({ email }: { email: string }) {
       >
         {[...SECOES, { href: "/painel/conta", rotulo: "Conta", icone: IconeConta }].map(
           ({ href, rotulo, icone: Icone }) => {
-            const ativo = estaAtivo(href, atual);
+            const ativo = estaAtivo(href, rotaAtiva);
+            const carregandoEstaAba = otimista === href && otimista !== atual;
+
             return (
               <Link
                 key={href}
                 href={href}
+                prefetch={true}
+                onClick={() => setOtimista(href)}
                 aria-current={ativo ? "page" : undefined}
-                className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5"
+                className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors"
                 style={{
                   minHeight: 56,
                   color: ativo ? "var(--color-accent)" : "var(--color-muted)",
                 }}
               >
-                <Icone />
-                <span style={{ fontSize: "0.7rem" }}>{rotulo}</span>
+                {ativo && (
+                  <motion.span
+                    layoutId={reduceMotion ? undefined : "painel-nav-indicator"}
+                    aria-hidden
+                    className="absolute inset-x-[18%] top-0 h-[2px]"
+                    style={{
+                      background: "var(--color-accent)",
+                      boxShadow: "0 0 10px rgba(194, 168, 117, 0.45)",
+                      borderRadius: "0 0 2px 2px",
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 450,
+                      damping: 32,
+                    }}
+                  />
+                )}
+                {ativo && (
+                  <motion.span
+                    layoutId={reduceMotion ? undefined : "painel-nav-backdrop"}
+                    aria-hidden
+                    className="absolute inset-1.5 -z-10 rounded-lg"
+                    style={{
+                      background: "rgba(194, 168, 117, 0.08)",
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 450,
+                      damping: 32,
+                    }}
+                  />
+                )}
+                <motion.div
+                  animate={{
+                    scale: ativo ? 1.08 : 1,
+                    y: ativo ? -1 : 0,
+                    opacity: carregandoEstaAba ? [0.4, 1, 0.4] : 1,
+                  }}
+                  transition={{
+                    scale: { type: "spring", stiffness: 450, damping: 28 },
+                    opacity: carregandoEstaAba
+                      ? { repeat: Infinity, duration: 0.7, ease: "easeInOut" }
+                      : undefined,
+                  }}
+                >
+                  <Icone />
+                </motion.div>
+                <span
+                  className="flex items-center gap-1"
+                  style={{
+                    fontSize: "0.7rem",
+                    fontWeight: ativo ? 600 : 400,
+                    letterSpacing: ativo ? "-0.01em" : "normal",
+                  }}
+                >
+                  {rotulo}
+                  {carregandoEstaAba && (
+                    <span
+                      className="inline-block h-1 w-1 rounded-full animate-ping"
+                      style={{ background: "var(--color-accent)" }}
+                    />
+                  )}
+                </span>
               </Link>
             );
           },

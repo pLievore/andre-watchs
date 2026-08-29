@@ -81,16 +81,15 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* ⚠️ DEMO: foto do Unsplash, não é o acervo da casa (ver watches.ts). */}
         <figure className="mt-16">
           <div
-            className="relative aspect-[4/3] w-full overflow-hidden border"
+            className="relative aspect-[16/9] w-full overflow-hidden border"
             style={{ borderColor: "var(--color-border)" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/pecas/acervo-caixa.webp"
-              alt="Caixa de relógios aberta com várias peças guardadas lado a lado"
+              src="/pecas/relogio-desmontado.webp"
+              alt="Calibre e componentes horológicos desmontados na bancada para conferência técnica de autenticidade"
               className="h-full w-full object-cover"
               loading="lazy"
               decoding="async"
