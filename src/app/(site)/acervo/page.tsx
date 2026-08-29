@@ -13,6 +13,7 @@ import { clienteAtual } from "@/lib/db/server";
 import { montarSaudacao } from "@/lib/saudacao";
 
 import { AccessVisitRecorder } from "./AccessVisitRecorder";
+import { AcervoScrollTop } from "./AcervoScrollTop";
 import { ModalBoasVindas } from "./ModalBoasVindas";
 
 export const dynamic = "force-dynamic";
@@ -82,6 +83,7 @@ export default async function AcervoPage({
       {admin && <BarraPrevia />}
       {/* Visita do dono não conta como acesso de cliente — sujaria o registro. */}
       {cliente && !admin && <AccessVisitRecorder />}
+      <AcervoScrollTop />
       <ModalBoasVindas nome={cliente?.nome ?? ""} ativo={boasVindas} />
       <header className="flex max-w-4xl flex-col gap-6">
         <h1

@@ -65,90 +65,9 @@ export default async function DossiePage({
 
   return (
     <main
-      className="dossie-wrapper min-h-screen pt-28 sm:pt-28 md:pt-32 px-4 sm:px-12 md:px-16 pb-32 sm:pb-16 print:p-0 print:bg-white print:text-black"
+      className="min-h-screen pt-28 sm:pt-28 md:pt-32 px-4 sm:px-12 md:px-16 pb-32 sm:pb-16 print:p-0 print:bg-white print:text-black"
       style={{ background: "var(--color-background)" }}
     >
-      {/* ── Regras de Impressão & Exportação PDF Impecável (A4) ──────────── */}
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            @page {
-              size: A4 portrait;
-              margin: 10mm 12mm;
-            }
-            @media print {
-              html, body {
-                background: #ffffff !important;
-                color: #17181a !important;
-                font-size: 10pt !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-              }
-              header, nav, .print-hidden, .fixed {
-                display: none !important;
-              }
-              .dossie-wrapper {
-                padding: 0 !important;
-                min-height: auto !important;
-                background: transparent !important;
-              }
-              .dossie-card {
-                border: none !important;
-                padding: 0 !important;
-                box-shadow: none !important;
-                background: transparent !important;
-                max-width: 100% !important;
-              }
-              .dossie-hero {
-                display: grid !important;
-                grid-template-columns: 180px 1fr !important;
-                gap: 20px !important;
-                padding-top: 12px !important;
-                padding-bottom: 12px !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-              }
-              .dossie-photo-box {
-                width: 180px !important;
-                height: 225px !important;
-                max-height: 225px !important;
-                max-width: 180px !important;
-                aspect-ratio: 4/5 !important;
-                border: 1px solid #e2ded6 !important;
-                overflow: hidden !important;
-              }
-              .dossie-photo-box img {
-                width: 100% !important;
-                height: 100% !important;
-                object-fit: cover !important;
-              }
-              .dossie-specs-list {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr !important;
-                column-gap: 20px !important;
-                row-gap: 4px !important;
-                font-size: 8.5pt !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-              }
-              .dossie-section {
-                padding-top: 12px !important;
-                padding-bottom: 12px !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-              }
-              .dossie-footer {
-                padding-top: 12px !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-              }
-            }
-          `,
-        }}
-      />
-
       {/* ── Barra de Ferramentas Superior (Invisível na Impressão) ────────── */}
       <div
         className="mx-auto max-w-4xl mb-8 flex flex-wrap items-center justify-between gap-3 border-b pb-4 print:hidden"
@@ -172,14 +91,14 @@ export default async function DossiePage({
 
       {/* ── Documento Editorial do Dossiê ───────────────────────────────── */}
       <article
-        className="dossie-card mx-auto max-w-4xl border p-6 sm:p-12 print:border-none print:p-0 shadow-sm print:shadow-none"
+        className="mx-auto max-w-4xl border p-8 sm:p-12 print:border-none print:p-0 shadow-sm print:shadow-none"
         style={{
           borderColor: "var(--color-border)",
           background: "var(--color-surface)",
         }}
       >
         {/* Cabeçalho do Dossiê */}
-        <header className="dossie-section border-b pb-6 sm:pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6" style={{ borderColor: "var(--color-border)" }}>
+        <header className="border-b pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6" style={{ borderColor: "var(--color-border)" }}>
           <div>
             <span
               className="text-xs uppercase tracking-widest font-semibold"
@@ -202,7 +121,7 @@ export default async function DossiePage({
             </p>
           </div>
 
-          <div className="text-left sm:text-right sm:self-end">
+          <div className="text-right sm:self-end">
             <span className="label text-[10px]">Preço de Referência</span>
             <p className="text-xl font-mono font-medium mt-0.5" style={{ color: "var(--color-foreground)" }}>
               {formatPrice(watch.priceCents)}
@@ -210,13 +129,10 @@ export default async function DossiePage({
           </div>
         </header>
 
-        {/* Resumo da Peça com Imagem Otimizada */}
-        <section
-          className="dossie-hero py-6 sm:py-8 grid grid-cols-1 sm:grid-cols-[220px_1fr] md:grid-cols-[260px_1fr] print:grid-cols-[180px_1fr] gap-6 sm:gap-8 items-start border-b"
-          style={{ borderColor: "var(--color-border)" }}
-        >
+        {/* Resumo da Peça com Imagem */}
+        <section className="py-8 grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8 items-start border-b" style={{ borderColor: "var(--color-border)" }}>
           <div
-            className="dossie-photo-box relative aspect-[4/5] w-full max-w-[240px] sm:max-w-none mx-auto sm:mx-0 overflow-hidden border"
+            className="relative aspect-[4/5] w-full overflow-hidden border"
             style={{ borderColor: "var(--color-border)", background: "var(--color-surface-2)" }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -265,12 +181,12 @@ export default async function DossiePage({
         </section>
 
         {/* Grade de Especificações Técnicas */}
-        <section className="dossie-section py-6 sm:py-8 border-b" style={{ borderColor: "var(--color-border)" }}>
+        <section className="py-8 border-b" style={{ borderColor: "var(--color-border)" }}>
           <h3 className="label text-xs uppercase tracking-wider mb-4" style={{ color: "var(--color-foreground)" }}>
             Ficha Técnica Detalhada
           </h3>
 
-          <dl className="dossie-specs-list grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-xs">
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-xs">
             {specs.map((s) => (
               <div
                 key={s.label}
@@ -288,7 +204,7 @@ export default async function DossiePage({
 
         {/* Laudo de Originalidade e Estado */}
         {watch.conditionNotes && (
-          <section className="dossie-section py-6 sm:py-8 border-b" style={{ borderColor: "var(--color-border)" }}>
+          <section className="py-8 border-b" style={{ borderColor: "var(--color-border)" }}>
             <h3 className="label text-xs uppercase tracking-wider mb-3" style={{ color: "var(--color-foreground)" }}>
               Laudo de Conservação & Inspeção da Bancada
             </h3>
@@ -299,7 +215,7 @@ export default async function DossiePage({
         )}
 
         {/* Rodapé e Autenticação da Casa */}
-        <footer className="dossie-footer pt-6 sm:pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <footer className="pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="max-w-md">
             <p className="text-xs font-serif italic" style={{ color: "var(--color-muted)" }}>
               "Cada peça é autenticada e conferida em bancada antes de qualquer oferta.
@@ -310,7 +226,7 @@ export default async function DossiePage({
             </p>
           </div>
 
-          <div className="border p-4 text-center min-w-48 self-stretch sm:self-auto" style={{ borderColor: "var(--color-border)" }}>
+          <div className="border p-4 text-center min-w-48" style={{ borderColor: "var(--color-border)" }}>
             <span
               className="text-[10px] uppercase font-mono tracking-widest block"
               style={{ color: "var(--color-accent)" }}
