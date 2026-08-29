@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { getTabDirection, SITE_TABS } from "@/lib/tab-transitions";
-import { useSwipeTabs } from "@/hooks/useSwipeTabs";
+import { InteractiveTabSlider } from "@/components/layout/InteractiveTabSlider";
 
 let lastSitePath: string | null = null;
 
@@ -16,9 +16,6 @@ export default function SiteTemplate({
 }) {
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
-
-  // Habilita navegação horizontal por gesto de swipe lateral na loja/acervo
-  useSwipeTabs({ tabs: SITE_TABS, disabled: pathname === "/" });
 
   const [direction] = useState(() => {
     // Na landing page principal ("/"), preservamos o alinhamento do canvas do hero sem deslocamento horizontal
@@ -32,21 +29,23 @@ export default function SiteTemplate({
   });
 
   return (
-    <motion.div
-      initial={
-        reduceMotion || direction === 0
-          ? { opacity: 0 }
-          : { opacity: 0, x: direction * 22 }
-      }
-      animate={{ opacity: 1, x: 0 }}
-      transition={{
-        duration: 0.18,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-      className="w-full"
-      style={{ willChange: "transform, opacity" }}
-    >
-      {children}
-    </motion.div>
+    <InteractiveTabSlider tabs={SITE_TABS} disabled={pathname === "/"}>
+      <motion.div
+        initial={
+          reduceMotion || direction === 0
+            ? { opacity: 0 }
+            : { opacity: 0, x: direction * 22 }
+        }
+        animate={{ opacity: 1, x: 0 }}
+        transition={{
+          duration: 0.18,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        className="w-full"
+        style={{ willChange: "transform, opacity" }}
+      >
+        {children}
+      </motion.div>
+    </InteractiveTabSlider>
   );
 }

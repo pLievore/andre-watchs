@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { getTabDirection, PAINEL_TABS } from "@/lib/tab-transitions";
-import { useSwipeTabs } from "@/hooks/useSwipeTabs";
+import { InteractiveTabSlider } from "@/components/layout/InteractiveTabSlider";
 
 let lastPainelPath: string | null = null;
 
@@ -17,9 +17,6 @@ export default function PainelTemplate({
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
 
-  // Habilita navegação horizontal por gesto de swipe lateral idêntico ao Instagram
-  useSwipeTabs({ tabs: PAINEL_TABS });
-
   const [direction] = useState(() => {
     const dir = getTabDirection(PAINEL_TABS, lastPainelPath, pathname);
     lastPainelPath = pathname;
@@ -27,21 +24,23 @@ export default function PainelTemplate({
   });
 
   return (
-    <motion.div
-      initial={
-        reduceMotion || direction === 0
-          ? { opacity: 0 }
-          : { opacity: 0, x: direction * 22 }
-      }
-      animate={{ opacity: 1, x: 0 }}
-      transition={{
-        duration: 0.18,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-      className="w-full"
-      style={{ willChange: "transform, opacity" }}
-    >
-      {children}
-    </motion.div>
+    <InteractiveTabSlider tabs={PAINEL_TABS}>
+      <motion.div
+        initial={
+          reduceMotion || direction === 0
+            ? { opacity: 0 }
+            : { opacity: 0, x: direction * 22 }
+        }
+        animate={{ opacity: 1, x: 0 }}
+        transition={{
+          duration: 0.18,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        className="w-full"
+        style={{ willChange: "transform, opacity" }}
+      >
+        {children}
+      </motion.div>
+    </InteractiveTabSlider>
   );
 }
