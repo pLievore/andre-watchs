@@ -153,12 +153,12 @@ export function Header({
       : NAV_PUBLICA;
 
   const autenticado = isAdmin || isClienteAtivo;
-  const clienteComBarra = isClienteAtivo && !isAdmin;
+  const mostrarBarraMobile = isClienteAtivo || isAdmin;
 
   return (
     <>
       <motion.header
-        className="fixed inset-x-0 top-0 z-50 border-b"
+        className="fixed inset-x-0 top-0 z-50 border-b print:hidden"
         style={
           {
             background,
@@ -212,7 +212,7 @@ export function Header({
             )}
           </div>
 
-          {!clienteComBarra && (
+          {!mostrarBarraMobile && (
             <button
               type="button"
               className="md:hidden"
@@ -227,7 +227,7 @@ export function Header({
         </div>
 
         <AnimatePresence>
-          {menuAberto && !clienteComBarra && (
+          {menuAberto && !mostrarBarraMobile && (
             <motion.nav
               id="menu-celular"
               aria-label="Navegação principal (celular)"
@@ -270,7 +270,7 @@ export function Header({
           )}
         </AnimatePresence>
       </motion.header>
-      {clienteComBarra && <ClienteNavMobile />}
+      {mostrarBarraMobile && <ClienteNavMobile isAdmin={isAdmin} />}
     </>
   );
 }

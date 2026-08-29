@@ -1,23 +1,30 @@
 "use client";
 
 /**
- * Barra inferior do cliente — a navegação recorrente fica ao alcance do
- * polegar, como no painel da casa. O header continua sendo a assinatura da
- * marca; no celular autenticado ele não precisa esconder quatro destinos
- * atrás de um menu sanduíche.
+ * Barra inferior do cliente e do admin na área da vitrine/acervo.
+ * A navegação recorrente fica ao alcance do polegar.
+ * O admin enxerga exatamente como o cliente, com o destino "Painel" no lugar de "Conta".
  */
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const DESTINOS = [
+const DESTINOS_CLIENTE = [
   { href: "/acervo", rotulo: "Acervo", icone: IconeAcervo },
   { href: "/vender", rotulo: "Vender", icone: IconeVender },
   { href: "/sobre", rotulo: "A casa", icone: IconeCasa },
   { href: "/acervo/conta", rotulo: "Conta", icone: IconeConta },
 ] as const;
 
+const DESTINOS_ADMIN = [
+  { href: "/acervo", rotulo: "Acervo", icone: IconeAcervo },
+  { href: "/vender", rotulo: "Vender", icone: IconeVender },
+  { href: "/sobre", rotulo: "A casa", icone: IconeCasa },
+  { href: "/painel", rotulo: "Painel", icone: IconePainel },
+] as const;
+
 function estaAtivo(href: string, atual: string) {
+  if (href === "/painel") return atual.startsWith("/painel");
   if (href === "/acervo/conta") return atual.startsWith(href);
   if (href === "/acervo") {
     return (
@@ -28,20 +35,21 @@ function estaAtivo(href: string, atual: string) {
   return atual === href || atual.startsWith(`${href}/`);
 }
 
-export function ClienteNavMobile() {
+export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
   const atual = usePathname();
+  const destinos = isAdmin ? DESTINOS_ADMIN : DESTINOS_CLIENTE;
 
   return (
     <nav
-      aria-label="Navegação do cliente"
-      className="fixed inset-x-0 bottom-0 z-50 flex border-t md:hidden"
+      aria-label="Navegação móvel"
+      className="fixed inset-x-0 bottom-0 z-50 flex border-t md:hidden print:hidden"
       style={{
         borderColor: "var(--color-border)",
         background: "var(--color-background)",
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      {DESTINOS.map(({ href, rotulo, icone: Icone }) => {
+      {destinos.map(({ href, rotulo, icone: Icone }) => {
         const ativo = estaAtivo(href, atual);
         return (
           <Link
@@ -115,6 +123,17 @@ function IconeConta() {
     <svg {...svg}>
       <circle cx="12" cy="8" r="3.4" />
       <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
+    </svg>
+  );
+}
+
+function IconePainel() {
+  return (
+    <svg {...svg}>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="14" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
     </svg>
   );
 }
