@@ -65,3 +65,59 @@ export function getTabDirection(
 
   return 0;
 }
+
+/**
+ * Retorna a rota adjacente para troca de abas via gesto de arraste (swipe).
+ * Ignora formulários de edição profunda para evitar perda de dados.
+ */
+export function getAdjacentTab(
+  routesOrder: readonly string[],
+  currentPath: string,
+  direction: "left" | "right",
+): string | null {
+  // Desativa swipe em páginas de formulário/edição profunda
+  if (
+    currentPath.includes("/pecas/nova") ||
+    currentPath.includes("/clientes/novo") ||
+    currentPath.match(/\/pecas\/[^/]+$/) ||
+    currentPath.match(/\/clientes\/[^/]+$/)
+  ) {
+    return null;
+  }
+
+  const getIndex = (path: string): number => {
+    if (routesOrder === PAINEL_TABS) {
+      if (path === "/painel") return 0;
+      if (path === "/painel/dashboard") return 1;
+      if (path === "/painel/negociacoes") return 2;
+      if (path === "/painel/pecas") return 3;
+      if (path === "/painel/conta") return 4;
+    } else {
+      if (path === "/acervo") return 0;
+      if (path === "/vender") return 1;
+      if (path === "/sobre") return 2;
+      if (path === "/acervo/conta") return 3;
+      if (path === "/painel") return 3;
+    }
+    return -1;
+  };
+
+  const currIdx = getIndex(currentPath);
+  if (currIdx === -1) return null;
+
+  if (direction === "left") {
+    // Arrastou para a esquerda -> avança para a próxima aba à direita
+    const nextIdx = currIdx + 1;
+    if (nextIdx < routesOrder.length) {
+      return routesOrder[nextIdx] ?? null;
+    }
+  } else {
+    // Arrastou para a direita -> volta para a aba anterior à esquerda
+    const prevIdx = currIdx - 1;
+    if (prevIdx >= 0) {
+      return routesOrder[prevIdx] ?? null;
+    }
+  }
+
+  return null;
+}

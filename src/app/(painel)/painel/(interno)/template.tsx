@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { getTabDirection, PAINEL_TABS } from "@/lib/tab-transitions";
+import { useSwipeTabs } from "@/hooks/useSwipeTabs";
 
 let lastPainelPath: string | null = null;
 
@@ -15,6 +16,9 @@ export default function PainelTemplate({
 }) {
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+
+  // Habilita navegação horizontal por gesto de swipe lateral idêntico ao Instagram
+  useSwipeTabs({ tabs: PAINEL_TABS });
 
   const [direction] = useState(() => {
     const dir = getTabDirection(PAINEL_TABS, lastPainelPath, pathname);

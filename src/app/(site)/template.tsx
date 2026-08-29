@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { getTabDirection, SITE_TABS } from "@/lib/tab-transitions";
+import { useSwipeTabs } from "@/hooks/useSwipeTabs";
 
 let lastSitePath: string | null = null;
 
@@ -15,6 +16,9 @@ export default function SiteTemplate({
 }) {
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
+
+  // Habilita navegação horizontal por gesto de swipe lateral na loja/acervo
+  useSwipeTabs({ tabs: SITE_TABS, disabled: pathname === "/" });
 
   const [direction] = useState(() => {
     // Na landing page principal ("/"), preservamos o alinhamento do canvas do hero sem deslocamento horizontal
