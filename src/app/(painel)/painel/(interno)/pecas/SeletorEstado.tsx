@@ -1,18 +1,11 @@
 "use client";
 
 /**
- * Escolha do estado comercial, direto da lista.
- *
- * Era um botão que alternava disponível/vendida a cada clique. Dois problemas:
- * o estado real tem três valores, e um botão que muda o dado no clique não
- * avisa para onde vai — quem quisesse marcar "vendida" tinha que adivinhar se
- * o clique ia levar para lá.
- *
- * Aqui o selo mostra o estado atual; o toque abre as três opções e a pessoa
- * escolhe. Fica claro o que é agora e o que dá para virar.
+ * Escolha do estado comercial, direto da lista com atualização otimista (0ms).
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 
 import { mudarEstado } from "./actions";
 
@@ -34,7 +27,7 @@ function corDe(estado: Estado): string {
 }
 
 export function rotuloDe(estado: Estado): string {
-  return OPCOES.find((o) => o.valor === estado)!.rotulo;
+  return OPCOES.find((o) => o.valor === estado)?.rotulo ?? "Disponível";
 }
 
 export function SeletorEstado({
@@ -44,11 +37,16 @@ export function SeletorEstado({
   slug: string;
   estado: Estado;
 }) {
+  const router = useRouter();
   const [aberto, setAberto] = useState(false);
+  const [atual, setAtual] = useState<Estado>(estado);
+  const [pendente, iniciarTransicao] = useTransition();
   const caixa = useRef<HTMLDivElement>(null);
 
-  // Fecha ao clicar fora ou apertar Esc — comportamento que todo menu tem e
-  // cuja ausência faz o painel parecer quebrado.
+  // Sincroniza caso a prop do servidor mude
+  useEffect(() => setAtual(estado), [estado]);
+
+  // Fecha ao clicar fora ou apertar Esc
   useEffect(() => {
     if (!aberto) return;
     const fora = (e: MouseEvent) => {
@@ -65,26 +63,52 @@ export function SeletorEstado({
     };
   }, [aberto]);
 
+  function escolher(proximo: Estado) {
+    if (proximo === atual || pendente) return;
+
+    const anterior = atual;
+    // 1. Atualização OTIMISTA imediata na UI (0ms!)
+    setAtual(proximo);
+    setAberto(false);
+
+    // 2. Persistência assíncrona no servidor e refresh de cache
+    iniciarTransicao(async () => {
+      try {
+        const res = await mudarEstado(slug, proximo);
+        if (res?.erro) {
+          setAtual(anterior);
+          return;
+        }
+        router.refresh();
+      } catch {
+        setAtual(anterior);
+      }
+    });
+  }
+
   return (
     <div ref={caixa} className="relative">
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
+        disabled={pendente}
         aria-haspopup="menu"
         aria-expanded={aberto}
-        className="label flex items-center gap-2 border px-3 py-2 transition-colors duration-200"
+        aria-busy={pendente}
+        className="label flex items-center gap-2 border px-3 py-1.5 transition-all duration-200"
         style={{
-          minHeight: 40,
+          minHeight: 36,
           borderColor: "var(--color-border)",
           color: "var(--color-foreground)",
+          opacity: pendente ? 0.7 : 1,
         }}
       >
         <span
           aria-hidden
           className="inline-block h-2 w-2 rounded-full"
-          style={{ background: corDe(estado) }}
+          style={{ background: corDe(atual) }}
         />
-        {rotuloDe(estado)}
+        <span>{rotuloDe(atual)}</span>
         <span aria-hidden style={{ color: "var(--color-muted)" }}>
           ▾
         </span>
@@ -100,38 +124,35 @@ export function SeletorEstado({
           }}
         >
           {OPCOES.map((o) => {
-            const atual = o.valor === estado;
+            const isItemAtual = o.valor === atual;
             return (
-              <form key={o.valor} action={mudarEstado}>
-                <input type="hidden" name="slug" value={slug} />
-                <input type="hidden" name="estado" value={o.valor} />
-                <button
-                  type="submit"
-                  role="menuitem"
-                  disabled={atual}
-                  onClick={() => setAberto(false)}
-                  className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left transition-colors duration-150 hover:bg-[var(--color-surface-2)] disabled:cursor-default"
-                  style={{ minHeight: 52 }}
+              <button
+                key={o.valor}
+                type="button"
+                role="menuitem"
+                disabled={isItemAtual || pendente}
+                onClick={() => escolher(o.valor)}
+                className="flex w-full flex-col items-start gap-0.5 px-4 py-3 text-left transition-colors duration-150 hover:bg-[var(--color-surface-2)] disabled:cursor-default"
+                style={{ minHeight: 52 }}
+              >
+                <span
+                  className="flex items-center gap-2 text-sm"
+                  style={{
+                    color: isItemAtual
+                      ? "var(--color-muted)"
+                      : "var(--color-foreground)",
+                  }}
                 >
                   <span
-                    className="flex items-center gap-2 text-sm"
-                    style={{
-                      color: atual
-                        ? "var(--color-muted)"
-                        : "var(--color-foreground)",
-                    }}
-                  >
-                    <span
-                      aria-hidden
-                      className="inline-block h-2 w-2 rounded-full"
-                      style={{ background: corDe(o.valor) }}
-                    />
-                    {o.rotulo}
-                    {atual && " · atual"}
-                  </span>
-                  <span className="meta pl-4">{o.nota}</span>
-                </button>
-              </form>
+                    aria-hidden
+                    className="inline-block h-2 w-2 rounded-full"
+                    style={{ background: corDe(o.valor) }}
+                  />
+                  {o.rotulo}
+                  {isItemAtual && " · atual"}
+                </span>
+                <span className="meta pl-4">{o.nota}</span>
+              </button>
             );
           })}
         </div>

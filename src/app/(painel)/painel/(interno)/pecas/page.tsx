@@ -10,6 +10,8 @@ import { SeletorEstado, type Estado } from "./SeletorEstado";
 
 export const metadata: Metadata = { title: "Peças" };
 
+export const dynamic = "force-dynamic";
+
 interface LinhaLista {
   slug: string;
   marca: string;

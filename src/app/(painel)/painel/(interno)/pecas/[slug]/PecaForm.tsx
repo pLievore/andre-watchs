@@ -11,6 +11,8 @@
  * sabe mostrar `—`. Nenhum deles é obrigatório.
  */
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -87,11 +89,15 @@ function Selecao({
   rotulo,
   opcoes,
   padrao,
+  valor,
+  aoMudar,
 }: {
   id: string;
   rotulo: string;
   opcoes: readonly (readonly [string, string])[];
-  padrao: string;
+  padrao?: string;
+  valor?: string;
+  aoMudar?: (v: string) => void;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -101,7 +107,8 @@ function Selecao({
       <select
         id={id}
         name={id}
-        defaultValue={padrao}
+        value={valor !== undefined ? valor : padrao}
+        onChange={(e) => aoMudar?.(e.target.value)}
         className={entrada}
         style={estiloEntrada}
       >
@@ -125,7 +132,21 @@ function Salvar() {
 }
 
 export function PecaForm({ peca }: { peca: PecaEditavel }) {
+  const router = useRouter();
   const [estado, acao] = useActionState<EstadoPeca, FormData>(salvarPeca, {});
+  const [estadoComercial, setEstadoComercial] = useState(peca.estado);
+
+  // Sincroniza se a peça for recarregada do servidor
+  useEffect(() => {
+    setEstadoComercial(peca.estado);
+  }, [peca.estado]);
+
+  // Força revalidação do cache local no Next.js assim que salvar
+  useEffect(() => {
+    if (estado.sucesso) {
+      router.refresh();
+    }
+  }, [estado.sucesso, router]);
 
   // Centavos viram "215000,00" no campo — o parser da action aceita de volta
   // em qualquer formato que o Andre digitar.
@@ -225,7 +246,8 @@ export function PecaForm({ peca }: { peca: PecaEditavel }) {
           id="estado"
           rotulo="Estado comercial"
           opcoes={ESTADOS}
-          padrao={peca.estado}
+          valor={estadoComercial}
+          aoMudar={setEstadoComercial}
         />
 
         <label className="flex items-center gap-2.5 text-sm">

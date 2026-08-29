@@ -102,6 +102,9 @@ function revalidar(slug: string) {
   revalidatePath(`/acervo/${slug}`);
   revalidatePath("/painel/pecas");
   revalidatePath(`/painel/pecas/${slug}`);
+  revalidatePath("/painel/negociacoes");
+  revalidatePath("/painel/dashboard");
+  revalidatePath("/painel");
 }
 
 /** Campos comuns a criar e salvar. */
@@ -222,19 +225,38 @@ export async function salvarPeca(
  * refletir isso agora. Obrigá-lo a abrir o formulário inteiro para uma escolha
  * de três opções seria atrito no uso diário.
  */
-export async function mudarEstado(form: FormData): Promise<void> {
+export async function mudarEstado(
+  slugOuForm: string | FormData,
+  estadoParam?: string,
+): Promise<{ erro?: string; sucesso?: string }> {
   const admin = await usuarioAdmin();
-  if (!admin) return;
+  if (!admin) return { erro: "Sessão expirada. Entre novamente." };
 
-  const slug = String(form.get("slug") ?? "").trim();
-  if (!slug) return;
+  let slug = "";
+  let estado: WatchState = "disponivel";
 
-  await dbAdmin
+  if (typeof slugOuForm === "string") {
+    slug = slugOuForm.trim();
+    estado = estadoValido(estadoParam ?? null);
+  } else {
+    slug = String(slugOuForm.get("slug") ?? "").trim();
+    estado = estadoValido(slugOuForm.get("estado"));
+  }
+
+  if (!slug) return { erro: "Peça não informada." };
+
+  const { error } = await dbAdmin
     .from("pecas")
-    .update({ estado: estadoValido(form.get("estado")) })
+    .update({ estado })
     .eq("slug", slug);
 
+  if (error) {
+    console.error("Erro ao mudar estado", error);
+    return { erro: "Não foi possível atualizar o estado." };
+  }
+
   revalidar(slug);
+  return { sucesso: "Estado atualizado." };
 }
 
 /**
