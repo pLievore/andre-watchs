@@ -25,6 +25,14 @@ interface SiteTabShellProps {
   boasVindas: boolean;
 }
 
+function vibrar(padrao: number | number[] = 10) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try {
+      navigator.vibrate(padrao);
+    } catch {}
+  }
+}
+
 export function SiteTabShell({
   initialTab,
   isAdmin,
@@ -45,8 +53,44 @@ export function SiteTabShell({
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const gestureLockRef = useRef<"horizontal" | "vertical" | null>(null);
   const hasSwipedRef = useRef(false);
+  const lastHapticTabRef = useRef(initialTab);
   const currentTabRef = useRef(initialTab);
   currentTabRef.current = currentTab;
+
+  // Sincroniza em tempo real a linha indicadora da barra de navegação com o deslize do dedo
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.style.setProperty(
+        "--site-tab-progress",
+        `${initialTab}`
+      );
+    }
+
+    const unsubscribe = xPercent.on("change", (latest) => {
+      const progress = Math.min(3, Math.max(0, -latest / 25));
+      if (typeof document !== "undefined") {
+        document.documentElement.style.setProperty(
+          "--site-tab-progress",
+          progress.toFixed(4)
+        );
+      }
+
+      // Vibração sutil e atualização da cor do ícone ao cruzar entre abas
+      const rounded = Math.round(progress);
+      if (rounded !== lastHapticTabRef.current) {
+        lastHapticTabRef.current = rounded;
+        vibrar(10);
+        const hoverRota = SITE_ROTAS[rounded];
+        if (hoverRota && typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("cliente:tab-mudou", { detail: hoverRota })
+          );
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [xPercent, initialTab]);
 
   const navegarParaAba = useCallback(
     (targetIndex: number, animar: boolean = true) => {
@@ -110,6 +154,7 @@ export function SiteTabShell({
 
       const targetIdx = SITE_ROTAS.indexOf(href as any);
       if (targetIdx !== -1 && targetIdx !== currentTabRef.current) {
+        vibrar(12);
         navegarParaAba(targetIdx, true);
       }
     }
@@ -125,6 +170,7 @@ export function SiteTabShell({
     function onPopState() {
       const idx = SITE_ROTAS.indexOf(window.location.pathname as any);
       if (idx !== -1 && idx !== currentTabRef.current) {
+        vibrar(10);
         navegarParaAba(idx, true);
       }
     }

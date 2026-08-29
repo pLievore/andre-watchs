@@ -44,6 +44,14 @@ interface PainelTabShellProps {
   };
 }
 
+function vibrar(padrao: number | number[] = 10) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try {
+      navigator.vibrate(padrao);
+    } catch {}
+  }
+}
+
 export function PainelTabShell({
   initialTab,
   admin,
@@ -64,8 +72,44 @@ export function PainelTabShell({
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const gestureLockRef = useRef<"horizontal" | "vertical" | null>(null);
   const hasSwipedRef = useRef(false);
+  const lastHapticTabRef = useRef(initialTab);
   const currentTabRef = useRef(initialTab);
   currentTabRef.current = currentTab;
+
+  // Sincroniza em tempo real a linha indicadora da barra de navegação com o deslize do dedo
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.style.setProperty(
+        "--painel-tab-progress",
+        `${initialTab}`
+      );
+    }
+
+    const unsubscribe = xPercent.on("change", (latest) => {
+      const progress = Math.min(4, Math.max(0, -latest / 20));
+      if (typeof document !== "undefined") {
+        document.documentElement.style.setProperty(
+          "--painel-tab-progress",
+          progress.toFixed(4)
+        );
+      }
+
+      // Vibração sutil e atualização da cor do ícone ao cruzar entre abas
+      const rounded = Math.round(progress);
+      if (rounded !== lastHapticTabRef.current) {
+        lastHapticTabRef.current = rounded;
+        vibrar(10);
+        const hoverRota = PAINEL_ROTAS[rounded];
+        if (hoverRota && typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("painel:tab-mudou", { detail: hoverRota })
+          );
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [xPercent, initialTab]);
 
   // Navega para uma aba com animação física suave de mola que desliza pelas abas intermediárias
   const navegarParaAba = useCallback(
@@ -118,6 +162,7 @@ export function PainelTabShell({
       const href = customEvent.detail;
       const targetIdx = PAINEL_ROTAS.indexOf(href as any);
       if (targetIdx !== -1 && targetIdx !== currentTabRef.current) {
+        vibrar(12);
         navegarParaAba(targetIdx, true);
       }
     }
@@ -133,6 +178,7 @@ export function PainelTabShell({
     function onPopState() {
       const idx = PAINEL_ROTAS.indexOf(window.location.pathname as any);
       if (idx !== -1 && idx !== currentTabRef.current) {
+        vibrar(10);
         navegarParaAba(idx, true);
       }
     }

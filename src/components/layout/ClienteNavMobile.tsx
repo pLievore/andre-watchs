@@ -71,28 +71,29 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
 
   const rotaAtiva = otimista ?? rotaAtivaClient ?? atual;
 
-  const estaNoShell = [
+  const SITE_ROTAS_SHELL = [
     "/acervo",
     "/vender",
     "/sobre",
     "/acervo/conta",
-  ].includes(atual);
+  ];
+  const estaNoShell = SITE_ROTAS_SHELL.includes(atual);
+  const tabIndexAtual = SITE_ROTAS_SHELL.indexOf(rotaAtiva);
+  const progressoPadrao = tabIndexAtual !== -1 ? tabIndexAtual : 0;
 
   const handleNavegar = (e: React.MouseEvent, href: string) => {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(10);
+      } catch {}
+    }
+
     if (href === "/painel") {
       setOtimista(href);
       return;
     }
 
-    if (
-      estaNoShell &&
-      [
-        "/acervo",
-        "/vender",
-        "/sobre",
-        "/acervo/conta",
-      ].includes(href)
-    ) {
+    if (estaNoShell && SITE_ROTAS_SHELL.includes(href)) {
       e.preventDefault();
       setOtimista(href);
       if (typeof window !== "undefined") {
@@ -115,6 +116,26 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
+      {/* Linha indicadora que acompanha 100% o movimento do dedo em tempo real */}
+      {estaNoShell && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute top-0 left-0 h-[2px] w-[25%]"
+          style={{
+            transform: `translateX(calc(var(--site-tab-progress, ${progressoPadrao}) * 100%))`,
+            willChange: "transform",
+          }}
+        >
+          <span
+            className="mx-auto block h-full w-[60%]"
+            style={{
+              background: "var(--color-foreground)",
+              borderRadius: "0 0 2px 2px",
+            }}
+          />
+        </div>
+      )}
+
       {destinos.map(({ href, rotulo, icone: Icone }) => {
         const ativo = estaAtivo(href, rotaAtiva);
         const carregandoEstaAba = otimista === href && otimista !== atual;
@@ -133,7 +154,7 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
               transitionTimingFunction: "var(--ease-editorial)",
             }}
           >
-            {ativo && (
+            {!estaNoShell && ativo && (
               <motion.span
                 layoutId={reduceMotion ? undefined : "cliente-nav-indicator"}
                 aria-hidden

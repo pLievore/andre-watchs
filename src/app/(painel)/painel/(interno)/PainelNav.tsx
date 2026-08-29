@@ -58,19 +58,41 @@ export function PainelNav({ email }: { email: string }) {
 
   const rotaAtiva = otimista ?? atual;
 
-  const estaNoShell = [
+  const PAINEL_ROTAS_SHELL = [
     "/painel",
     "/painel/dashboard",
     "/painel/negociacoes",
     "/painel/pecas",
     "/painel/conta",
-  ].includes(atual);
+  ];
+
+  const estaNoShell =
+    atual === "/painel" ||
+    atual === "/painel/clientes" ||
+    PAINEL_ROTAS_SHELL.includes(atual);
+
+  const getTabIndex = (rota: string) => {
+    if (rota === "/painel" || rota === "/painel/clientes") return 0;
+    if (rota === "/painel/dashboard") return 1;
+    if (rota === "/painel/negociacoes") return 2;
+    if (rota === "/painel/pecas") return 3;
+    if (rota === "/painel/conta") return 4;
+    return 0;
+  };
+  const progressoPadrao = getTabIndex(rotaAtiva);
 
   const handleNavegar = (e: React.MouseEvent, href: string) => {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(10);
+      } catch {}
+    }
+
     if (
       estaNoShell &&
       [
         "/painel",
+        "/painel/clientes",
         "/painel/dashboard",
         "/painel/negociacoes",
         "/painel/pecas",
@@ -207,6 +229,27 @@ export function PainelNav({ email }: { email: string }) {
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
+        {/* Linha indicadora que acompanha 100% o movimento do dedo em tempo real */}
+        {estaNoShell && (
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-0 left-0 h-[2px] w-[20%]"
+            style={{
+              transform: `translateX(calc(var(--painel-tab-progress, ${progressoPadrao}) * 100%))`,
+              willChange: "transform",
+            }}
+          >
+            <span
+              className="mx-auto block h-full w-[64%]"
+              style={{
+                background: "var(--color-accent)",
+                boxShadow: "0 0 10px rgba(194, 168, 117, 0.45)",
+                borderRadius: "0 0 2px 2px",
+              }}
+            />
+          </div>
+        )}
+
         {[...SECOES, { href: "/painel/conta", rotulo: "Conta", icone: IconeConta }].map(
           ({ href, rotulo, icone: Icone }) => {
             const ativo = estaAtivo(href, rotaAtiva);
@@ -225,7 +268,7 @@ export function PainelNav({ email }: { email: string }) {
                   color: ativo ? "var(--color-accent)" : "var(--color-muted)",
                 }}
               >
-                {ativo && (
+                {!estaNoShell && ativo && (
                   <motion.span
                     layoutId={reduceMotion ? undefined : "painel-nav-indicator"}
                     aria-hidden
