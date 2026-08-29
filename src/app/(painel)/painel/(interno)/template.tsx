@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { getTabDirection, PAINEL_TABS } from "@/lib/tab-transitions";
-import { InteractiveTabSlider } from "@/components/layout/InteractiveTabSlider";
 
 let lastPainelPath: string | null = null;
 
@@ -17,30 +16,36 @@ export default function PainelTemplate({
   const pathname = usePathname();
   const reduceMotion = useReducedMotion();
 
+  // Nas abas primárias do painel, o PainelTabShell gerencia o ViewPager contínuo com todas as telas em memória
+  const isPrimaryTab = PAINEL_TABS.includes(pathname as any);
+
   const [direction] = useState(() => {
     const dir = getTabDirection(PAINEL_TABS, lastPainelPath, pathname);
     lastPainelPath = pathname;
     return dir;
   });
 
+  if (isPrimaryTab) {
+    return <div className="w-full">{children}</div>;
+  }
+
+  // Em páginas de detalhe/sub-rotas (/pecas/nova, etc.), mantém transição suave
   return (
-    <InteractiveTabSlider tabs={PAINEL_TABS}>
-      <motion.div
-        initial={
-          reduceMotion || direction === 0
-            ? { opacity: 0 }
-            : { opacity: 0, x: direction * 22 }
-        }
-        animate={{ opacity: 1, x: 0 }}
-        transition={{
-          duration: 0.18,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-        className="w-full"
-        style={{ willChange: "transform, opacity" }}
-      >
-        {children}
-      </motion.div>
-    </InteractiveTabSlider>
+    <motion.div
+      initial={
+        reduceMotion || direction === 0
+          ? { opacity: 0 }
+          : { opacity: 0, x: direction * 22 }
+      }
+      animate={{ opacity: 1, x: 0 }}
+      transition={{
+        duration: 0.18,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+      className="w-full"
+      style={{ willChange: "transform, opacity" }}
+    >
+      {children}
+    </motion.div>
   );
 }

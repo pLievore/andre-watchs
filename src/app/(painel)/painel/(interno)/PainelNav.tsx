@@ -46,6 +46,16 @@ export function PainelNav({ email }: { email: string }) {
     setOtimista(null);
   }, [atual]);
 
+  // Sincroniza quando a aba é trocada via gesto de swipe na tela
+  useEffect(() => {
+    function onTabMudou(e: Event) {
+      const customEvent = e as CustomEvent<string>;
+      setOtimista(customEvent.detail);
+    }
+    window.addEventListener("painel:tab-mudou", onTabMudou);
+    return () => window.removeEventListener("painel:tab-mudou", onTabMudou);
+  }, []);
+
   const rotaAtiva = otimista ?? atual;
 
   return (
@@ -76,6 +86,14 @@ export function PainelNav({ email }: { email: string }) {
                 key={href}
                 href={href}
                 prefetch={true}
+                onClick={() => {
+                  setOtimista(href);
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(
+                      new CustomEvent("painel:mudar-aba", { detail: href })
+                    );
+                  }
+                }}
                 aria-current={ativo ? "page" : undefined}
                 className="relative flex items-center gap-3 px-3 py-2.5 text-sm transition-colors duration-200"
                 style={{
@@ -154,7 +172,14 @@ export function PainelNav({ email }: { email: string }) {
                 key={href}
                 href={href}
                 prefetch={true}
-                onClick={() => setOtimista(href)}
+                onClick={() => {
+                  setOtimista(href);
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(
+                      new CustomEvent("painel:mudar-aba", { detail: href })
+                    );
+                  }
+                }}
                 aria-current={ativo ? "page" : undefined}
                 className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors"
                 style={{
