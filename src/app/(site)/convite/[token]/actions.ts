@@ -114,5 +114,5 @@ export async function resgatarConvite(
   }
 
   revalidatePath("/", "layout");
-  redirect("/acervo");
+  redirect("/acervo?boas-vindas=1");
 }

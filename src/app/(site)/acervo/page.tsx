@@ -13,6 +13,7 @@ import { clienteAtual } from "@/lib/db/server";
 import { montarSaudacao } from "@/lib/saudacao";
 
 import { AccessVisitRecorder } from "./AccessVisitRecorder";
+import { ModalBoasVindas } from "./ModalBoasVindas";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,15 @@ function horaEmSaoPaulo(agora: Date): number {
   return Number.parseInt(hora, 10);
 }
 
-export default async function AcervoPage() {
+export default async function AcervoPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const boasVindas =
+    params?.["boas-vindas"] === "1" || params?.convite === "1";
+
   // O middleware faz a primeira barreira; esta checagem mantém a página segura
   // mesmo se ela for chamada por outro caminho no futuro. O RLS é a terceira.
   // O dono vê a própria vitrine. Ele não tem linha em `clientes`, então a
@@ -73,6 +82,7 @@ export default async function AcervoPage() {
       {admin && <BarraPrevia />}
       {/* Visita do dono não conta como acesso de cliente — sujaria o registro. */}
       {cliente && !admin && <AccessVisitRecorder />}
+      <ModalBoasVindas nome={cliente?.nome ?? ""} ativo={boasVindas} />
 
       <header className="flex max-w-4xl flex-col gap-6">
         <h1
