@@ -83,7 +83,6 @@ export default async function AcervoPage({
       {/* Visita do dono não conta como acesso de cliente — sujaria o registro. */}
       {cliente && !admin && <AccessVisitRecorder />}
       <ModalBoasVindas nome={cliente?.nome ?? ""} ativo={boasVindas} />
-
       <header className="flex max-w-4xl flex-col gap-6">
         <h1
           className="text-balance"

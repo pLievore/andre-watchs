@@ -148,9 +148,6 @@ export function AccessForms({
           />
           <Aviso estado={login} />
           <Botao>Entrar</Botao>
-          <p className="text-sm" style={{ color: "var(--color-muted)" }}>
-            No primeiro acesso, a senha é o seu telefone — só os números.
-          </p>
         </form>
       ) : (
         <form action={acaoPedido} className="flex flex-col gap-5">

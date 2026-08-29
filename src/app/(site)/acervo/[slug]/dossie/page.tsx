@@ -65,21 +65,26 @@ export default async function DossiePage({
 
   return (
     <main
-      className="min-h-screen p-6 sm:p-12 md:p-16 print:p-0 print:bg-white print:text-black"
+      className="min-h-screen pt-28 sm:pt-28 md:pt-32 px-4 sm:px-12 md:px-16 pb-32 sm:pb-16 print:p-0 print:bg-white print:text-black"
       style={{ background: "var(--color-background)" }}
     >
       {/* ── Barra de Ferramentas Superior (Invisível na Impressão) ────────── */}
-      <div className="mx-auto max-w-4xl mb-8 flex items-center justify-between gap-4 border-b pb-4 print:hidden" style={{ borderColor: "var(--color-border)" }}>
+      <div
+        className="mx-auto max-w-4xl mb-8 flex flex-wrap items-center justify-between gap-3 border-b pb-4 print:hidden"
+        style={{ borderColor: "var(--color-border)" }}
+      >
         <Link
           href={`/acervo/${watch.slug}`}
-          className="link-quiet text-xs flex items-center gap-1.5"
+          className="link-quiet text-xs flex items-center gap-1.5 font-medium"
         >
           <span aria-hidden>←</span>
           <span>Voltar à peça no acervo</span>
         </Link>
 
         <div className="flex items-center gap-3">
-          <span className="meta text-xs">Formato otimizado para exportação em PDF A4</span>
+          <span className="meta text-xs hidden sm:inline">
+            Formato otimizado para exportação em PDF A4
+          </span>
           <BotaoImprimir />
         </div>
       </div>
