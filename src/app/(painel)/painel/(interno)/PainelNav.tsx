@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { sairDoPainel } from "@/app/(painel)/painel/entrar/actions";
+import { dispararVibracao } from "@/lib/haptics";
 
 const SECOES = [
   { href: "/painel", rotulo: "Clientes", icone: IconeClientes },
@@ -82,11 +83,7 @@ export function PainelNav({ email }: { email: string }) {
   const progressoPadrao = getTabIndex(rotaAtiva);
 
   const handleNavegar = (e: React.MouseEvent, href: string) => {
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(10);
-      } catch {}
-    }
+    dispararVibracao(10);
 
     if (
       estaNoShell &&

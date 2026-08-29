@@ -65,6 +65,26 @@ export default async function RootLayout({
             <Footer />
           </div>
         </SmoothScroll>
+        <div
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            top: -9999,
+            left: -9999,
+            width: 1,
+            height: 1,
+            opacity: 0,
+            pointerEvents: "none",
+            overflow: "hidden",
+          }}
+        >
+          <input
+            type="checkbox"
+            id="ios-haptic-switch"
+            {...({ switch: "" } as any)}
+          />
+          <label htmlFor="ios-haptic-switch" id="ios-haptic-label" />
+        </div>
         <Analytics />
       </body>
     </html>

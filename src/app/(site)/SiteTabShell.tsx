@@ -25,13 +25,7 @@ interface SiteTabShellProps {
   boasVindas: boolean;
 }
 
-function vibrar(padrao: number | number[] = 10) {
-  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-    try {
-      navigator.vibrate(padrao);
-    } catch {}
-  }
-}
+import { dispararVibracao as vibrar } from "@/lib/haptics";
 
 export function SiteTabShell({
   initialTab,

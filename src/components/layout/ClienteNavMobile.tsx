@@ -10,6 +10,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
+import { dispararVibracao } from "@/lib/haptics";
 
 const DESTINOS_CLIENTE = [
   { href: "/acervo", rotulo: "Acervo", icone: IconeAcervo },
@@ -82,11 +83,7 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
   const progressoPadrao = tabIndexAtual !== -1 ? tabIndexAtual : 0;
 
   const handleNavegar = (e: React.MouseEvent, href: string) => {
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      try {
-        navigator.vibrate(10);
-      } catch {}
-    }
+    dispararVibracao(10);
 
     if (href === "/painel") {
       setOtimista(href);
