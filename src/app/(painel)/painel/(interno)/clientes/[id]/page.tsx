@@ -133,12 +133,17 @@ export default async function ClientePage({
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-3">
-        <Link href="/painel" className="meta link-quiet">
-          ← Clientes
+        <Link
+          href="/painel"
+          className="link-quiet inline-flex items-center gap-1.5 py-1 text-xs"
+          style={{ color: "var(--color-muted)" }}
+        >
+          <span aria-hidden>←</span>
+          <span>Voltar para Clientes</span>
         </Link>
 
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-1.5">
             <h1
               style={{
                 fontFamily: "var(--font-display)",
@@ -149,7 +154,7 @@ export default async function ClientePage({
             >
               {cliente.nome}
             </h1>
-            <p className="meta">
+            <p className="meta text-xs">
               Cliente desde {data(cliente.criado_em)} · último acesso{" "}
               {quando(cliente.ultimo_acesso)}
             </p>
@@ -167,8 +172,7 @@ export default async function ClientePage({
             color: "var(--color-foreground)",
           }}
         >
-          Cliente cadastrado. A senha inicial é o telefone dele, só os números —
-          combine a troca no primeiro acesso.
+          Cliente cadastrado com sucesso. O acesso à vitrine reservada está liberado.
         </p>
       )}
 

@@ -75,115 +75,120 @@ export function PainelAcoesSuspensas({
   }, [aberto]);
 
   return (
-    <div ref={containerRef} className="relative flex items-center gap-2.5 flex-wrap">
-      {/* ── Botão 1: Pedidos para analisar ─────────────────────────────── */}
-      <button
-        type="button"
-        onClick={() =>
-          setAberto((prev) => (prev === "pedidos" ? null : "pedidos"))
-        }
-        aria-expanded={aberto === "pedidos"}
-        className="flex items-center gap-2 border px-3.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer select-none"
-        style={{
-          borderColor:
-            totalPendentes > 0
-              ? "var(--color-accent)"
-              : aberto === "pedidos"
-                ? "var(--color-foreground)"
-                : "var(--color-border)",
-          background:
-            aberto === "pedidos"
-              ? "var(--color-surface-2)"
-              : "var(--color-surface)",
-          color:
-            totalPendentes > 0
-              ? "var(--color-accent)"
-              : "var(--color-foreground)",
-        }}
-      >
-        <span
-          className="grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-mono"
+    <div ref={containerRef} className="relative w-full sm:w-auto">
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-2.5">
+        {/* ── Botão 1: Cadastrar cliente (Ação Primária) ─────────────────── */}
+        <Link
+          href="/painel/clientes/novo"
+          className="btn btn-primary text-xs py-2 px-3.5 col-span-2 sm:col-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap font-medium"
+          style={{ minHeight: 38 }}
+        >
+          <span className="text-sm leading-none font-light">+</span>
+          <span>Cadastrar cliente</span>
+        </Link>
+
+        {/* ── Botão 2: Pedidos para analisar ─────────────────────────────── */}
+        <button
+          type="button"
+          onClick={() =>
+            setAberto((prev) => (prev === "pedidos" ? null : "pedidos"))
+          }
+          aria-expanded={aberto === "pedidos"}
+          className="col-span-1 sm:col-auto flex items-center justify-center gap-2 border px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer select-none"
           style={{
-            background:
+            minHeight: 38,
+            borderColor:
               totalPendentes > 0
                 ? "var(--color-accent)"
-                : "var(--color-surface-2)",
-            color: totalPendentes > 0 ? "#000" : "var(--color-muted)",
-            fontWeight: totalPendentes > 0 ? 600 : 400,
+                : aberto === "pedidos"
+                  ? "var(--color-foreground)"
+                  : "var(--color-border)",
+            background:
+              aberto === "pedidos"
+                ? "var(--color-surface-2)"
+                : "var(--color-surface)",
+            color:
+              totalPendentes > 0
+                ? "var(--color-accent)"
+                : "var(--color-foreground)",
           }}
         >
-          {totalPendentes}
-        </span>
-        <span>Pedidos para analisar</span>
-        <span
-          className="text-[9px] transition-transform duration-200 ml-0.5 opacity-60"
-          style={{
-            transform: aberto === "pedidos" ? "rotate(180deg)" : "none",
-          }}
-          aria-hidden
-        >
-          ▼
-        </span>
-      </button>
-
-      {/* ── Botão 2: Gerar convite exclusivo ───────────────────────────── */}
-      <button
-        type="button"
-        onClick={() =>
-          setAberto((prev) => (prev === "convites" ? null : "convites"))
-        }
-        aria-expanded={aberto === "convites"}
-        className="flex items-center gap-2 border px-3.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer select-none"
-        style={{
-          borderColor:
-            aberto === "convites"
-              ? "var(--color-foreground)"
-              : "var(--color-border)",
-          background:
-            aberto === "convites"
-              ? "var(--color-surface-2)"
-              : "var(--color-surface)",
-          color: "var(--color-foreground)",
-        }}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          className="h-3.5 w-3.5 opacity-70"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-        >
-          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-        </svg>
-        <span>Gerar convite</span>
-        {convitesValidos > 0 && (
-          <span className="meta text-[10px] font-mono">
-            ({convitesValidos})
+          <span
+            className="grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-mono"
+            style={{
+              background:
+                totalPendentes > 0
+                  ? "var(--color-accent)"
+                  : "var(--color-surface-2)",
+              color: totalPendentes > 0 ? "#000" : "var(--color-muted)",
+              fontWeight: totalPendentes > 0 ? 600 : 400,
+            }}
+          >
+            {totalPendentes}
           </span>
-        )}
-        <span
-          className="text-[9px] transition-transform duration-200 ml-0.5 opacity-60"
-          style={{
-            transform: aberto === "convites" ? "rotate(180deg)" : "none",
-          }}
-          aria-hidden
-        >
-          ▼
-        </span>
-      </button>
+          <span className="truncate">Pedidos</span>
+          <span
+            className="text-[9px] transition-transform duration-200 ml-0.5 opacity-60 shrink-0"
+            style={{
+              transform: aberto === "pedidos" ? "rotate(180deg)" : "none",
+            }}
+            aria-hidden
+          >
+            ▼
+          </span>
+        </button>
 
-      {/* ── Botão 3: Cadastrar cliente (Integrado e Alinhado) ──────────── */}
-      <Link
-        href="/painel/clientes/novo"
-        className="btn btn-primary text-xs py-2 px-3.5 inline-flex items-center gap-1.5 whitespace-nowrap"
-      >
-        <span className="text-sm leading-none font-light">+</span>
-        <span>Cadastrar cliente</span>
-      </Link>
+        {/* ── Botão 3: Gerar convite exclusivo ───────────────────────────── */}
+        <button
+          type="button"
+          onClick={() =>
+            setAberto((prev) => (prev === "convites" ? null : "convites"))
+          }
+          aria-expanded={aberto === "convites"}
+          className="col-span-1 sm:col-auto flex items-center justify-center gap-2 border px-3 py-2 text-xs font-medium transition-all duration-200 cursor-pointer select-none"
+          style={{
+            minHeight: 38,
+            borderColor:
+              aberto === "convites"
+                ? "var(--color-foreground)"
+                : "var(--color-border)",
+            background:
+              aberto === "convites"
+                ? "var(--color-surface-2)"
+                : "var(--color-surface)",
+            color: "var(--color-foreground)",
+          }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="h-3.5 w-3.5 opacity-70 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden
+          >
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </svg>
+          <span className="truncate">Gerar convite</span>
+          {convitesValidos > 0 && (
+            <span className="meta text-[10px] font-mono">
+              ({convitesValidos})
+            </span>
+          )}
+          <span
+            className="text-[9px] transition-transform duration-200 ml-0.5 opacity-60 shrink-0"
+            style={{
+              transform: aberto === "convites" ? "rotate(180deg)" : "none",
+            }}
+            aria-hidden
+          >
+            ▼
+          </span>
+        </button>
+      </div>
 
       {/* ── Painel Suspenso Flutuante: Pedidos ──────────────────────────── */}
       {aberto === "pedidos" && (

@@ -42,6 +42,18 @@ function desdeQuando(iso: string | null): string {
   return `há ${Math.floor(dias / 30)} meses`;
 }
 
+function formatarTelefone(tel: string | null): string {
+  if (!tel) return "";
+  const nums = tel.replace(/\D/g, "");
+  if (nums.length === 11) {
+    return `(${nums.substring(0, 2)}) ${nums.substring(2, 7)}-${nums.substring(7)}`;
+  }
+  if (nums.length === 10) {
+    return `(${nums.substring(0, 2)}) ${nums.substring(2, 6)}-${nums.substring(6)}`;
+  }
+  return tel;
+}
+
 export default async function PainelClientesPage({
   searchParams,
 }: {
@@ -90,26 +102,42 @@ export default async function PainelClientesPage({
   const totalPendentes = pendentes?.length ?? 0;
 
   return (
-    <div className="flex flex-col gap-12">
+    <div className="flex flex-col gap-8 md:gap-10">
+      {/* ── Header da Seção com Ações Unificadas ───────────────────────── */}
       <header
-        className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between border-b pb-6"
+        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b pb-5"
         style={{ borderColor: "var(--color-border)" }}
       >
-        <div className="flex flex-col gap-1.5">
-          <h1
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
-              lineHeight: 1.05,
-              letterSpacing: "-0.02em",
-            }}
-          >
-            Clientes
-          </h1>
-          <p className="meta text-xs">
-            {totalPendentes > 0
-              ? `${totalPendentes} pedido${totalPendentes === 1 ? "" : "s"} para analisar · `
-              : ""}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <h1
+              style={{
+                fontFamily: "var(--font-display)",
+                fontSize: "clamp(1.75rem, 4vw, 2.5rem)",
+                lineHeight: 1.05,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Clientes
+            </h1>
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-mono font-medium"
+              style={{
+                background: "var(--color-surface-2)",
+                color: "var(--color-foreground)",
+                border: "1px solid var(--color-border)",
+              }}
+            >
+              {lista.length}
+            </span>
+          </div>
+
+          <p className="text-xs" style={{ color: "var(--color-muted)" }}>
+            {totalPendentes > 0 ? (
+              <span style={{ color: "var(--color-accent)", fontWeight: 500 }}>
+                {totalPendentes} pedido{totalPendentes === 1 ? "" : "s"} para analisar ·{" "}
+              </span>
+            ) : null}
             {conta("ativo")} com acesso
             {conta("pendente") > 0 && ` · ${conta("pendente")} em análise`}
             {conta("inativo") > 0 && ` · ${conta("inativo")} sem acesso`}
@@ -125,122 +153,185 @@ export default async function PainelClientesPage({
         />
       </header>
 
-      <section className="flex flex-col gap-7" aria-labelledby="base-title">
-        <div>
-          <h2 id="base-title" className="label">
-            Base de clientes
-          </h2>
-          <p className="meta mt-1">
-            Cadastro, acesso e suporte de quem já pertence à base.
-          </p>
-        </div>
+      {/* ── Barra de Busca Integrada ───────────────────────────────────── */}
+      <section className="flex flex-col gap-4" aria-label="Lista de clientes">
+        <form method="get" className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <svg
+              viewBox="0 0 24 24"
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none opacity-50"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              id="q"
+              name="q"
+              defaultValue={busca}
+              placeholder="Buscar por nome, e-mail ou telefone..."
+              className="campo w-full pl-10 pr-4 text-xs sm:text-sm"
+              style={{ minHeight: 42 }}
+            />
+          </div>
 
-        <form method="get" className="flex flex-wrap gap-2">
-          <label htmlFor="q" className="sr-only">
-            Buscar cliente
-          </label>
-          <input
-            id="q"
-            name="q"
-            defaultValue={busca}
-            placeholder="Buscar por nome, e-mail ou telefone"
-            className="campo max-w-sm flex-1"
-            style={{ minWidth: "14rem" }}
-          />
           <button
             type="submit"
-            className="label border px-4"
-            style={{ minHeight: 44, borderColor: "var(--color-border)" }}
+            className="label border px-4 text-xs font-medium shrink-0 transition-colors hover:bg-[var(--color-surface-2)]"
+            style={{ minHeight: 42, borderColor: "var(--color-border)" }}
           >
             Buscar
           </button>
+
           {busca && (
             <Link
               href="/painel"
-              className="label flex items-center px-3"
-              style={{ minHeight: 44, color: "var(--color-muted)" }}
+              className="label border px-3 text-xs shrink-0 flex items-center transition-colors hover:bg-[var(--color-surface-2)]"
+              style={{ minHeight: 42, borderColor: "var(--color-border)", color: "var(--color-muted)" }}
+              title="Limpar busca"
             >
-              Limpar
+              Limpar ✕
             </Link>
           )}
         </form>
 
         {busca && (
-          <p className="meta">
+          <p className="meta text-xs">
             {lista.length} resultado{lista.length === 1 ? "" : "s"} para “{busca}”
           </p>
         )}
 
+        {/* ── Cartões de Clientes (Design Touch de Alto Luxo) ──────────── */}
         {lista.length === 0 ? (
           <div
             className="border px-6 py-12 text-center"
-            style={{ borderColor: "var(--color-border)" }}
+            style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
           >
             <p style={{ color: "var(--color-foreground)" }}>
               {busca ? "Nenhum cliente encontrado." : "Nenhum cliente cadastrado."}
             </p>
-            <p className="meta mx-auto mt-2 max-w-sm">
+            <p className="meta mx-auto mt-2 max-w-sm text-xs">
               {busca
-                ? "Tente parte do nome ou do e-mail."
-                : "Cadastre quem você já conhece ou aprove um pedido acima."}
+                ? "Tente buscar por parte do nome, e-mail ou número de telefone."
+                : "Cadastre quem você já conhece ou gere um convite exclusivo acima."}
             </p>
           </div>
         ) : (
-          <ul
-            className="flex flex-col divide-y border-y"
-            style={{ borderColor: "var(--color-border)" }}
-          >
-            {lista.map((cliente) => (
-              <li
-                key={cliente.id}
-                className="flex flex-col gap-3 py-4 md:flex-row md:items-center md:justify-between md:gap-6"
-              >
-                <div className="flex min-w-0 flex-col gap-1">
-                  <Link
-                    href={`/painel/clientes/${cliente.id}`}
-                    className="link-quiet truncate"
-                    style={{
-                      fontSize: "1rem",
-                      color:
-                        cliente.status === "ativo"
-                          ? "var(--color-foreground)"
-                          : "var(--color-muted)",
-                    }}
-                  >
-                    {cliente.nome}
-                  </Link>
-                  <span className="meta truncate">
-                    {cliente.email}
-                    {cliente.telefone ? ` · ${cliente.telefone}` : ""}
-                  </span>
-                </div>
+          <ul className="grid grid-cols-1 gap-3 sm:gap-3.5">
+            {lista.map((cliente) => {
+              const iniciais = (cliente.nome || "")
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((p) => p[0]?.toUpperCase() ?? "")
+                .join("");
 
-                <div className="flex shrink-0 flex-wrap items-center gap-3 md:gap-4">
-                  <span className="meta whitespace-nowrap">
-                    {desdeQuando(cliente.ultimo_acesso)}
-                  </span>
-                  <SeletorStatus id={cliente.id} status={cliente.status} />
-                  <Link
-                    href={`/painel/clientes/${cliente.id}`}
-                    className="label border px-3 py-2"
-                    style={{
-                      minHeight: 40,
-                      borderColor: "var(--color-border)",
-                      color: "var(--color-foreground)",
-                    }}
+              const telFormatado = formatarTelefone(cliente.telefone);
+
+              return (
+                <li
+                  key={cliente.id}
+                  className="group flex flex-col justify-between gap-3.5 p-4 sm:p-5 border transition-all duration-200 hover:border-[var(--color-foreground)]"
+                  style={{
+                    borderColor: "var(--color-border)",
+                    background: "var(--color-surface)",
+                  }}
+                >
+                  {/* Cabeçalho do Card: Avatar, Nome e Botão Ficha */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-semibold font-mono"
+                        style={{
+                          background: "var(--color-surface-2)",
+                          color: "var(--color-accent)",
+                          border: "1px solid var(--color-border)",
+                        }}
+                      >
+                        {iniciais || "AW"}
+                      </div>
+
+                      <div className="flex flex-col min-w-0">
+                        <Link
+                          href={`/painel/clientes/${cliente.id}`}
+                          className="font-medium text-base truncate hover:underline"
+                          style={{
+                            color:
+                              cliente.status === "ativo"
+                                ? "var(--color-foreground)"
+                                : "var(--color-muted)",
+                          }}
+                        >
+                          {cliente.nome}
+                        </Link>
+                        <div className="flex items-center gap-2 flex-wrap text-xs" style={{ color: "var(--color-muted)" }}>
+                          <span className="truncate">{cliente.email}</span>
+                          {telFormatado && (
+                            <>
+                              <span aria-hidden>·</span>
+                              <a
+                                href={`tel:${cliente.telefone?.replace(/\D/g, "")}`}
+                                className="hover:text-white transition-colors"
+                              >
+                                {telFormatado}
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/painel/clientes/${cliente.id}`}
+                      className="label shrink-0 border px-3 py-1.5 text-xs inline-flex items-center gap-1 transition-colors hover:bg-[var(--color-surface-2)]"
+                      style={{
+                        minHeight: 36,
+                        borderColor: "var(--color-border)",
+                        color: "var(--color-foreground)",
+                      }}
+                    >
+                      <span>Abrir</span>
+                      <span aria-hidden>→</span>
+                    </Link>
+                  </div>
+
+                  {/* Rodapé do Card: Último Acesso & Seletor Rápido de Status */}
+                  <div
+                    className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t text-xs"
+                    style={{ borderColor: "var(--color-border)" }}
                   >
-                    Abrir
-                  </Link>
-                </div>
-              </li>
-            ))}
+                    <span className="flex items-center gap-1.5 text-xs" style={{ color: "var(--color-muted)" }}>
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-3.5 w-3.5 opacity-60 shrink-0"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <polyline points="12 7 12 12 15 15" />
+                      </svg>
+                      <span>Último acesso:</span>
+                      <span className="font-medium" style={{ color: "var(--color-foreground)" }}>
+                        {desdeQuando(cliente.ultimo_acesso)}
+                      </span>
+                    </span>
+
+                    <SeletorStatus id={cliente.id} status={cliente.status} />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
-
-        <p className="meta">
-          Abra a ficha para corrigir cadastro, trocar o e-mail de acesso ou
-          redefinir a senha de quem não está conseguindo entrar.
-        </p>
       </section>
     </div>
   );

@@ -197,24 +197,24 @@ export default async function PainelNegociacoesPage() {
 
           <ul className="divide-y border-t" style={{ borderColor: "var(--color-border)" }}>
             {rankingPecas.map((p, idx) => (
-              <li key={p.slug} className="py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="meta font-mono font-medium text-sm">#{idx + 1}</span>
+              <li key={p.slug} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-4">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="meta font-mono font-medium text-xs">#{idx + 1}</span>
                   <Link
                     href={`/painel/pecas/${p.slug}`}
-                    className="link-quiet truncate text-sm font-medium"
+                    className="link-quiet truncate text-sm font-medium hover:underline"
                     style={{ color: "var(--color-foreground)" }}
                   >
                     {p.nome}
                   </Link>
                 </div>
-                <div className="flex items-center gap-4 text-xs meta shrink-0">
+                <div className="flex items-center gap-3 text-xs meta pl-6 sm:pl-0 shrink-0">
                   <span>{p.views} visualizaç{p.views === 1 ? "ão" : "ões"}</span>
                   <span
                     className="font-medium"
                     style={{ color: p.whatsapps > 0 ? "var(--color-accent)" : "var(--color-muted)" }}
                   >
-                    {p.whatsapps} contato{p.whatsapps === 1 ? "" : "s"} no WhatsApp
+                    {p.whatsapps} contato{p.whatsapps === 1 ? "" : "s"} WhatsApp
                   </span>
                 </div>
               </li>
@@ -242,12 +242,12 @@ export default async function PainelNegociacoesPage() {
             style={{ borderColor: "var(--color-border)" }}
           >
             <p style={{ color: "var(--color-foreground)" }}>Nenhuma negociação aberta ainda.</p>
-            <p className="meta mt-2 max-w-md mx-auto">
+            <p className="meta mt-2 max-w-md mx-auto text-xs">
               Quando um cliente ativo visualizar uma peça no acervo e clicar para falar no WhatsApp, a negociação entra aqui automaticamente.
             </p>
           </div>
         ) : (
-          <ul className="flex flex-col divide-y border-y" style={{ borderColor: "var(--color-border)" }}>
+          <ul className="grid grid-cols-1 gap-3 sm:gap-3.5">
             {interesses.map((item) => {
               const cliente = item.clientes;
               const peca = item.pecas;
@@ -255,53 +255,68 @@ export default async function PainelNegociacoesPage() {
               return (
                 <li
                   key={item.id}
-                  className="py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                  className="group flex flex-col justify-between gap-3.5 p-4 sm:p-5 border transition-all duration-200 hover:border-[var(--color-foreground)]"
+                  style={{
+                    borderColor: "var(--color-border)",
+                    background: "var(--color-surface)",
+                  }}
                 >
-                  {/* Dados do cliente e peça */}
-                  <div className="flex flex-col gap-1.5 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {cliente ? (
-                        <Link
-                          href={`/painel/clientes/${cliente.id}`}
-                          className="link-quiet font-medium text-base"
-                          style={{ color: "var(--color-foreground)" }}
-                        >
-                          {cliente.nome}
-                        </Link>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {cliente ? (
+                          <Link
+                            href={`/painel/clientes/${cliente.id}`}
+                            className="font-medium text-base hover:underline"
+                            style={{ color: "var(--color-foreground)" }}
+                          >
+                            {cliente.nome}
+                          </Link>
+                        ) : (
+                          <span className="text-sm font-medium">Cliente removido</span>
+                        )}
+                        {cliente?.telefone && (
+                          <a
+                            href={`https://wa.me/55${cliente.telefone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] px-2 py-0.5 rounded border border-emerald-800/40 text-emerald-400 bg-emerald-950/30 hover:bg-emerald-900/40 transition-colors inline-flex items-center gap-1 font-mono"
+                          >
+                            <span>WhatsApp</span>
+                            <span>↗</span>
+                          </a>
+                        )}
+                      </div>
+
+                      {peca ? (
+                        <div className="flex items-center gap-2 text-sm mt-1 flex-wrap">
+                          <Link
+                            href={`/painel/pecas/${peca.slug}`}
+                            className="font-medium hover:underline"
+                            style={{ color: "var(--color-accent)" }}
+                          >
+                            {peca.marca} {peca.modelo}
+                          </Link>
+                          <span className="meta">·</span>
+                          <span className="font-mono text-xs" style={{ color: "var(--color-foreground)" }}>
+                            {formatPrice(peca.preco_centavos)}
+                          </span>
+                        </div>
                       ) : (
-                        <span className="text-sm">Cliente removido</span>
-                      )}
-                      {cliente?.telefone && (
-                        <span className="meta">· {cliente.telefone}</span>
-                      )}
-                      {cliente?.email && (
-                        <span className="meta truncate">· {cliente.email}</span>
+                        <span className="meta text-xs mt-1">Peça descontinuada</span>
                       )}
                     </div>
 
-                    {peca ? (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="label text-xs">Peça:</span>
-                        <Link
-                          href={`/painel/pecas/${peca.slug}`}
-                          className="link-quiet font-medium"
-                          style={{ color: "var(--color-accent)" }}
-                        >
-                          {peca.marca} {peca.modelo}
-                        </Link>
-                        <span className="meta">({formatPrice(peca.preco_centavos)})</span>
-                      </div>
-                    ) : (
-                      <span className="meta">Peça descontinuada</span>
-                    )}
-
-                    <span className="meta text-xs">
-                      Atualizado em {formatarData(item.atualizado_em)}
+                    <span className="meta text-[11px] shrink-0 text-right">
+                      {formatarData(item.atualizado_em)}
                     </span>
                   </div>
 
-                  {/* Seletor rápido de status do pipeline */}
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div
+                    className="flex items-center justify-between gap-3 pt-3 border-t text-xs"
+                    style={{ borderColor: "var(--color-border)" }}
+                  >
+                    <span className="meta text-xs">Etapa da negociação:</span>
                     <SeletorStatusInteresse id={item.id} statusAtual={item.status} />
                   </div>
                 </li>
