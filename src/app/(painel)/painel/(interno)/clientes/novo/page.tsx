@@ -15,8 +15,13 @@ export default async function NovoClientePage() {
   return (
     <div className="flex max-w-2xl flex-col gap-8">
       <div className="flex flex-col gap-3">
-        <Link href="/painel" className="meta link-quiet">
-          ← Clientes
+        <Link
+          href="/painel"
+          className="link-quiet inline-flex items-center gap-1.5 py-1 text-xs"
+          style={{ color: "var(--color-muted)" }}
+        >
+          <span aria-hidden>←</span>
+          <span>Voltar para Clientes</span>
         </Link>
         <h1
           style={{

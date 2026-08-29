@@ -95,7 +95,7 @@ export function FormConvite({
           disabled={pendente}
         />
         <span className="meta text-xs">
-          Dica: você pode usar seu telefone como senha ou definir uma senha exclusiva.
+          Defina uma senha pessoal para acessar a vitrine reservada.
         </span>
       </label>
 

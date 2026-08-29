@@ -63,7 +63,7 @@ export function NovoClienteForm() {
             className="campo"
             placeholder="11 98765-4321"
           />
-          <span className="meta">Vira a senha inicial, só os números.</span>
+          <span className="meta">Contato do cliente para suporte e WhatsApp.</span>
         </div>
       </div>
 

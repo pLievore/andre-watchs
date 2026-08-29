@@ -70,8 +70,13 @@ export default async function EditarPecaPage({
   return (
     <div className="flex flex-col gap-10">
       <div className="flex flex-col gap-3">
-        <Link href="/painel/pecas" className="meta link-quiet">
-          ← Peças
+        <Link
+          href="/painel/pecas"
+          className="link-quiet inline-flex items-center gap-1.5 py-1 text-xs"
+          style={{ color: "var(--color-muted)" }}
+        >
+          <span aria-hidden>←</span>
+          <span>Voltar para Peças</span>
         </Link>
         <h1
           style={{

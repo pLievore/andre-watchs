@@ -655,8 +655,8 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        <div className="overflow-x-auto -mx-2 px-2">
+          <table className="w-full min-w-[480px] text-left text-xs">
             <thead>
               <tr className="border-b" style={{ borderColor: "var(--color-border)" }}>
                 <th className="py-2.5 font-mono font-medium meta uppercase tracking-wider">Cliente</th>
