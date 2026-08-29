@@ -43,18 +43,33 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
   const reduceMotion = useReducedMotion();
   const destinos = isAdmin ? DESTINOS_ADMIN : DESTINOS_CLIENTE;
   const [otimista, setOtimista] = useState<string | null>(null);
+  const [rotaAtivaClient, setRotaAtivaClient] = useState<string | null>(null);
 
   // Pré-carrega ativamente as abas no cache local do cliente para resposta instantânea
   useEffect(() => {
     destinos.forEach(({ href }) => router.prefetch(href));
   }, [destinos, router]);
 
+  // Escuta evento emitido pelo SiteTabShell quando o usuário arrasta o dedo
+  useEffect(() => {
+    function onTabMudou(e: Event) {
+      const custom = e as CustomEvent<string>;
+      if (custom.detail) {
+        setRotaAtivaClient(custom.detail);
+        setOtimista(null);
+      }
+    }
+    window.addEventListener("cliente:tab-mudou", onTabMudou);
+    return () => window.removeEventListener("cliente:tab-mudou", onTabMudou);
+  }, []);
+
   // Sincroniza e reseta o clique otimista assim que a navegação do Next.js se consolida
   useEffect(() => {
     setOtimista(null);
+    setRotaAtivaClient(null);
   }, [atual]);
 
-  const rotaAtiva = otimista ?? atual;
+  const rotaAtiva = otimista ?? rotaAtivaClient ?? atual;
 
   return (
     <nav
@@ -75,7 +90,14 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
             key={href}
             href={href}
             prefetch={true}
-            onClick={() => setOtimista(href)}
+            onClick={() => {
+              setOtimista(href);
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(
+                  new CustomEvent("cliente:mudar-aba", { detail: href })
+                );
+              }
+            }}
             aria-current={ativo ? "page" : undefined}
             className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors duration-200"
             style={{
