@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { aprovarSolicitacao, recusarSolicitacao } from "../actions";
 import { GeradorConvite } from "./GeradorConvite";
 import type { ConviteItem } from "./convites-actions";
@@ -74,116 +75,120 @@ export function PainelAcoesSuspensas({
   }, [aberto]);
 
   return (
-    <div ref={containerRef} className="relative flex flex-col gap-2">
-      {/* ── Barra de Botões Suspensos ──────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Botão 1: Pedidos para analisar */}
-        <button
-          type="button"
-          onClick={() =>
-            setAberto((prev) => (prev === "pedidos" ? null : "pedidos"))
-          }
-          aria-expanded={aberto === "pedidos"}
-          className="flex items-center gap-2.5 border px-4 py-2 text-xs font-medium uppercase tracking-wider transition-colors duration-200"
-          style={{
-            borderColor:
-              totalPendentes > 0
-                ? "var(--color-accent)"
-                : aberto === "pedidos"
-                  ? "var(--color-foreground)"
-                  : "var(--color-border)",
-            background:
-              aberto === "pedidos"
-                ? "var(--color-surface-2)"
-                : "var(--color-surface)",
-            color:
-              totalPendentes > 0
-                ? "var(--color-accent)"
-                : "var(--color-foreground)",
-          }}
-        >
-          <span
-            className="grid h-5 min-w-5 place-items-center rounded-full border text-[11px] font-mono"
-            style={{
-              borderColor:
-                totalPendentes > 0
-                  ? "var(--color-accent)"
-                  : "var(--color-border)",
-              color:
-                totalPendentes > 0
-                  ? "var(--color-accent)"
-                  : "var(--color-muted)",
-            }}
-          >
-            {totalPendentes}
-          </span>
-          <span>Pedidos para analisar</span>
-          <span
-            className="text-[10px] transition-transform duration-200"
-            style={{
-              transform: aberto === "pedidos" ? "rotate(180deg)" : "none",
-            }}
-            aria-hidden
-          >
-            ▼
-          </span>
-        </button>
-
-        {/* Botão 2: Gerar convite exclusivo */}
-        <button
-          type="button"
-          onClick={() =>
-            setAberto((prev) => (prev === "convites" ? null : "convites"))
-          }
-          aria-expanded={aberto === "convites"}
-          className="flex items-center gap-2 border px-4 py-2 text-xs font-medium uppercase tracking-wider transition-colors duration-200"
-          style={{
-            borderColor:
-              aberto === "convites"
+    <div ref={containerRef} className="relative flex items-center gap-2.5 flex-wrap">
+      {/* ── Botão 1: Pedidos para analisar ─────────────────────────────── */}
+      <button
+        type="button"
+        onClick={() =>
+          setAberto((prev) => (prev === "pedidos" ? null : "pedidos"))
+        }
+        aria-expanded={aberto === "pedidos"}
+        className="flex items-center gap-2 border px-3.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer select-none"
+        style={{
+          borderColor:
+            totalPendentes > 0
+              ? "var(--color-accent)"
+              : aberto === "pedidos"
                 ? "var(--color-foreground)"
                 : "var(--color-border)",
+          background:
+            aberto === "pedidos"
+              ? "var(--color-surface-2)"
+              : "var(--color-surface)",
+          color:
+            totalPendentes > 0
+              ? "var(--color-accent)"
+              : "var(--color-foreground)",
+        }}
+      >
+        <span
+          className="grid h-4.5 min-w-4.5 px-1.5 place-items-center rounded-full text-[10px] font-mono"
+          style={{
             background:
-              aberto === "convites"
-                ? "var(--color-surface-2)"
-                : "var(--color-surface)",
-            color: "var(--color-foreground)",
+              totalPendentes > 0
+                ? "var(--color-accent)"
+                : "var(--color-surface-2)",
+            color: totalPendentes > 0 ? "#000" : "var(--color-muted)",
+            fontWeight: totalPendentes > 0 ? 600 : 400,
           }}
         >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-3.5 w-3.5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden
-          >
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-          </svg>
-          <span>Gerar convite</span>
-          {convitesValidos > 0 && (
-            <span className="meta text-[10px] font-mono">
-              ({convitesValidos} ativo{convitesValidos > 1 ? "s" : ""})
-            </span>
-          )}
-          <span
-            className="text-[10px] transition-transform duration-200"
-            style={{
-              transform: aberto === "convites" ? "rotate(180deg)" : "none",
-            }}
-            aria-hidden
-          >
-            ▼
+          {totalPendentes}
+        </span>
+        <span>Pedidos para analisar</span>
+        <span
+          className="text-[9px] transition-transform duration-200 ml-0.5 opacity-60"
+          style={{
+            transform: aberto === "pedidos" ? "rotate(180deg)" : "none",
+          }}
+          aria-hidden
+        >
+          ▼
+        </span>
+      </button>
+
+      {/* ── Botão 2: Gerar convite exclusivo ───────────────────────────── */}
+      <button
+        type="button"
+        onClick={() =>
+          setAberto((prev) => (prev === "convites" ? null : "convites"))
+        }
+        aria-expanded={aberto === "convites"}
+        className="flex items-center gap-2 border px-3.5 py-2 text-xs font-medium transition-all duration-200 cursor-pointer select-none"
+        style={{
+          borderColor:
+            aberto === "convites"
+              ? "var(--color-foreground)"
+              : "var(--color-border)",
+          background:
+            aberto === "convites"
+              ? "var(--color-surface-2)"
+              : "var(--color-surface)",
+          color: "var(--color-foreground)",
+        }}
+      >
+        <svg
+          viewBox="0 0 24 24"
+          className="h-3.5 w-3.5 opacity-70"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+        </svg>
+        <span>Gerar convite</span>
+        {convitesValidos > 0 && (
+          <span className="meta text-[10px] font-mono">
+            ({convitesValidos})
           </span>
-        </button>
-      </div>
+        )}
+        <span
+          className="text-[9px] transition-transform duration-200 ml-0.5 opacity-60"
+          style={{
+            transform: aberto === "convites" ? "rotate(180deg)" : "none",
+          }}
+          aria-hidden
+        >
+          ▼
+        </span>
+      </button>
+
+      {/* ── Botão 3: Cadastrar cliente (Integrado e Alinhado) ──────────── */}
+      <Link
+        href="/painel/clientes/novo"
+        className="btn btn-primary text-xs py-2 px-3.5 inline-flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span className="text-sm leading-none font-light">+</span>
+        <span>Cadastrar cliente</span>
+      </Link>
 
       {/* ── Painel Suspenso Flutuante: Pedidos ──────────────────────────── */}
       {aberto === "pedidos" && (
         <div
-          className="absolute left-0 top-full z-40 mt-2 w-full max-w-2xl border p-5 md:p-6 shadow-2xl"
+          className="absolute left-0 lg:left-auto lg:right-0 top-full z-40 mt-2 w-[calc(100vw-2rem)] sm:w-full sm:max-w-xl md:max-w-2xl border p-5 md:p-6 shadow-2xl"
           style={{
             background: "var(--color-surface)",
             borderColor:
@@ -201,7 +206,7 @@ export function PainelAcoesSuspensas({
             <button
               type="button"
               onClick={() => setAberto(null)}
-              className="meta hover:text-white p-1 text-sm leading-none"
+              className="meta hover:text-white p-1 text-sm leading-none cursor-pointer"
               title="Fechar painel"
             >
               ✕
@@ -287,7 +292,7 @@ export function PainelAcoesSuspensas({
       {/* ── Painel Suspenso Flutuante: Gerador de Convite ────────────────── */}
       {aberto === "convites" && (
         <div
-          className="absolute left-0 top-full z-40 mt-2 w-full max-w-2xl border p-5 md:p-6 shadow-2xl"
+          className="absolute left-0 lg:left-auto lg:right-0 top-full z-40 mt-2 w-[calc(100vw-2rem)] sm:w-full sm:max-w-xl md:max-w-2xl border p-5 md:p-6 shadow-2xl"
           style={{
             background: "var(--color-surface)",
             borderColor: "var(--color-border)",
@@ -302,7 +307,7 @@ export function PainelAcoesSuspensas({
             <button
               type="button"
               onClick={() => setAberto(null)}
-              className="meta hover:text-white p-1 text-sm leading-none"
+              className="meta hover:text-white p-1 text-sm leading-none cursor-pointer"
               title="Fechar painel"
             >
               ✕

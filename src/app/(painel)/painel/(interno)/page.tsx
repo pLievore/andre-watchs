@@ -91,8 +91,11 @@ export default async function PainelClientesPage({
 
   return (
     <div className="flex flex-col gap-12">
-      <header className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="flex flex-col gap-2">
+      <header
+        className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between border-b pb-6"
+        style={{ borderColor: "var(--color-border)" }}
+      >
+        <div className="flex flex-col gap-1.5">
           <h1
             style={{
               fontFamily: "var(--font-display)",
@@ -103,7 +106,7 @@ export default async function PainelClientesPage({
           >
             Clientes
           </h1>
-          <p className="meta">
+          <p className="meta text-xs">
             {totalPendentes > 0
               ? `${totalPendentes} pedido${totalPendentes === 1 ? "" : "s"} para analisar · `
               : ""}
@@ -115,16 +118,12 @@ export default async function PainelClientesPage({
           </p>
         </div>
 
-        <Link href="/painel/clientes/novo" className="btn btn-primary self-start">
-          Cadastrar cliente
-        </Link>
+        <PainelAcoesSuspensas
+          pendentes={(pendentes ?? []) as any}
+          recusadas={(recusadas ?? []) as any}
+          convites={convites}
+        />
       </header>
-
-      <PainelAcoesSuspensas
-        pendentes={(pendentes ?? []) as any}
-        recusadas={(recusadas ?? []) as any}
-        convites={convites}
-      />
 
       <section className="flex flex-col gap-7" aria-labelledby="base-title">
         <div>
