@@ -155,6 +155,31 @@ export function Header({
   const autenticado = isAdmin || isClienteAtivo;
   const mostrarBarraMobile = isClienteAtivo || isAdmin;
 
+  const estaNoShell = [
+    "/acervo",
+    "/vender",
+    "/sobre",
+    "/acervo/conta",
+  ].includes(pathname);
+
+  const handleLinkClick = (e: React.MouseEvent, href: string) => {
+    if (href === "/painel") return;
+
+    if (estaNoShell && [
+      "/acervo",
+      "/vender",
+      "/sobre",
+      "/acervo/conta",
+    ].includes(href)) {
+      e.preventDefault();
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("cliente:mudar-aba", { detail: href })
+        );
+      }
+    }
+  };
+
   return (
     <>
       <motion.header
@@ -192,7 +217,12 @@ export function Header({
             className="hidden items-center gap-10 md:flex"
           >
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="label link-quiet">
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={(e) => handleLinkClick(e, link.href)}
+                className="label link-quiet"
+              >
                 {link.label}
               </Link>
             ))}
@@ -245,6 +275,10 @@ export function Header({
                 <Link
                   key={link.href}
                   href={link.href}
+                  onClick={(e) => {
+                    setMenuAberto(false);
+                    handleLinkClick(e, link.href);
+                  }}
                   className="label link-quiet py-3"
                 >
                   {link.label}

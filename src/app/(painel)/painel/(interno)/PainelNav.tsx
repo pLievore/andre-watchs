@@ -58,24 +58,75 @@ export function PainelNav({ email }: { email: string }) {
 
   const rotaAtiva = otimista ?? atual;
 
+  const estaNoShell = [
+    "/painel",
+    "/painel/dashboard",
+    "/painel/negociacoes",
+    "/painel/pecas",
+    "/painel/conta",
+  ].includes(atual);
+
+  const handleNavegar = (e: React.MouseEvent, href: string) => {
+    if (
+      estaNoShell &&
+      [
+        "/painel",
+        "/painel/dashboard",
+        "/painel/negociacoes",
+        "/painel/pecas",
+        "/painel/conta",
+      ].includes(href)
+    ) {
+      e.preventDefault();
+      setOtimista(href);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("painel:mudar-aba", { detail: href })
+        );
+      }
+    } else {
+      setOtimista(href);
+    }
+  };
+
   return (
     <>
       {/* ── Desktop: lateral fixa ────────────────────────────────────────── */}
       <aside
-        className="fixed inset-y-0 left-0 z-40 hidden w-56 flex-col border-r md:flex"
+        aria-label="Navegação do painel"
+        className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r md:flex"
         style={{
           borderColor: "var(--color-border)",
           background: "var(--color-surface)",
         }}
       >
         <div
-          className="flex items-center gap-2.5 border-b px-5 py-5"
+          className="flex h-16 items-center gap-3 border-b px-6"
           style={{ borderColor: "var(--color-border)" }}
         >
-          <Monograma />
-          <span className="label" style={{ color: "var(--color-foreground)" }}>
-            Painel
-          </span>
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded text-xs font-semibold tracking-wider"
+            style={{
+              background: "var(--color-accent)",
+              color: "var(--color-background)",
+            }}
+          >
+            AW
+          </div>
+          <div className="flex flex-col">
+            <span
+              className="text-xs tracking-wider"
+              style={{
+                fontFamily: "var(--font-display)",
+                color: "var(--color-foreground)",
+              }}
+            >
+              ANDRE WATCHES
+            </span>
+            <span className="meta" style={{ fontSize: "0.65rem" }}>
+              PAINEL INTERNO
+            </span>
+          </div>
         </div>
 
         <nav aria-label="Seções do painel" className="flex flex-1 flex-col gap-1 p-3">
@@ -86,14 +137,7 @@ export function PainelNav({ email }: { email: string }) {
                 key={href}
                 href={href}
                 prefetch={true}
-                onClick={() => {
-                  setOtimista(href);
-                  if (typeof window !== "undefined") {
-                    window.dispatchEvent(
-                      new CustomEvent("painel:mudar-aba", { detail: href })
-                    );
-                  }
-                }}
+                onClick={(e) => handleNavegar(e, href)}
                 aria-current={ativo ? "page" : undefined}
                 className="relative flex items-center gap-3 px-3 py-2.5 text-sm transition-colors duration-200"
                 style={{
@@ -132,6 +176,7 @@ export function PainelNav({ email }: { email: string }) {
           <Link
             href="/painel/conta"
             prefetch={true}
+            onClick={(e) => handleNavegar(e, "/painel/conta")}
             className="meta link-quiet truncate px-3"
             title={email}
             aria-current={atual === "/painel/conta" ? "page" : undefined}
@@ -172,14 +217,7 @@ export function PainelNav({ email }: { email: string }) {
                 key={href}
                 href={href}
                 prefetch={true}
-                onClick={() => {
-                  setOtimista(href);
-                  if (typeof window !== "undefined") {
-                    window.dispatchEvent(
-                      new CustomEvent("painel:mudar-aba", { detail: href })
-                    );
-                  }
-                }}
+                onClick={(e) => handleNavegar(e, href)}
                 aria-current={ativo ? "page" : undefined}
                 className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors"
                 style={{

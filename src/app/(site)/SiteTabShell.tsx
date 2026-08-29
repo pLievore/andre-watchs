@@ -57,17 +57,30 @@ export function SiteTabShell({
         return;
       }
 
+      const prevIndex = currentTabRef.current;
       setCurrentTab(targetIndex);
       currentTabRef.current = targetIndex;
 
       const targetPercent = -targetIndex * 25;
 
       if (animar) {
+        const deltaTabs = Math.abs(targetIndex - prevIndex);
+        // Quando a aba for distante (> 1 aba), ajustamos a física para o deslizamento
+        // através de todas as abas intermediárias ser contínuo, nítido e fluido
+        const stiffness = deltaTabs > 1 ? 260 : 380;
+        const damping = deltaTabs > 1 ? 32 : 36;
+        const mass = deltaTabs > 1 ? 0.85 : 1;
+
         animate(xPercent, targetPercent, {
           type: "spring",
-          stiffness: 420,
-          damping: 36,
+          stiffness,
+          damping,
+          mass,
         });
+
+        if (typeof window !== "undefined" && window.scrollY > 60) {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
       } else {
         xPercent.set(targetPercent);
       }

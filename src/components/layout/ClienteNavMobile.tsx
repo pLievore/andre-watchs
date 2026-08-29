@@ -71,6 +71,40 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
 
   const rotaAtiva = otimista ?? rotaAtivaClient ?? atual;
 
+  const estaNoShell = [
+    "/acervo",
+    "/vender",
+    "/sobre",
+    "/acervo/conta",
+  ].includes(atual);
+
+  const handleNavegar = (e: React.MouseEvent, href: string) => {
+    if (href === "/painel") {
+      setOtimista(href);
+      return;
+    }
+
+    if (
+      estaNoShell &&
+      [
+        "/acervo",
+        "/vender",
+        "/sobre",
+        "/acervo/conta",
+      ].includes(href)
+    ) {
+      e.preventDefault();
+      setOtimista(href);
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("cliente:mudar-aba", { detail: href })
+        );
+      }
+    } else {
+      setOtimista(href);
+    }
+  };
+
   return (
     <nav
       aria-label="Navegação móvel"
@@ -90,14 +124,7 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
             key={href}
             href={href}
             prefetch={true}
-            onClick={() => {
-              setOtimista(href);
-              if (typeof window !== "undefined") {
-                window.dispatchEvent(
-                  new CustomEvent("cliente:mudar-aba", { detail: href })
-                );
-              }
-            }}
+            onClick={(e) => handleNavegar(e, href)}
             aria-current={ativo ? "page" : undefined}
             className="relative flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-colors duration-200"
             style={{
