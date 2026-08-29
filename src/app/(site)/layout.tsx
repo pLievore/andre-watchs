@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/react";
 
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
@@ -64,6 +65,7 @@ export default async function RootLayout({
             <Footer />
           </div>
         </SmoothScroll>
+        <Analytics />
       </body>
     </html>
   );

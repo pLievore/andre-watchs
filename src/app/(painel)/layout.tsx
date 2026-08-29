@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/react";
 
 import "./painel.css";
 /**
@@ -41,6 +42,7 @@ export default function PainelRootLayout({
           Pular para o conteúdo
         </a>
         {children}
+        <Analytics />
       </body>
     </html>
   );
