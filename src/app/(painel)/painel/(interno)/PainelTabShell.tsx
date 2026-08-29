@@ -53,31 +53,37 @@ export function PainelTabShell({
   pecasData,
 }: PainelTabShellProps) {
   const [currentTab, setCurrentTab] = useState(initialTab);
-  const [arrastando, setArrastando] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  // Valor de translação em porcentagem negativa (ex: 0 = 0%, 1 = -100%, 2 = -200%)
-  const xPercent = useMotionValue(-initialTab * 100);
+  // Em um container flex com 5 abas (largura 500%), cada aba representa 20% do container
+  // Aba 0 = 0% | Aba 1 = -20% | Aba 2 = -40% | Aba 3 = -60% | Aba 4 = -80%
+  const xPercent = useMotionValue(-initialTab * 20);
   const transformStyle = useTransform(xPercent, (val) => `${val}%`);
 
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const gestureLockRef = useRef<"horizontal" | "vertical" | null>(null);
+  const currentTabRef = useRef(initialTab);
+  currentTabRef.current = currentTab;
 
   // Navega para uma aba com animação física suave de mola
   const navegarParaAba = useCallback(
-    (targetIndex: number) => {
+    (targetIndex: number, animar: boolean = true) => {
       if (targetIndex < 0 || targetIndex > 4) return;
       setCurrentTab(targetIndex);
+      currentTabRef.current = targetIndex;
 
-      animate(xPercent, -targetIndex * 100, {
-        type: "spring",
-        stiffness: 380,
-        damping: 34,
-        onComplete: () => {
-          setArrastando(false);
-        },
-      });
+      const targetPercent = -targetIndex * 20;
+
+      if (animar) {
+        animate(xPercent, targetPercent, {
+          type: "spring",
+          stiffness: 420,
+          damping: 36,
+        });
+      } else {
+        xPercent.set(targetPercent);
+      }
 
       const novoCaminho = PAINEL_ROTAS[targetIndex];
       if (novoCaminho && typeof window !== "undefined") {
@@ -90,14 +96,14 @@ export function PainelTabShell({
     [xPercent]
   );
 
-  // Escuta cliques no menu de navegação inferior/superior
+  // Escuta cliques no menu de navegação (inferior mobile ou lateral desktop)
   useEffect(() => {
     function onMudarAba(e: Event) {
       const customEvent = e as CustomEvent<string>;
       const href = customEvent.detail;
       const targetIdx = PAINEL_ROTAS.indexOf(href as any);
-      if (targetIdx !== -1) {
-        navegarParaAba(targetIdx);
+      if (targetIdx !== -1 && targetIdx !== currentTabRef.current) {
+        navegarParaAba(targetIdx, true);
       }
     }
 
@@ -111,13 +117,13 @@ export function PainelTabShell({
   useEffect(() => {
     function onPopState() {
       const idx = PAINEL_ROTAS.indexOf(window.location.pathname as any);
-      if (idx !== -1 && idx !== currentTab) {
-        navegarParaAba(idx);
+      if (idx !== -1 && idx !== currentTabRef.current) {
+        navegarParaAba(idx, true);
       }
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, [currentTab, navegarParaAba]);
+  }, [navegarParaAba]);
 
   // Listener de toque para arraste 1:1 real estilo Instagram
   useEffect(() => {
@@ -137,7 +143,7 @@ export function PainelTabShell({
         return;
       }
 
-      // Ignora containers de rolagem horizontal própria (ex: gráfico ou tabela com scroll)
+      // Ignora containers com scroll horizontal próprio (ex: gráfico ou tabela)
       const horizontalScroll = target?.closest(".overflow-x-auto, .overflow-x-scroll");
       if (horizontalScroll && horizontalScroll.scrollWidth > horizontalScroll.clientWidth) {
         return;
@@ -170,7 +176,6 @@ export function PainelTabShell({
 
         if (absX > absY && absX > 8) {
           gestureLockRef.current = "horizontal";
-          setArrastando(true);
         }
       }
 
@@ -180,15 +185,16 @@ export function PainelTabShell({
         if (e.cancelable) e.preventDefault();
 
         const screenWidth = window.innerWidth || 400;
-        const deltaPercent = (deltaX / screenWidth) * 100;
-        const basePercent = -currentTab * 100;
+        // Cada tela inteira arrastada corresponde a 20% do container de 500%
+        const deltaPercent = (deltaX / screenWidth) * 20;
+        const basePercent = -currentTabRef.current * 20;
 
         let novoPercent = basePercent + deltaPercent;
 
-        // Resistência elástica nas extremidades (rubber-band)
-        if (currentTab === 0 && deltaX > 0) {
+        // Resistência elástica de borda (rubber-band) nas extremidades
+        if (currentTabRef.current === 0 && deltaX > 0) {
           novoPercent = basePercent + deltaPercent * 0.2;
-        } else if (currentTab === 4 && deltaX < 0) {
+        } else if (currentTabRef.current === 4 && deltaX < 0) {
           novoPercent = basePercent + deltaPercent * 0.2;
         }
 
@@ -200,7 +206,6 @@ export function PainelTabShell({
       if (!touchStartRef.current || gestureLockRef.current !== "horizontal") {
         touchStartRef.current = null;
         gestureLockRef.current = null;
-        setArrastando(false);
         return;
       }
 
@@ -208,7 +213,6 @@ export function PainelTabShell({
       if (!touch) {
         touchStartRef.current = null;
         gestureLockRef.current = null;
-        setArrastando(false);
         return;
       }
 
@@ -216,34 +220,37 @@ export function PainelTabShell({
       const duration = Date.now() - touchStartRef.current.time;
       const velocity = deltaX / Math.max(duration, 1);
       const screenWidth = window.innerWidth || 400;
-      const deltaPercent = (deltaX / screenWidth) * 100;
 
       touchStartRef.current = null;
       gestureLockRef.current = null;
 
-      // Limiar: 16% da tela ou flick rápido (> 0.4px/ms)
-      const limiar = 16;
-      const foiRapido = Math.abs(velocity) > 0.4;
+      // Limiar: 16% da largura da tela ou flick rápido (> 0.35px/ms)
+      const limiarPx = screenWidth * 0.16;
+      const foiRapido = Math.abs(velocity) > 0.35;
 
-      let proximaAba = currentTab;
+      const activeIdx = currentTabRef.current;
+      let targetIdx = activeIdx;
 
-      if (deltaPercent < -limiar || (deltaPercent < -5 && foiRapido)) {
-        if (currentTab < 4) {
-          proximaAba = currentTab + 1;
+      // Arrastou para a esquerda -> Próxima Aba
+      if (deltaX < -limiarPx || (deltaX < -25 && foiRapido)) {
+        if (activeIdx < 4) {
+          targetIdx = activeIdx + 1;
         }
-      } else if (deltaPercent > limiar || (deltaPercent > 5 && foiRapido)) {
-        if (currentTab > 0) {
-          proximaAba = currentTab - 1;
+      }
+      // Arrastou para a direita -> Aba Anterior
+      else if (deltaX > limiarPx || (deltaX > 25 && foiRapido)) {
+        if (activeIdx > 0) {
+          targetIdx = activeIdx - 1;
         }
       }
 
-      if (proximaAba !== currentTab) {
+      if (targetIdx !== activeIdx) {
         if (typeof navigator !== "undefined" && "vibrate" in navigator) {
           try { navigator.vibrate(10); } catch {}
         }
       }
 
-      navegarParaAba(proximaAba);
+      navegarParaAba(targetIdx, true);
     }
 
     window.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -257,23 +264,16 @@ export function PainelTabShell({
       window.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [currentTab, xPercent, navegarParaAba]);
+  }, [xPercent, navegarParaAba]);
 
   return (
-    <div className="relative w-full overflow-hidden">
+    <div className="relative w-full overflow-x-clip pb-12">
       <motion.div
         style={{ x: transformStyle }}
         className="flex w-[500%] items-start will-change-transform"
       >
-        {/* ── Aba 0: Clientes ────────────────────────────────────────────── */}
-        <div
-          className="w-[20%] min-w-[20%] shrink-0 px-0.5"
-          style={{
-            height: currentTab === 0 || arrastando ? "auto" : 0,
-            overflow: currentTab === 0 || arrastando ? "visible" : "hidden",
-            visibility: currentTab === 0 || arrastando ? "visible" : "hidden",
-          }}
-        >
+        {/* ── Aba 0: Clientes (20% da largura do container = 100% da tela) ── */}
+        <div className="w-[20%] min-w-[20%] shrink-0 px-1 sm:px-2">
           <ClientesView
             clientes={clientesData.clientes}
             pendentes={clientesData.pendentes}
@@ -283,14 +283,7 @@ export function PainelTabShell({
         </div>
 
         {/* ── Aba 1: Dashboard ───────────────────────────────────────────── */}
-        <div
-          className="w-[20%] min-w-[20%] shrink-0 px-0.5"
-          style={{
-            height: currentTab === 1 || arrastando ? "auto" : 0,
-            overflow: currentTab === 1 || arrastando ? "visible" : "hidden",
-            visibility: currentTab === 1 || arrastando ? "visible" : "hidden",
-          }}
-        >
+        <div className="w-[20%] min-w-[20%] shrink-0 px-1 sm:px-2">
           <DashboardView
             eventosRaw={dashboardData.eventosRaw}
             interessesRaw={dashboardData.interessesRaw}
@@ -300,14 +293,7 @@ export function PainelTabShell({
         </div>
 
         {/* ── Aba 2: Negociações ─────────────────────────────────────────── */}
-        <div
-          className="w-[20%] min-w-[20%] shrink-0 px-0.5"
-          style={{
-            height: currentTab === 2 || arrastando ? "auto" : 0,
-            overflow: currentTab === 2 || arrastando ? "visible" : "hidden",
-            visibility: currentTab === 2 || arrastando ? "visible" : "hidden",
-          }}
-        >
+        <div className="w-[20%] min-w-[20%] shrink-0 px-1 sm:px-2">
           <NegociacoesView
             totalAcessos={negociacoesData.totalAcessos}
             totalViuPeca={negociacoesData.totalViuPeca}
@@ -317,26 +303,12 @@ export function PainelTabShell({
         </div>
 
         {/* ── Aba 3: Peças ───────────────────────────────────────────────── */}
-        <div
-          className="w-[20%] min-w-[20%] shrink-0 px-0.5"
-          style={{
-            height: currentTab === 3 || arrastando ? "auto" : 0,
-            overflow: currentTab === 3 || arrastando ? "visible" : "hidden",
-            visibility: currentTab === 3 || arrastando ? "visible" : "hidden",
-          }}
-        >
+        <div className="w-[20%] min-w-[20%] shrink-0 px-1 sm:px-2">
           <PecasView pecas={pecasData.pecas} />
         </div>
 
         {/* ── Aba 4: Conta ───────────────────────────────────────────────── */}
-        <div
-          className="w-[20%] min-w-[20%] shrink-0 px-0.5"
-          style={{
-            height: currentTab === 4 || arrastando ? "auto" : 0,
-            overflow: currentTab === 4 || arrastando ? "visible" : "hidden",
-            visibility: currentTab === 4 || arrastando ? "visible" : "hidden",
-          }}
-        >
+        <div className="w-[20%] min-w-[20%] shrink-0 px-1 sm:px-2">
           <ContaView adminEmail={admin.email ?? ""} />
         </div>
       </motion.div>
