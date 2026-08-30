@@ -111,7 +111,10 @@ que a usa, nunca depois.
 | O quê | Por quê | Referência |
 |---|---|---|
 | **Fotos são do Unsplash** | Não são peças da casa. Bloqueiam publicação real | SPEC D8 |
-| **WhatsApp cai no Instagram** | `NEXT_PUBLIC_WHATSAPP_NUMBER` vazio; o CTA usa o Instagram como alternativa | SPEC D7 |
+
+O bloqueio do WhatsApp **saiu**: o número da casa (+55 42 98870-6221) está
+confirmado em `WhatsappCta.tsx` desde 2026-08-28 e conferido no ar — todo CTA
+aponta para `wa.me/5542988706221`. A decisão D7 do SPEC virou histórico.
 
 ---
 
