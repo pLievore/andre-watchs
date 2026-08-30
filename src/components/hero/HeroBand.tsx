@@ -182,6 +182,16 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const imagesRef = useRef<(HTMLImageElement | undefined)[]>([]);
+  /**
+   * Redesenho pedido de fora do laço de scroll.
+   *
+   * O laço só vive enquanto há movimento — parado, ele se encerra. Sem isto,
+   * um quadro que chega DEPOIS de a pessoa parar não aparece: a tela fica no
+   * vizinho aproximado mesmo já tendo o certo em memória, até o próximo
+   * movimento. É o que fazia a imagem parecer "de menor qualidade" logo
+   * depois do primeiro acesso.
+   */
+  const repintarRef = useRef<(() => void) | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -230,7 +240,13 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
           img.onerror = () => resolve();
         });
       }
-      if (!cancelled) images[i] = img;
+      if (cancelled) return;
+      images[i] = img;
+
+      // Se a pessoa já parou de rolar, o laço de desenho não está mais vivo e
+      // o quadro recém-chegado só apareceria no próximo movimento. Este pedido
+      // troca o vizinho aproximado pelo quadro certo assim que ele existe.
+      repintarRef.current?.();
     };
 
     /** Índice do frame que o scroll está mostrando agora. */
@@ -249,8 +265,24 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
       while (pending.size > 0) {
         if (cancelled) return;
         const here = currentIndex();
+
+        /*
+         * Distância pesada pelo sentido do scroll.
+         *
+         * Distância pura trata igualmente o quadro que vem e o que ficou para
+         * trás — e, na primeira descida, metade da banda ia para quadros que a
+         * pessoa acabou de passar. O que está à frente é o próximo a entrar na
+         * tela; o de trás só importa se ela voltar.
+         */
+        const descendo = progress.getVelocity() >= 0;
+        const custo = (i: number) => {
+          const distancia = Math.abs(i - here);
+          const aFrente = descendo ? i >= here : i <= here;
+          return aFrente ? distancia : distancia * 3;
+        };
+
         const next = [...pending]
-          .sort((a, b) => Math.abs(a - here) - Math.abs(b - here))
+          .sort((a, b) => custo(a) - custo(b))
           .slice(0, LOAD_CONCURRENCY);
         next.forEach((i) => pending.delete(i));
         await Promise.all(next.map(load));
@@ -336,6 +368,52 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
       return undefined;
     };
 
+    /**
+     * Os dois quadros carregados que cercam a posição atual, com a fração de
+     * onde ela cai entre eles.
+     *
+     * É o que mantém o movimento vivo enquanto a sequência está esparsa. Com
+     * `nearest` sozinho, um vão de 12 quadros vira "segura, segura, segura,
+     * pula": a tela congela e depois salta, que é exatamente a queixa de
+     * travamento no primeiro acesso. Dissolvendo entre os vizinhos existentes,
+     * o mesmo vão vira um movimento contínuo, um pouco mais macio que o real —
+     * e macio demais é infinitamente melhor que parado.
+     *
+     * Sem custo de rede: são os quadros que já estão em memória, na resolução
+     * original.
+     */
+    const cerca = (f: number) => {
+      const imgs = imagesRef.current;
+      const i = Math.floor(f);
+
+      let esquerda = -1;
+      for (let k = i; k >= 0; k--) {
+        if (imgs[k]) {
+          esquerda = k;
+          break;
+        }
+      }
+
+      let direita = -1;
+      for (let k = i + 1; k < FRAME_COUNT; k++) {
+        if (imgs[k]) {
+          direita = k;
+          break;
+        }
+      }
+
+      if (esquerda < 0 && direita < 0) return null;
+      if (esquerda < 0) return { a: imgs[direita]!, b: undefined, t: 0 };
+      if (direita < 0) return { a: imgs[esquerda]!, b: undefined, t: 0 };
+
+      return {
+        a: imgs[esquerda]!,
+        b: imgs[direita]!,
+        t: (f - esquerda) / (direita - esquerda),
+        vao: direita - esquerda,
+      };
+    };
+
     const cover = (img: HTMLImageElement) => {
       const cw = canvas.width;
       const ch = canvas.height;
@@ -370,18 +448,29 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
         return;
       }
 
-      const i0 = Math.floor(f);
-      const t = f - i0;
-      const a = nearest(i0);
-      if (!a) return;
+      const vizinhos = cerca(f);
+      if (!vizinhos) return;
 
-      cover(a);
+      cover(vizinhos.a);
 
-      // Dissolve com o próximo só quando estamos entre frames E devagar.
-      const slow = Math.abs(progress.getVelocity()) < BLEND_SPEED_LIMIT;
-      if (slow && t > 0.02 && i0 + 1 < FRAME_COUNT) {
-        const b = imagesRef.current[i0 + 1];
-        if (b) {
+      const { b, t, vao } = vizinhos;
+
+      if (b) {
+        /*
+         * Duas situações, uma regra cada:
+         *
+         * - **Vão maior que 1** (sequência ainda esparsa): dissolve SEMPRE,
+         *   em qualquer velocidade. Aqui a mistura não é refinamento, é o que
+         *   substitui os quadros que ainda não chegaram — sem ela a imagem
+         *   fica parada enquanto a página rola.
+         * - **Vizinhos adjacentes** (sequência completa): dissolve só devagar,
+         *   como antes. Em scroll rápido o segundo `drawImage` seria
+         *   desperdício, porque o olho não distingue.
+         */
+        const devagar = Math.abs(progress.getVelocity()) < BLEND_SPEED_LIMIT;
+        const preenchendoVao = (vao ?? 1) > 1;
+
+        if ((preenchendoVao || devagar) && t > 0.02) {
           ctx.globalAlpha = t;
           cover(b);
           ctx.globalAlpha = 1;
@@ -407,6 +496,16 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
         return;
       }
       rafId = requestAnimationFrame(loop);
+    };
+
+    /*
+     * Porta para o carregador pedir um redesenho quando um quadro chega.
+     *
+     * Só age em repouso: em movimento o laço já está desenhando, e um desenho
+     * extra fora dele brigaria com a cadência de tela.
+     */
+    repintarRef.current = () => {
+      if (Math.abs(progress.getVelocity()) < SETTLE_SPEED) paint(true, true);
     };
 
     const schedule = () => {
@@ -441,6 +540,7 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
     return () => {
       window.removeEventListener("resize", resize);
       if (rafId) cancelAnimationFrame(rafId);
+      repintarRef.current = null;
       unsub();
     };
   }, [isMobile, reduce, progress, ready]);
