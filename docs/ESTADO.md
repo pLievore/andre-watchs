@@ -4,87 +4,87 @@
 > seguir" em uma página. É o único documento que muda a cada entrega — se ele
 > discordar de outro, ele está certo e o outro está velho.
 >
-> **Última atualização**: 2026-08-28 (cliente ganhou navegação inferior no
-> mobile, 18 fotos legadas voltaram ao acervo e descrição alternativa ficou
-> opcional e recolhida; falta o deploy)
+> **Última atualização**: 2026-08-30 (rodada de acabamento: miniatura de foto
+> no envio, esqueletos de espera, ícone e cartão de compartilhamento, guardar
+> peça, propostas de venda registradas, tipos gerados do banco — e o retorno
+> tátil ao arrastar pela barra, nos dois sentidos)
 
 ---
 
 ## Em uma frase
 
-Site de acervo de relógios de luxo, em transição de **vitrine pública** para
-**clube fechado**: o acervo passa a exigir login e o dono ganha um painel.
+Site de acervo de relógios de luxo que **já é clube fechado**: o acervo exige
+login, o dono tem painel, e a venda fecha no WhatsApp.
 
 ---
 
-## O que está pronto e no ar
+## O que está no ar
 
-**https://andre-watches.vercel.app** — deploy de produção, projeto
-`andre-watches` na conta `plievores-projects`. **Ainda roda o código da Fase
-1** — o deploy da Fase 2 é um `git push` deliberado que falta dar (ver
-"Estado inconsistente" abaixo).
+**https://andre-watches.vercel.app** — projeto `andre-watches` na conta
+`plievores-projects`. A produção roda o código atual do `main`: conferido em
+2026-08-29, `/colecao` responde 308 para `/acervo`, redirect que só existe no
+código da Fase 2 em diante.
 
-- Landing com hero de scrubbing por scroll (361 quadros, canvas 2D)
-- `/colecao`, `/relogios/[slug]`, `/sobre`, `/vender`
+**Vitrine pública**
+
+- Landing com hero dirigido por scroll (361 quadros em canvas no desktop;
+  vídeo boomerang de uma tela no mobile)
+- `/sobre`, `/vender`, `/acesso` e a home institucional
 - Sistema de design completo (papel e tinta, palco escuro no hero)
-- Marca: monograma AW em `public/brand/`
 
-## O que está pronto em local, aguardando deploy
+**Acabamento da rodada de 2026-08-30** (em local, aguardando deploy)
 
-A Fase 2 — Porta está implementada e verificada (checklist completo em
-[FASE-2.md](FASE-2.md)): `/acesso` (entrar e pedir acesso), `/acervo` e
-`/acervo/[slug]` protegidos por middleware + RLS, home institucional, saudação
-ligada. Testado com dois clientes descartáveis (ativo e pendente) e por
-consulta direta à API sem sessão.
+- Fotos entram em três formas — original, miniatura de 1000px e desfoque de
+  espera —, todas geradas no navegador antes do envio
+- Esqueleto de carregamento no acervo, na peça e na conta
+- Ícone do site, ícone de aplicativo, manifesto (instalar na tela de início) e
+  cartão de compartilhamento nas páginas públicas — **nunca nas de peça**
+- Voltar de uma peça devolve o cliente à posição onde ele estava na lista
+- Cliente guarda peça; o painel mostra quantos guardaram cada uma
+- Proposta de venda fica registrada antes de qualquer pulo para o WhatsApp
+- Ordenação no acervo, busca e filtro na lista de peças do painel
+- Tipos do banco gerados e ligados aos três clientes — `any` virou erro de lint
 
-Além do que a Fase 2 previa: o cliente logado tem `/acervo/conta` — edita
-nome e telefone, e troca a própria senha. É a mitigação do risco D24
-(PLANO-CLUBE §3, "aditiva, liga quando quiser") ligada agora. No mobile, o
-cliente usa uma barra inferior persistente com Acervo, Vender, A casa e Conta;
-o menu sanduíche fica para visitante e dono.
+**Clube** — exige sessão e `clientes.status = 'ativo'`
 
-O painel local também cobre o núcleo da Fase 3: cadastro e edição completos de
-peças e clientes. Foto pode ser escolhida já na criação da peça e vai direto ao
-bucket privado por URL assinada, sem atravessar o limite de 1 MB da Server
-Action. Cadastro e edição compartilham o fluxo. A ordenação é otimista na tela
-e transacional no banco (`supabase/fase-5.sql`). Testado no Chrome com três
-JPEGs de 4,34 MB, rajada de oito toques e 30 movimentos concorrentes; o cadastro
-descartável e seus objetos foram removidos ao fim.
+- `/acervo` e `/acervo/[slug]`, protegidos por middleware **e** RLS
+- `/acervo/[slug]/dossie` — ficha técnica diagramada em A4 para impressão
+- `/acervo/conta` — nome, telefone e troca da própria senha
+- `/convite/[token]` — convite por link de uso único, validade de 7 dias
+- Encomenda ("procuro um relógio assim") registrada pelo cliente
+- No mobile, barra inferior com Acervo, Vender, A casa e Conta. As quatro
+  telas vivem num shell único (`SiteTabShell`) com deslize lateral 1:1
 
-As 18 fotos da semente voltaram a aparecer. Elas usam caminhos locais iniciados
-por `/pecas/`; o assinador os confundia com uploads do bucket e os descartava
-quando a assinatura falhava. Upload novo continua privado no formato
-`slug/uuid.ext`. A descrição alternativa é gerada automaticamente e sua edição
-manual ficou opcional, recolhida em cada foto.
+**Painel do dono** — `/painel`, e-mail listado em `ADMIN_EMAILS`
 
-### ⚠️ Estado inconsistente entre banco e produção
+- Clientes: cadastro, edição, quatro status, exclusão e gerador de convites
+- Peças: cadastro e edição com upload direto ao bucket privado (a foto não
+  passa pela Server Action) e ordenação transacional
+- Dashboard: funil de 30 dias, ranking de peças, origem e dispositivo
+- Negociações: pipeline comercial com quatro status
+- Conta do admin, separada da conta de cliente
 
-O Supabase é um projeto só, compartilhado por local e produção — não há
-ambiente de staging (docs/BANCO.md). A migração `supabase/fase-2.sql` **já foi
-aplicada nesse banco** em 2026-08-28, o que já fechou `pecas`/`fotos` para
-qualquer leitura sem sessão de cliente ativo. O `/colecao` público que ainda
+## Banco
 
-### ⚠️ Estado inconsistente entre banco e produção
+Todas as migrações de `supabase/` estão aplicadas — conferido por consulta
+direta ao banco em 2026-08-29 (tabelas `clientes`, `convites`, `encomendas`,
+`eventos`, `fotos`, `interesses`, `pecas`, `solicitacoes_acesso`). O registro
+com data está na tabela do topo de [BANCO.md](BANCO.md).
 
-O Supabase é um projeto só, compartilhado por local e produção — não há
-ambiente de staging (docs/BANCO.md). A migração `supabase/fase-2.sql` **já foi
-aplicada nesse banco** em 2026-08-28, o que já fechou `pecas`/`fotos` para
-qualquer leitura sem sessão de cliente ativo. O `/colecao` público que ainda
-está de pé na Vercel só continua mostrando peças porque a página ficou em
-cache estático de antes da troca — qualquer revalidação ou rebuild sem o
-deploy desta fase o deixa vazio. A correção é publicar o código desta fase, não
-reabrir o banco: era o resultado esperado (FASE-2.md §2.1), só chegou antes do
-deploy.
+Não existe staging: local e produção falam com o **mesmo** projeto Supabase.
+Migração aplicada vale para os dois na hora — por isso ela entra antes da tela
+que a usa, nunca depois.
 
 ## O que NÃO existe ainda
 
-- ~~Banco de dados~~ — **feito**: Supabase, 10 peças migradas. `watches.ts`
-  segue como semente de referência
-- ~~Autenticação~~ — **feito na Fase 2**, em local. Falta publicar
-- ~~Convite por link~~ — **feito na Fase 3**: `convites`, gerador no painel com texto para WhatsApp, resgate em `/convite/[token]`
-- ~~Funil e eventos~~ — **feito na Fase 4**: `eventos` (acesso, visualização de peça, cliques no WhatsApp), métricas de 30 dias e ranking das mais vistas
-- ~~Interesses~~ — **feito na Fase 4**: pipeline comercial `/painel/negociacoes`, 4 status, histórico na ficha do cliente e na peça
-- **Gateway de pagamento** — fora de escopo por decisão (a venda fecha no WhatsApp)
+- **Gateway de pagamento** — fora de escopo por decisão (a venda fecha no
+  WhatsApp)
+- **Testes automatizados** — o gate hoje é `npx tsc --noEmit` mais `npm run
+  lint`, os dois limpos. Autenticação, RLS e os quatro status de cliente não
+  têm rede de proteção além de teste manual
+- **Transição da foto do card para a peça** — a continuidade real (a mesma
+  foto crescendo até a página) depende de recurso experimental do Next; hoje a
+  foto assenta na chegada, que é o que dá para prometer sem risco
 
 ## Bloqueios conhecidos
 
@@ -92,28 +92,32 @@ deploy.
 |---|---|---|
 | **Fotos são do Unsplash** | Não são peças da casa. Bloqueiam publicação real | SPEC D8 |
 | **WhatsApp cai no Instagram** | `NEXT_PUBLIC_WHATSAPP_NUMBER` vazio; o CTA usa o Instagram como alternativa | SPEC D7 |
-| **Produção com RLS de Fase 2 e código de Fase 1** | Deploy pendente após as migrações já aplicadas | ver acima |
-| **`fase-4.sql`, `fase-5.sql`, `fase-6.sql` e `fase-7.sql` já aplicadas no banco** | O banco tem `estado`, bucket `pecas`, troca atômica, `convites`, `eventos` e `interesses`; produção ainda não tem o código que os usa | ver acima |
 
 ---
 
 ## Fase atual
 
-**Fase 4 — Inteligência, concluída em local.** As Fases 2 (Porta), 3 (Painel
-operacional completo com convites por link) e 4 (Eventos, funil e pipeline de
-negociações) estão implementadas e validadas em local.
+**Fase 5 — Acabamento.** As fases 1 a 4 estão publicadas. O que veio depois
+delas (encomendas, dossiê, dashboard de BI, navegação por abas com deslize)
+foi entregue sem virar fase própria — daí não haver `docs/FASE-4.md` em
+diante.
 
-Falta publicar o conjunto completo com `git push` + `npx vercel --prod`.
+O que a fase 5 ainda deve: revisão de acessibilidade, estados vazios, peso do
+JavaScript no cliente (o shell de abas monta todas as telas de uma vez) e as
+fotos reais no lugar das do Unsplash.
 
 ## Fases
 
 | | Fase | Status |
 |---|---|---|
 | 1 | **Fundação** — Supabase, RLS, catálogo no banco | ✅ em produção |
-| 2 | **Porta** — auth, acervo privado, home institucional | ✅ em local · ⬜ deploy |
-| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | ✅ em local · ⬜ deploy |
-| 4 | **Inteligência** — eventos, funil identificado, interesses | ✅ em local · ⬜ deploy |
-| 5 | **Acabamento** — mobile, estados vazios, a11y, desempenho | ⬜ |
+| 2 | **Porta** — auth, acervo privado, home institucional | ✅ em produção |
+| 3 | **Painel** — CRUD de peças, clientes, caminhos de entrada | ✅ em produção |
+| 4 | **Inteligência** — eventos, funil identificado, interesses | ✅ em produção |
+| 5 | **Acabamento** — mobile, estados vazios, a11y, desempenho | 🔄 em andamento |
+
+## Dois route groups, duas cascas
+
 `src/app/(site)` e `src/app/(painel)` são **route groups irmãos**, com layouts
 raiz próprios. Não compartilham header, rodapé nem Lenis — só os tokens de CSS.
 

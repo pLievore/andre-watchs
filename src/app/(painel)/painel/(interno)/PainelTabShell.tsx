@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { usePathname, useRouter } from "next/navigation";
 import { animate, motion, useMotionValue, useTransform } from "motion/react";
 
 import { ClientesView } from "./views/ClientesView";
@@ -9,6 +8,11 @@ import { DashboardView } from "./views/DashboardView";
 import { NegociacoesView } from "./views/NegociacoesView";
 import { PecasView } from "./views/PecasView";
 import { ContaView } from "./views/ContaView";
+import { dispararVibracao as vibrar } from "@/lib/haptics";
+
+// Só o tipo: `import type` é apagado na compilação, então o módulo de dados
+// (que abre a chave secret) não é arrastado para o bundle do navegador.
+import type { DadosPainel } from "./dados-painel";
 
 export const PAINEL_ROTAS = [
   "/painel",
@@ -18,33 +22,12 @@ export const PAINEL_ROTAS = [
   "/painel/conta",
 ] as const;
 
-interface PainelTabShellProps {
-  initialTab: number;
-  admin: { email?: string };
-  clientesData: {
-    clientes: any[];
-    pendentes: any[];
-    recusadas: any[];
-    convites: any[];
-  };
-  dashboardData: {
-    eventosRaw: any[];
-    interessesRaw: any[];
-    totalClientes: number;
-    pecasAtivasRaw: any[];
-  };
-  negociacoesData: {
-    totalAcessos: number;
-    totalViuPeca: number;
-    totalWhatsApp: number;
-    interessesRaw: any[];
-  };
-  pecasData: {
-    pecas: any[];
-  };
-}
-
-import { dispararVibracao as vibrar } from "@/lib/haptics";
+/**
+ * As props são exatamente o que `carregarDadosPainel` devolve — a página faz
+ * `{...dados}`. Derivar do carregador em vez de redeclarar `any[]` mantém a
+ * checagem viva na travessia servidor -> cliente.
+ */
+type PainelTabShellProps = DadosPainel & { initialTab: number };
 
 export function PainelTabShell({
   initialTab,
@@ -55,8 +38,6 @@ export function PainelTabShell({
   pecasData,
 }: PainelTabShellProps) {
   const [currentTab, setCurrentTab] = useState(initialTab);
-  const router = useRouter();
-  const pathname = usePathname();
 
   // Em um container flex com 5 abas (largura 500%), cada aba representa 20% do container
   // Aba 0 = 0% | Aba 1 = -20% | Aba 2 = -40% | Aba 3 = -60% | Aba 4 = -80%
@@ -66,6 +47,20 @@ export function PainelTabShell({
   const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
   const gestureLockRef = useRef<"horizontal" | "vertical" | null>(null);
   const hasSwipedRef = useRef(false);
+  /** O gesto atual começou na barra inferior, que também é superfície de arrasto. */
+  const barraNoGestoRef = useRef(false);
+  /** Virou arrasto lá dentro — o clique que o navegador manda depois é lixo. */
+  const arrastouNaBarraRef = useRef(false);
+  /** Geometria da barra no início do gesto: é ela que traduz dedo em aba. */
+  const barraCaixaRef = useRef<DOMRect | null>(null);
+  /** O switch nativo sob o dedo — é dele que sai o tique no iPhone. */
+  const switchDaBarraRef = useRef<HTMLInputElement | null>(null);
+  /** Rearme do switch: um tique por aba atravessada, não um por gesto. */
+  const rearmeRef = useRef<{
+    sw: HTMLInputElement;
+    estado: boolean;
+    tiques: number;
+  } | null>(null);
   const lastHapticTabRef = useRef(initialTab);
   const currentTabRef = useRef(initialTab);
   currentTabRef.current = currentTab;
@@ -88,7 +83,10 @@ export function PainelTabShell({
         );
       }
 
-      // Vibração sutil e atualização da cor do ícone ao cruzar entre abas
+      // Ponto único do retorno tátil: vibra quando a aba de fato vira, seja
+      // por deslize, clique ou botão de voltar. Concentrar aqui evita vibrar
+      // duas vezes no mesmo gesto (uma na travessia, outra ao soltar o dedo).
+      // No iPhone nada acontece — ver src/lib/haptics.ts.
       const rounded = Math.round(progress);
       if (rounded !== lastHapticTabRef.current) {
         lastHapticTabRef.current = rounded;
@@ -154,9 +152,8 @@ export function PainelTabShell({
     function onMudarAba(e: Event) {
       const customEvent = e as CustomEvent<string>;
       const href = customEvent.detail;
-      const targetIdx = PAINEL_ROTAS.indexOf(href as any);
+      const targetIdx = (PAINEL_ROTAS as readonly string[]).indexOf(href);
       if (targetIdx !== -1 && targetIdx !== currentTabRef.current) {
-        vibrar(12);
         navegarParaAba(targetIdx, true);
       }
     }
@@ -170,9 +167,8 @@ export function PainelTabShell({
   // Sincroniza se o usuário usar o botão Voltar/Avançar do navegador
   useEffect(() => {
     function onPopState() {
-      const idx = PAINEL_ROTAS.indexOf(window.location.pathname as any);
+      const idx = (PAINEL_ROTAS as readonly string[]).indexOf(window.location.pathname);
       if (idx !== -1 && idx !== currentTabRef.current) {
-        vibrar(10);
         navegarParaAba(idx, true);
       }
     }
@@ -182,9 +178,56 @@ export function PainelTabShell({
 
   // Listener de toque para arraste 1:1 real estilo Instagram (permite arrastar sobre tabelas e cards)
   useEffect(() => {
+    /**
+     * Onde o dedo está, em abas, quando o gesto acontece sobre a barra.
+     *
+     * A conta é a geometria da barra, não a largura da tela: dedo no centro do
+     * terceiro botão é aba 2, e o conteúdo mostra a aba que está sob o dedo.
+     * Medir por deslocamento obrigava a percorrer a tela inteira para andar
+     * uma casa numa barra em que cada botão tem um quinto disso.
+     */
+    function posicaoNaBarra(clientX: number): number {
+      const caixa = barraCaixaRef.current;
+      if (!caixa || !caixa.width) return currentTabRef.current;
+      const larguraBotao = caixa.width / PAINEL_ROTAS.length;
+      const posicao = (clientX - caixa.left) / larguraBotao - 0.5;
+      return Math.max(0, Math.min(PAINEL_ROTAS.length - 1, posicao));
+    }
+
+    /**
+     * O switch acabou de virar, então o iPhone acabou de dar o tique. Devolvê-lo
+     * ao estado anterior deixa o mesmo arrasto disparar de novo quando o dedo
+     * cruzar o próximo botão — é o que dá **um tique por aba**, e não um por
+     * gesto. Fora do despacho do evento, para não reentrar no controle nativo.
+     */
+    function aoTrocarSwitch() {
+      const rearme = rearmeRef.current;
+      if (!rearme) return;
+      rearme.tiques += 1;
+      if (rearme.tiques >= 8) return;
+      requestAnimationFrame(() => {
+        if (rearmeRef.current === rearme) rearme.sw.checked = rearme.estado;
+      });
+    }
+
+    function soltarRearme() {
+      const rearme = rearmeRef.current;
+      if (!rearme) return;
+      rearme.sw.removeEventListener("change", aoTrocarSwitch);
+      rearmeRef.current = null;
+    }
+
     function onClickCapture(e: MouseEvent) {
       const target = e.target as HTMLElement | null;
       if (target?.closest("label[id*='tab-label-'], input[id*='tab-input-']")) {
+        // Arrastar na barra alterna o switch nativo do botão sob o dedo, e o
+        // navegador ainda manda um clique no fim. Sem engolir esse clique, o
+        // arrasto terminaria abrindo a aba errada. Toque simples não marca a
+        // flag, então continua passando.
+        if (arrastouNaBarraRef.current) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
         return;
       }
 
@@ -202,20 +245,44 @@ export function PainelTabShell({
 
       const target = e.target as HTMLElement | null;
 
-      // Não bloqueia links, cards ou botões: apenas campos de texto para digitação
-      if (
-        target?.closest(
-          "input:not([type='button']):not([type='submit']), textarea, select, [role='slider'], [data-no-swipe], .no-swipe"
-        )
-      ) {
-        return;
+      /*
+       * A barra inferior também é superfície de arrasto — e no iPhone é a
+       * única que vibra: os botões têm switch nativo transparente por cima, e
+       * desde o iOS 26.5 só a manipulação física de um controle desses aciona
+       * a Taptic Engine (ver `src/lib/haptics.ts`). Arrastar ali é arrastar o
+       * switch, e o tique vem do sistema, sem passar por JavaScript.
+       *
+       * Então o filtro de campos abaixo não vale para ela: os "inputs" da
+       * barra são justamente os switches que precisam receber o dedo.
+       */
+      const barra = target?.closest<HTMLElement>("[data-swipe-nav]") ?? null;
+      const naBarra = barra !== null;
+      barraCaixaRef.current = barra ? barra.getBoundingClientRect() : null;
+      switchDaBarraRef.current = naBarra
+        ? target
+            ?.closest("label[id*='tab-label-']")
+            ?.querySelector<HTMLInputElement>("input[type='checkbox']") ?? null
+        : null;
+
+      if (!naBarra) {
+        // Não bloqueia links, cards ou botões: apenas campos de texto para digitação
+        if (
+          target?.closest(
+            "input:not([type='button']):not([type='submit']), textarea, select, [role='slider'], [data-no-swipe], .no-swipe"
+          )
+        ) {
+          return;
+        }
+
+        // Ignora containers com scroll horizontal próprio (ex: gráfico ou tabela interna)
+        const horizontalScroll = target?.closest(".overflow-x-auto, .overflow-x-scroll");
+        if (horizontalScroll && horizontalScroll.scrollWidth > horizontalScroll.clientWidth) {
+          return;
+        }
       }
 
-      // Ignora containers com scroll horizontal próprio (ex: gráfico ou tabela interna)
-      const horizontalScroll = target?.closest(".overflow-x-auto, .overflow-x-scroll");
-      if (horizontalScroll && horizontalScroll.scrollWidth > horizontalScroll.clientWidth) {
-        return;
-      }
+      barraNoGestoRef.current = naBarra;
+      arrastouNaBarraRef.current = false;
 
       touchStartRef.current = {
         x: touch.clientX,
@@ -251,8 +318,38 @@ export function PainelTabShell({
       if (gestureLockRef.current === "vertical") return;
 
       if (gestureLockRef.current === "horizontal") {
-        if (e.cancelable) e.preventDefault();
+        // Na barra não se previne nada: o gesto pertence ao switch nativo, e é
+        // dele que vem o tique no iPhone. Cancelar o evento tiraria o controle
+        // do sistema. A barra é fixa, então não há rolagem a impedir.
+        if (e.cancelable && !barraNoGestoRef.current) e.preventDefault();
         hasSwipedRef.current = true;
+
+        if (barraNoGestoRef.current) {
+          /*
+           * Arma o switch para a direção do gesto, uma vez só, no primeiro
+           * movimento — que é quando a direção passa a ser conhecida.
+           *
+           * Switch desligado só sabe ligar, indo para a direita; para a
+           * esquerda ele não muda de estado, e sem mudança de estado o iPhone
+           * não dá o tique. Escrever `.checked` por código não dispara evento
+           * algum, então isso não mexe na navegação.
+           */
+          if (!arrastouNaBarraRef.current) {
+            arrastouNaBarraRef.current = true;
+            const sw = switchDaBarraRef.current;
+            if (sw) {
+              const estado = deltaX < 0;
+              sw.checked = estado;
+              // Rearma a cada tique: pular três abas num gesto dá três tiques,
+              // não um. O teto existe para um arrasto longo não virar matraca.
+              rearmeRef.current = { sw, estado, tiques: 0 };
+              sw.addEventListener("change", aoTrocarSwitch);
+            }
+          }
+
+          xPercent.set(-posicaoNaBarra(touch.clientX) * 20);
+          return;
+        }
 
         const screenWidth = window.innerWidth || 400;
         // Cada tela inteira arrastada corresponde a 20% do container de 500%
@@ -296,9 +393,27 @@ export function PainelTabShell({
 
       // Mantém a flag de swipe ativa brevemente para engolir o evento click gerado pelo navegador
       hasSwipedRef.current = true;
+      const arrastouNaBarra = arrastouNaBarraRef.current;
+      barraNoGestoRef.current = false;
+      soltarRearme();
       setTimeout(() => {
         hasSwipedRef.current = false;
+        arrastouNaBarraRef.current = false;
       }, 150);
+
+      /*
+       * Arrasto na barra fecha pela posição do dedo, não pelo limiar de meia
+       * tela que vale para o conteúdo — o gesto inteiro cabe nos 56px de
+       * altura da barra.
+       *
+       * Este caminho também atende `touchcancel`: quando o switch nativo
+       * assume o gesto, o WebKit cancela o toque em vez de encerrá-lo, e sem
+       * tratar isso o conteúdo ficava parado no meio do caminho.
+       */
+      if (arrastouNaBarra) {
+        navegarParaAba(Math.round(posicaoNaBarra(touch.clientX)), true);
+        return;
+      }
 
       // Limiar: 16% da largura da tela ou flick rápido (> 0.35px/ms)
       const limiarPx = screenWidth * 0.16;
@@ -320,13 +435,6 @@ export function PainelTabShell({
         }
       }
 
-      if (targetIdx !== activeIdx) {
-        vibrar(12);
-        try {
-          const targetLabel = document.getElementById(`painel-tab-label-${targetIdx}`);
-          targetLabel?.click();
-        } catch {}
-      }
 
       navegarParaAba(targetIdx, true);
     }
@@ -343,6 +451,7 @@ export function PainelTabShell({
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("touchcancel", onTouchEnd);
+      soltarRearme();
     };
   }, [xPercent, navegarParaAba]);
 
@@ -379,6 +488,7 @@ export function PainelTabShell({
             totalViuPeca={negociacoesData.totalViuPeca}
             totalWhatsApp={negociacoesData.totalWhatsApp}
             interessesRaw={negociacoesData.interessesRaw}
+            propostas={negociacoesData.propostas as never}
           />
         </div>
 

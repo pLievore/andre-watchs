@@ -5,13 +5,6 @@
  *
  * Client component porque o filtro é estado local. O catálogo chega por prop
  * do server component (`/acervo/page.tsx`), então a fronteira client fica
-"use client";
-
-/**
- * SPEC §11 — grid do acervo com filtro por marca e disponibilidade.
- *
- * Client component porque o filtro é estado local. O catálogo chega por prop
- * do server component (`/acervo/page.tsx`), então a fronteira client fica
  * baixa na árvore e a listagem continua renderizando no servidor.
  *
  * Reveal em stagger com `whileInView` (§3.4), `once: true` — a peça não
@@ -35,6 +28,15 @@ const AVAILABILITY_FILTERS: readonly { id: Availability; label: string }[] = [
 
 const ALL_BRANDS = "Todas as marcas";
 
+type Ordem = "recentes" | "menor-preco" | "maior-preco";
+
+/** `recentes` é a ordem em que a casa recebe as peças — a que vem do banco. */
+const ORDENACOES: readonly { id: Ordem; label: string }[] = [
+  { id: "recentes", label: "Recentes" },
+  { id: "menor-preco", label: "Menor preço" },
+  { id: "maior-preco", label: "Maior preço" },
+];
+
 interface CollectionGridProps {
   watches: readonly Watch[];
 }
@@ -43,6 +45,7 @@ export function CollectionGrid({ watches }: CollectionGridProps) {
   const reduce = useReducedMotion();
   const [brand, setBrand] = useState<string>(ALL_BRANDS);
   const [availability, setAvailability] = useState<Availability>("todas");
+  const [ordem, setOrdem] = useState<Ordem>("recentes");
   const [aberto, setAberto] = useState(false);
   const refFiltro = useRef<HTMLDivElement>(null);
 
@@ -51,17 +54,24 @@ export function CollectionGrid({ watches }: CollectionGridProps) {
     [watches],
   );
 
-  const filtered = useMemo(
-    () =>
-      watches.filter((w) => {
-        if (brand !== ALL_BRANDS && w.brand !== brand) return false;
-        if (availability === "disponiveis" && w.state !== "disponivel") return false;
-        if (availability === "reservadas" && w.state !== "reservada") return false;
-        if (availability === "vendidas" && w.state !== "vendida") return false;
-        return true;
-      }),
-    [watches, brand, availability],
-  );
+  const filtered = useMemo(() => {
+    const lista = watches.filter((w) => {
+      if (brand !== ALL_BRANDS && w.brand !== brand) return false;
+      if (availability === "disponiveis" && w.state !== "disponivel") return false;
+      if (availability === "reservadas" && w.state !== "reservada") return false;
+      if (availability === "vendidas" && w.state !== "vendida") return false;
+      return true;
+    });
+
+    if (ordem === "recentes") return lista;
+
+    // Cópia antes de ordenar: `watches` vem do servidor e é compartilhada.
+    return [...lista].sort((a, b) =>
+      ordem === "menor-preco"
+        ? a.priceCents - b.priceCents
+        : b.priceCents - a.priceCents,
+    );
+  }, [watches, brand, availability, ordem]);
 
   const quantidadeFiltros =
     (brand !== ALL_BRANDS ? 1 : 0) + (availability !== "todas" ? 1 : 0);
@@ -70,6 +80,7 @@ export function CollectionGrid({ watches }: CollectionGridProps) {
   function limparFiltros() {
     setBrand(ALL_BRANDS);
     setAvailability("todas");
+    setOrdem("recentes");
   }
 
   // Fecha o filtro suspenso ao clicar fora ou pressionar Escape
@@ -233,6 +244,28 @@ export function CollectionGrid({ watches }: CollectionGridProps) {
                   </select>
                 </div>
 
+                {/*
+                  Ordenação.
+
+                  Três opções cobrem o que se pede num catálogo, e nenhuma
+                  delas inventa hierarquia: "recentes" é a ordem da casa (o
+                  que chegou por último aparece antes), e as de preço são fato,
+                  não recomendação. Sem "relevância", que ninguém sabe explicar.
+                */}
+                <div className="mt-5">
+                  <span className="label mb-2 block">Ordenar por</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {ORDENACOES.map((opcao) => (
+                      <FilterButton
+                        key={opcao.id}
+                        label={opcao.label}
+                        active={ordem === opcao.id}
+                        onSelect={() => setOrdem(opcao.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
                 {/* Filtro de Situação */}
                 <div className="mt-5">
                   <span className="label mb-2 block">Situação</span>
@@ -317,9 +350,23 @@ export function CollectionGrid({ watches }: CollectionGridProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <p className="mt-16 text-lg" style={{ color: "var(--color-muted)" }}>
-          Nenhuma peça com esses filtros no momento.
-        </p>
+        /*
+         * Estado vazio com saída: a frase sozinha deixava a pessoa numa tela
+         * sem caminho, com o botão de limpar lá em cima, fora de onde o olho
+         * está. Quem filtrou até zerar quer voltar atrás em um toque.
+         */
+        <div className="mt-16 flex flex-col items-start gap-5">
+          <p className="text-lg" style={{ color: "var(--color-muted)" }}>
+            Nenhuma peça com esses filtros no momento.
+          </p>
+          <button
+            type="button"
+            onClick={limparFiltros}
+            className="btn btn-ghost"
+          >
+            Limpar filtros
+          </button>
+        </div>
       ) : (
         <ul className="mt-10 grid gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((watch, i) => (

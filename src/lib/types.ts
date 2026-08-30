@@ -41,6 +41,16 @@ export interface WatchImage {
   url: string;
   /** SPEC §9 — alt horológico: marca, modelo, ref., mostrador, ângulo. */
   alt: string;
+  /**
+   * Versão reduzida da foto, para lista e miniatura (fase 13). Ausente nas
+   * fotos anteriores — quem exibe cai em `url` sem precisar perguntar.
+   */
+  thumbUrl?: string;
+  /**
+   * Miniatura minúscula embutida como data URL. Entra desfocada no lugar da
+   * foto e sai quando a real chega, para o card não piscar de vazio para cheio.
+   */
+  blur?: string;
 }
 
 /**

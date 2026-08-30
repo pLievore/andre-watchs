@@ -11,6 +11,8 @@ import { PecaForm, type PecaEditavel } from "./PecaForm";
 
 export const metadata: Metadata = { title: "Editar peça" };
 
+export const dynamic = "force-dynamic";
+
 /** Uma hora — o suficiente para a sessão de edição, sem virar link eterno. */
 const VALIDADE_PREVIA = 3600;
 
@@ -43,6 +45,7 @@ export default async function EditarPecaPage({
     { data: linhas },
     { data: interessesRaw },
     { data: visualizacoesRaw },
+    { count: guardaram },
   ] = await Promise.all([
     dbAdmin
       .from("fotos")
@@ -61,11 +64,20 @@ export default async function EditarPecaPage({
       .eq("tipo", "viu_peca")
       .order("criado_em", { ascending: false })
       .limit(15),
+    // Quantos clientes guardaram esta peça: demanda medida antes de qualquer
+    // conversa, e o sinal mais barato que a casa tem sobre o preço.
+    dbAdmin
+      .from("guardadas")
+      .select("peca_id", { count: "exact", head: true })
+      .eq("peca_id", peca.id),
   ]);
 
   const fotos = await comPrevia((linhas ?? []) as FotoPainel[]);
-  const interesses = (interessesRaw ?? []) as any[];
-  const visualizacoes = (visualizacoesRaw ?? []) as any[];
+  // Sem `as any`: as consultas acima já vêm tipadas pelos tipos gerados do
+  // banco, e a junção com `clientes` pode ser nula quando o cliente foi
+  // excluído — a tela trata isso abaixo.
+  const interesses = interessesRaw ?? [];
+  const visualizacoes = visualizacoesRaw ?? [];
 
   return (
     <div className="flex flex-col gap-10">
@@ -141,7 +153,7 @@ export default async function EditarPecaPage({
         </div>
 
         <div
-          className="grid grid-cols-2 gap-4 border-y py-4"
+          className="grid grid-cols-2 gap-4 border-y py-4 sm:grid-cols-3"
           style={{ borderColor: "var(--color-border)" }}
         >
           <div>
@@ -160,6 +172,19 @@ export default async function EditarPecaPage({
               style={{ color: "var(--color-accent)" }}
             >
               {interesses.length}
+            </p>
+          </div>
+          {/*
+            Guardar é o degrau antes de chamar no WhatsApp: mede quem está de
+            olho sem ter falado nada ainda.
+          */}
+          <div>
+            <span className="label text-xs">Guardaram a peça</span>
+            <p
+              className="mt-1 text-2xl font-light font-mono"
+              style={{ color: "var(--color-foreground)" }}
+            >
+              {guardaram ?? 0}
             </p>
           </div>
         </div>

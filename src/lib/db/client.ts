@@ -9,6 +9,8 @@
 
 import { createClient } from "@supabase/supabase-js";
 
+import type { Database } from "./tipos-banco";
+
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
@@ -21,7 +23,7 @@ if (!url || !anonKey) {
   );
 }
 
-export const db = createClient(url, anonKey, {
+export const db = createClient<Database>(url, anonKey, {
   auth: {
     // Fase 1 não tem login. Persistir sessão aqui só criaria estado inútil;
     // a Fase 2 troca isto quando a autenticação entrar.

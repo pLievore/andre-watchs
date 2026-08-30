@@ -1,69 +1,83 @@
-# NEXUS DROP
+# ANDRE WATCHES
 
-Boutique digital de sneakers premium da coleção pessoal do fundador.
-Fonte da verdade: [SPEC.md](./SPEC.md).
+Acervo privado de relógios de luxo: catálogo atrás de login, painel para o
+dono da casa, venda fechada no WhatsApp.
+
+**Comece por [`docs/ESTADO.md`](docs/ESTADO.md)** — ele diz em uma página o que
+já existe, o que falta e qual é a fase atual. É o documento que muda a cada
+entrega; se ele discordar de outro, ele está certo.
+
+| Arquivo | O que responde |
+|---|---|
+| [docs/ESTADO.md](docs/ESTADO.md) | onde estamos, o que falta |
+| [CLAUDE.md](CLAUDE.md) | como trabalhar neste repo |
+| [SPEC.md](SPEC.md) | o que o produto é e por quê |
+| [PLANO-CLUBE.md](PLANO-CLUBE.md) | o plano da fase contratada |
+| [docs/BANCO.md](docs/BANCO.md) | esquema, RLS, migrações, as duas chaves |
+
+## Stack
+
+Next.js 15 (App Router, RSC) · TypeScript strict · Tailwind v4 ·
+Motion (`motion/react`) para movimento · Lenis para scroll ·
+Supabase (Postgres + auth + RLS + Storage privado).
 
 ## Setup
 
 ```bash
 npm install
+cp .env.example .env.local   # e preencha os valores
 npm run dev
 ```
 
-Abre em `http://localhost:3000`. O hero (`§4`) carrega frames de
-`public/hero-sequence/`. Enquanto a pasta estiver vazia o canvas mostra o
-skeleton de loading — gere os frames primeiro:
+Abre em `http://localhost:3000`. As variáveis estão explicadas uma a uma em
+[`.env.example`](.env.example) — o arquivo é versionado com os **nomes**, e os
+valores só existem no `.env.local`, que o `.gitignore` protege.
 
-## Pipeline do hero (Veo 3 → 72 frames WebP)
+Sem `SUPABASE_SECRET_KEY` o painel não escreve; sem `ADMIN_EMAILS` ninguém
+entra em `/painel`; sem `NEXT_PUBLIC_WHATSAPP_NUMBER` todo CTA de contato cai
+no Instagram da casa, de propósito, em vez de num número inventado.
 
-Coloque o `veo3_output.mp4` na raiz do repo e rode um dos pipelines:
+## Comandos
 
-**Bash (Git Bash, WSL, macOS, Linux):**
 ```bash
-chmod +x scripts/build-hero-frames.sh
-./scripts/build-hero-frames.sh veo3_output.mp4
+npm run dev              # desenvolvimento
+npx tsc --noEmit         # gate 1: tipos
+npm run lint             # gate 2: eslint 9 (config plana em eslint.config.mjs)
+npx vercel --prod --yes  # deploy (projeto já linkado)
+
+node scripts/aplicar-sql.mjs supabase/<arquivo>.sql   # aplica uma migração
 ```
 
-**PowerShell (Windows nativo):**
-```powershell
-./scripts/build-hero-frames.ps1
-```
-
-Saída final: `public/hero-sequence/jordan1-001.webp … jordan1-072.webp`.
-
-Pré-requisitos: `ffmpeg` + `ffprobe` no PATH. No Windows:
-```powershell
-winget install Gyan.FFmpeg
-```
-Os scripts usam o encoder `libwebp` embutido no ffmpeg — não precisa instalar
-`cwebp` separadamente.
-
-### Por que `fps=9`
-
-Veo 3 entrega 8s @ 24fps = 192 frames. O hero precisa de 72 frames pra
-mapear sobre 200vh de scroll (SPEC §4.2). `8s × 9fps = 72`, exato. Os
-scripts re-derivam o fps via `ffprobe` antes de extrair, então re-gerar o
-vídeo com outra duração não quebra o pipeline.
+⚠️ `next build` **falha localmente no Node 25** (prerender de `/_not-found`).
+A Vercel builda no Node 22 e passa — valide com `tsc` e `lint`, não tente
+consertar esse erro.
 
 ## Estrutura
 
 ```
 src/
   app/
-    layout.tsx          # root layout + skip link + metadata
-    page.tsx            # home — hero + placeholder do carrossel (§5)
-    globals.css         # tokens de design (§3.1, §3.4)
-  components/
-    hero/
-      HeroSequence.tsx  # canvas scrubbing + fallbacks (§4)
+    (site)/         vitrine e clube — hero, acervo, PDP, dossiê, conta
+    (painel)/       painel do dono — clientes, peças, funil, negociações
+    globals.css     tokens de design
+  components/       hero, coleção, layout, mídia, contato
+  lib/
+    db/             fronteira com o Supabase (pecas.ts traduz banco → Watch)
+    haptics.ts      retorno tátil: o que cada plataforma permite
+  middleware.ts     proteção por prefixo de rota (/acervo e /painel)
 public/
-  hero-sequence/        # frames otimizados (gerados, não commitar)
-scripts/
-  build-hero-frames.sh  # bash / WSL / Git Bash
-  build-hero-frames.ps1 # Windows nativo
+  hero-sequence/    361 quadros WebP do hero de desktop
+  hero-mobile.mp4   vídeo boomerang do hero de mobile
+supabase/           migrações SQL, na ordem, idempotentes
+scripts/            pipeline de mídia e utilitários de banco
 ```
 
-## Próximos passos
+Os dois route groups têm layouts raiz próprios e não compartilham casca: o
+painel é ferramenta de trabalho, a vitrine é peça de contemplação. O porquê
+está em [docs/ESTADO.md](docs/ESTADO.md).
 
-Roadmap em [SPEC.md §13](./SPEC.md). Fase 1 atual: fundação. Próximo:
-schema Drizzle + Neon, R2 upload, design system primitives.
+## Antes de publicar
+
+Duas pendências bloqueiam a publicação de verdade, ambas registradas em
+[docs/ESTADO.md](docs/ESTADO.md): as fotos de `/public/pecas` são do Unsplash
+(não são peças da casa) e o número de WhatsApp ainda não foi preenchido.

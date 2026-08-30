@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/react";
 
+import { GatilhoTatil } from "@/components/layout/GatilhoTatil";
+
 import "./painel.css";
 /**
  * Layout RAIZ do painel — irmão do layout da vitrine, não filho.
@@ -42,27 +44,7 @@ export default function PainelRootLayout({
           Pular para o conteúdo
         </a>
         {children}
-        <div
-          aria-hidden="true"
-          style={{
-            position: "fixed",
-            bottom: 0,
-            right: 0,
-            width: 1,
-            height: 1,
-            opacity: 0.001,
-            pointerEvents: "auto",
-            overflow: "hidden",
-            zIndex: -1,
-          }}
-        >
-          <input
-            type="checkbox"
-            id="ios-haptic-switch"
-            {...({ switch: "" } as any)}
-          />
-          <label htmlFor="ios-haptic-switch" id="ios-haptic-label" style={{ display: "block", width: "100%", height: "100%", cursor: "pointer" }} />
-        </div>
+        <GatilhoTatil />
         <Analytics />
       </body>
     </html>

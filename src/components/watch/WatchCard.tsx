@@ -35,10 +35,24 @@ interface WatchCardProps {
   watch: CardWatch | MockWatch;
 }
 
+/**
+ * O card mostra a miniatura, nunca a original.
+ *
+ * São ~340px de retângulo: servir a foto de vários megabytes que o dono
+ * enviou é baixar vinte vezes mais bytes do que a tela usa. A original fica
+ * para o visualizador, onde a pessoa amplia de verdade. Foto anterior à fase
+ * 13 não tem miniatura e cai na original sozinha.
+ */
+function fonteDe(imagem: { url: string; thumbUrl?: string }): string {
+  return imagem.thumbUrl || imagem.url;
+}
+
 export function WatchCard({ watch }: WatchCardProps) {
   const fullName = watchFullName(watch);
   const hasPrimaryImage = watch.images.primary.url !== "";
   const hasSecondaryImage = !!watch.images.secondary?.url;
+  /** Miniatura embutida: ocupa o lugar da foto enquanto ela desce. */
+  const desfoque = "blur" in watch.images.primary ? watch.images.primary.blur : undefined;
   const gradient = watch.placeholderGradient;
   const sold = watch.state === "vendida";
   const reserved = watch.state === "reservada";
@@ -60,6 +74,16 @@ export function WatchCard({ watch }: WatchCardProps) {
           background: "var(--color-surface)",
           borderColor: "var(--color-border)",
           transitionTimingFunction: "var(--ease-editorial)",
+          // O desfoque fica ATRÁS da foto: ele aparece enquanto ela desce e
+          // some sozinho quando a real cobre o quadro. Sem transição de
+          // opacidade, sem quadro vazio, sem pulo de layout.
+          ...(desfoque
+            ? {
+                backgroundImage: `url("${desfoque}")`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : {}),
         }}
       >
         {!hasPrimaryImage && gradient && (
@@ -75,7 +99,7 @@ export function WatchCard({ watch }: WatchCardProps) {
         {hasPrimaryImage && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={watch.images.primary.url}
+            src={fonteDe(watch.images.primary)}
             alt={watch.images.primary.alt}
             loading="lazy"
             decoding="async"
@@ -91,7 +115,7 @@ export function WatchCard({ watch }: WatchCardProps) {
         {hasSecondaryImage && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={watch.images.secondary!.url}
+            src={fonteDe(watch.images.secondary!)}
             alt={watch.images.secondary!.alt}
             loading="lazy"
             decoding="async"

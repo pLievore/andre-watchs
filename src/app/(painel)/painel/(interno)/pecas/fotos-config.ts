@@ -40,3 +40,32 @@ export function validarArquivosFoto(
 
   return null;
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Miniatura e desfoque (fase 13)
+
+   O card do acervo pede um retângulo de ~340px e recebia a foto original de
+   vários megabytes. As duas versões abaixo são geradas no navegador, antes do
+   envio, e guardadas junto da foto:
+
+     - `THUMB`: WebP de 1000px de largura. Serve card, lista e miniatura da
+       galeria, e ainda tem folga para tela de alta densidade.
+     - `BLUR`: 20px, embutido como data URL na própria linha da foto. É o que
+       ocupa o lugar enquanto a foto real desce.
+
+   Se o navegador não conseguir gerar (formato exótico, imagem gigante), o
+   envio segue sem elas e a tela cai na foto original. Degradar é aceitável;
+   travar o cadastro do dono, não.
+   ──────────────────────────────────────────────────────────────────────────── */
+
+export const LARGURA_THUMB = 1000;
+export const QUALIDADE_THUMB = 0.82;
+export const LARGURA_BLUR = 20;
+export const QUALIDADE_BLUR = 0.5;
+/** Teto de segurança: data URL grande deixa de ser atalho e vira peso. */
+export const MAX_BLUR_CHARS = 3000;
+
+/** O caminho da miniatura deriva do da foto: `slug/uuid.jpg` → `slug/uuid.thumb.webp`. */
+export function caminhoDaMiniatura(caminho: string): string {
+  return `${caminho.replace(/\.[^.]+$/, "")}.thumb.webp`;
+}

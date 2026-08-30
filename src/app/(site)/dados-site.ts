@@ -5,6 +5,7 @@ import {
 } from "@/lib/db/pecas-sessao";
 import { clienteAtual } from "@/lib/db/server";
 import { montarSaudacao } from "@/lib/saudacao";
+import type { Watch } from "@/lib/types";
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 
@@ -30,9 +31,16 @@ export async function carregarDadosSite(searchParams?: { [key: string]: string |
     clienteAtual(),
   ]);
 
+  // Quem não tem direito ao acervo não paga a consulta dele. Visitante em
+  // /sobre ou /vender chegava aqui e disparava a leitura completa de peças
+  // (mais assinatura de foto) para receber uma lista vazia do RLS.
+  const podeVerAcervo = Boolean(admin) || cliente?.status === "ativo";
+
   const [pecas, pecasNovas] = await Promise.all([
-    listarPecasDoCliente(),
-    cliente ? contarPecasDesde(cliente.ultimo_acesso) : Promise.resolve(0),
+    podeVerAcervo ? listarPecasDoCliente() : Promise.resolve<Watch[]>([]),
+    podeVerAcervo && cliente
+      ? contarPecasDesde(cliente.ultimo_acesso)
+      : Promise.resolve(0),
   ]);
 
   const agora = new Date();
@@ -51,6 +59,7 @@ export async function carregarDadosSite(searchParams?: { [key: string]: string |
 
   return {
     isAdmin: Boolean(admin),
+    podeVerAcervo,
     cliente: cliente
       ? {
           nome: cliente.nome,

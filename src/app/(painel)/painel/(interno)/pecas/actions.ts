@@ -326,12 +326,15 @@ export async function excluirPeca(form: FormData): Promise<void> {
   // depósito de imagem órfã que ninguém mais consegue nem listar.
   const { data: fotos } = await dbAdmin
     .from("fotos")
-    .select("url")
+    .select("url, url_thumb")
     .eq("peca_id", peca.id);
 
+  // Original e miniatura: desde a fase 13 cada foto pode ter dois objetos.
   const caminhos = (fotos ?? [])
-    .map((f) => f.url)
-    .filter((u) => u && !/^https?:\/\//i.test(u));
+    .flatMap((f) => [f.url, f.url_thumb])
+    .filter(
+      (u): u is string => typeof u === "string" && !/^https?:\/\//i.test(u),
+    );
   if (caminhos.length) {
     await dbAdmin.storage.from("pecas").remove(caminhos);
   }

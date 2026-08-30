@@ -20,6 +20,8 @@ import { dbAdmin } from "@/lib/db/admin";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
 
 import {
+  caminhoDaMiniatura,
+  MAX_BLUR_CHARS,
   MAX_FOTOS,
   validarArquivosFoto,
   type MetadadosArquivoFoto,
@@ -60,6 +62,22 @@ function revalidar(slug: string) {
 export type UploadAssinado = {
   caminho: string;
   token: string;
+  /**
+   * Caminho e token da miniatura. Sempre assinado, mesmo que o navegador
+   * acabe não conseguindo gerar a versão reduzida — uma URL de escrita não
+   * usada simplesmente expira, e assinar depois exigiria uma segunda ida ao
+   * servidor no meio do envio.
+   */
+  miniatura?: { caminho: string; token: string };
+};
+
+/** O que o navegador informa depois de colocar os bytes no bucket. */
+export type FotoEnviada = {
+  caminho: string;
+  /** Só vem quando a miniatura chegou inteira ao bucket. */
+  caminhoThumb?: string;
+  /** Data URL minúscula, gerada no navegador junto da miniatura. */
+  blur?: string;
 };
 
 export type PreparacaoUpload = {
@@ -110,9 +128,19 @@ export async function prepararEnvioFotos(
       console.error("Falha ao assinar upload", error?.message);
       return { erro: "Não foi possível preparar o envio. Tente de novo." };
     }
+
+    const caminhoThumb = caminhoDaMiniatura(caminho);
+    const { data: dadosThumb } = await dbAdmin.storage
+      .from("pecas")
+      .createSignedUploadUrl(caminhoThumb, { upsert: false });
+
     uploads.push({
       caminho,
       token: data.token,
+      // Sem assinatura para a miniatura, o envio segue só com a original.
+      ...(dadosThumb
+        ? { miniatura: { caminho: caminhoThumb, token: dadosThumb.token } }
+        : {}),
     });
   }
 
@@ -125,7 +153,7 @@ export async function prepararEnvioFotos(
  */
 export async function registrarFotosEnviadas(
   slug: string,
-  caminhos: string[],
+  itens: FotoEnviada[],
 ): Promise<EstadoFoto> {
   const admin = await usuarioAdmin();
   if (!admin) return { erro: "Sessão expirada. Entre novamente." };
@@ -133,6 +161,7 @@ export async function registrarFotosEnviadas(
   const peca = await pecaPorSlug(slug);
   if (!peca) return { erro: "Peça não encontrada." };
 
+  const caminhos = itens.map((item) => item.caminho);
   const unicos = Array.from(new Set(caminhos));
   if (
     unicos.length === 0 ||
@@ -177,12 +206,30 @@ export async function registrarFotosEnviadas(
 
   const proximaOrdem = (existentes?.[0]?.ordem ?? -1) + 1;
   const total = jaTem + unicos.length;
-  const linhas = unicos.map((caminho, indice) => ({
-    peca_id: peca.id,
-    url: caminho,
-    alt: altAutomatico(peca, proximaOrdem + indice + 1, total),
-    ordem: proximaOrdem + indice,
-  }));
+  const linhas = itens.map((item, indice) => {
+    /*
+     * A miniatura só é aceita se o caminho for exatamente o derivado da foto,
+     * dentro da pasta da peça. Não é excesso de zelo: este valor vem do
+     * navegador, e sem a conferência ele poderia apontar para o objeto de
+     * outra peça — e a lista mostraria o relógio errado.
+     */
+    const thumbEsperado = caminhoDaMiniatura(item.caminho);
+    const thumbValido = item.caminhoThumb === thumbEsperado;
+    const desfoque =
+      item.blur && item.blur.startsWith("data:image/") &&
+      item.blur.length <= MAX_BLUR_CHARS
+        ? item.blur
+        : null;
+
+    return {
+      peca_id: peca.id,
+      url: item.caminho,
+      url_thumb: thumbValido ? item.caminhoThumb : null,
+      blur: desfoque,
+      alt: altAutomatico(peca, proximaOrdem + indice + 1, total),
+      ordem: proximaOrdem + indice,
+    };
+  });
 
   const { error } = await dbAdmin.from("fotos").insert(linhas);
 
@@ -234,10 +281,17 @@ function altAutomatico(
 async function limparOrfaosAntigos(slug: string, pecaId: string) {
   const [{ data: objetos }, { data: linhas }] = await Promise.all([
     dbAdmin.storage.from("pecas").list(slug, { limit: 100 }),
-    dbAdmin.from("fotos").select("url").eq("peca_id", pecaId),
+    dbAdmin.from("fotos").select("url, url_thumb").eq("peca_id", pecaId),
   ]);
 
-  const registrados = new Set((linhas ?? []).map((linha) => linha.url));
+  // As miniaturas contam como registradas: elas vivem em `url_thumb`, e sem
+  // incluí-las aqui a faxina de órfãos apagaria toda miniatura com mais de
+  // duas horas — a lista voltaria a servir a foto original sem ninguém notar.
+  const registrados = new Set(
+    (linhas ?? []).flatMap((linha) =>
+      [linha.url, linha.url_thumb].filter(Boolean),
+    ),
+  );
   const limite = Date.now() - 2 * 60 * 60 * 1000;
   const orfaos = (objetos ?? [])
     .filter((objeto) => {
@@ -343,15 +397,21 @@ export async function excluirFoto(form: FormData): Promise<void> {
 
   const { data: foto } = await dbAdmin
     .from("fotos")
-    .select("url")
+    .select("url, url_thumb")
     .eq("id", id)
     .maybeSingle();
   if (!foto) return;
 
   await dbAdmin.from("fotos").delete().eq("id", id);
 
-  if (foto.url && !/^https?:\/\//i.test(foto.url)) {
-    await dbAdmin.storage.from("pecas").remove([foto.url]);
+  // A miniatura sai junto: `on delete cascade` limpa a linha, nunca o objeto,
+  // e miniatura órfã é arquivo que nenhuma tela alcança mais.
+  const objetos = [foto.url, foto.url_thumb].filter(
+    (url): url is string =>
+      typeof url === "string" && !/^https?:\/\//i.test(url),
+  );
+  if (objetos.length > 0) {
+    await dbAdmin.storage.from("pecas").remove(objetos);
   }
 
   // Sem renumerar, apagar a capa deixaria a peça começando na ordem 1 — o que

@@ -112,8 +112,9 @@ export default async function ClientePage({
 
   if (!linha) notFound();
   const cliente = linha as Cliente;
-  const interesses = (interessesRaw ?? []) as any[];
-  const pecasVistas = (pecasVistasRaw ?? []) as any[];
+  // Sem `as any`: as consultas vêm tipadas pelos tipos gerados do banco.
+  const interesses = interessesRaw ?? [];
+  const pecasVistas = pecasVistasRaw ?? [];
 
   // Agrupa quantas vezes cada peça foi vista por este cliente
   const mapaVistas = new Map<string, { nome: string; slug: string; count: number; ultimoVisto: string }>();

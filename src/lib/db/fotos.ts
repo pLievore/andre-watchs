@@ -26,13 +26,23 @@ function ehCaminhoDeBucket(url: string): boolean {
   return url !== "" && !url.startsWith("/") && !/^https?:\/\//i.test(url);
 }
 
-function caminhosDe(w: Watch): string[] {
-  const todas = [
+function todasAsFotos(w: Watch): WatchImage[] {
+  return [
     w.images.primary,
     w.images.secondary,
     ...(w.images.gallery ?? []),
   ].filter(Boolean) as WatchImage[];
-  return todas.map((f) => f.url).filter(ehCaminhoDeBucket);
+}
+
+/**
+ * Cada foto pode ter dois objetos no bucket: a original e a miniatura da fase
+ * 13. As duas precisam de assinatura — a lista mostra a miniatura, o
+ * visualizador mostra a original, e um link sem assinar não abre.
+ */
+function caminhosDe(w: Watch): string[] {
+  return todasAsFotos(w)
+    .flatMap((f) => [f.url, f.thumbUrl])
+    .filter((url): url is string => Boolean(url) && ehCaminhoDeBucket(url!));
 }
 
 /**
@@ -61,8 +71,16 @@ export async function assinarFotos(pecas: Watch[]): Promise<Watch[]> {
     if (item.signedUrl && item.path) mapa.set(item.path, item.signedUrl);
   }
 
-  const troca = (f: WatchImage): WatchImage =>
-    ehCaminhoDeBucket(f.url) ? { ...f, url: mapa.get(f.url) ?? "" } : f;
+  const troca = (f: WatchImage): WatchImage => {
+    const url = ehCaminhoDeBucket(f.url) ? (mapa.get(f.url) ?? "") : f.url;
+    const thumbUrl =
+      f.thumbUrl && ehCaminhoDeBucket(f.thumbUrl)
+        ? mapa.get(f.thumbUrl)
+        : f.thumbUrl;
+
+    // Miniatura que não assinou não vira erro: a lista cai na foto original.
+    return { ...f, url, ...(thumbUrl ? { thumbUrl } : { thumbUrl: undefined }) };
+  };
 
   return pecas.map((w) => ({
     ...w,
@@ -83,7 +101,9 @@ export async function assinarFotosDe(peca: Watch): Promise<Watch> {
 /** Sem assinatura, a foto do bucket não pode ser exibida — cai no placeholder. */
 function semFotosDeBucket(w: Watch): Watch {
   const limpa = (f: WatchImage): WatchImage =>
-    ehCaminhoDeBucket(f.url) ? { ...f, url: "" } : f;
+    ehCaminhoDeBucket(f.url)
+      ? { ...f, url: "", thumbUrl: undefined }
+      : { ...f, thumbUrl: undefined };
   return {
     ...w,
     images: {

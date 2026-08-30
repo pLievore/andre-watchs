@@ -2,10 +2,6 @@
 
 > Esquema, políticas e o raciocínio por trás. O SQL executável vive em
 > [`supabase/schema.sql`](../supabase/schema.sql) — este arquivo explica **por
-# BANCO — Supabase
-
-> Esquema, políticas e o raciocínio por trás. O SQL executável vive em
-> [`supabase/schema.sql`](../supabase/schema.sql) — este arquivo explica **por
 > quê**, o SQL diz **o quê**.
 
 ## Migrações, na ordem
@@ -20,13 +16,42 @@ Todas idempotentes: rodar de novo não quebra nada.
 | `supabase/fase-5.sql` | função transacional para reordenar fotos | ✅ 2026-08-28 |
 | `supabase/fase-6.sql` | tabela `convites`, RLS, expiração de 7 dias | ✅ 2026-08-28 |
 | `supabase/fase-7.sql` | tabelas `eventos` e `interesses`, RLS e pipeline | ✅ 2026-08-28 |
+| `supabase/fase-8-encomendas.sql` | tabela `encomendas` (pedido de peça que a casa ainda não tem), RLS | ✅ 2026-08-28 |
+| `supabase/fase-9-analytics.sql` | `eventos.cidade` e `eventos.dispositivo`, índice por cidade | ✅ 2026-08-28 |
+| `supabase/fase-10-seguranca-limpeza.sql` | **correção**: as políticas de `encomendas` passam a exigir `private.e_cliente_ativo()`; remove o admin de `clientes` | ✅ 2026-08-28 |
 | `supabase/fase-11-integralidade-relogio-caixa.sql` | enum `integralidade` com `relogio-e-caixa` e `diametro_mm` numeric | ✅ 2026-08-29 |
+| `supabase/fase-12-limpeza-eventos-teste.sql` | apaga os 63 eventos de teste que o padrão "São Paulo - SP" tinha criado | ✅ 2026-08-29 |
+| `supabase/fase-13-miniaturas.sql` | `fotos.url_thumb` e `fotos.blur` — miniatura e desfoque gerados no envio | ✅ 2026-08-30 |
+| `supabase/fase-14-guardadas-e-propostas.sql` | tabelas `guardadas` (lista do cliente, RLS) e `propostas` (venda pela vitrine) | ✅ 2026-08-30 |
 
 ```bash
 node scripts/aplicar-sql.mjs supabase/fase-5.sql
+```
+
 Usa a `DIRECT_URL` (porta 5432, modo sessão) e envia o arquivo inteiro numa
 chamada só — fatiar por `;` quebraria os blocos `do $$ … $$` e o corpo das
 funções, que têm ponto e vírgula dentro.
+
+## Tipos, gerados do banco
+
+`src/lib/db/tipos-banco.ts` descreve a forma real do esquema e é passado aos
+três clientes (`db`, `dbServidor`, `dbAdmin`). **É arquivo gerado** — rode
+`node scripts/gerar-tipos-banco.mjs` depois de cada migração e versione o
+resultado junto com o SQL.
+
+Não é preciosismo: enquanto as consultas devolviam `any`, o painel filtrava
+peças por uma coluna `publicado` que nunca existiu — o valor em estoque
+aparecia zerado e ninguém sabia por quê. O tipo achou isso na primeira
+compilação.
+
+---
+
+⚠️ **A `fase-10` conserta a `fase-8`.** A política de inserção em `encomendas`
+nasceu checando só `cliente_id = auth.uid()`, sem exigir cliente **ativo** —
+quem tivesse conta pendente, recusada ou inativa conseguia registrar encomenda.
+As duas migrações são do mesmo dia, então a janela foi curta, mas fica
+registrado: migração de segurança que não aparece nesta lista não existe para
+quem for auditar depois.
 
 ---
 

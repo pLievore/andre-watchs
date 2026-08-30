@@ -3,12 +3,21 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import { GraficoTendencia } from "../dashboard/GraficoTendencia";
+import type { DadosPainel } from "../dados-painel";
+
+/**
+ * Os dados chegam com a forma do banco (tipos gerados em
+ * `src/lib/db/tipos-banco.ts`), derivada do carregador do painel. Foi assim
+ * que apareceu o filtro por uma coluna `publicado` que não existe — o `any`
+ * escondia isso desde a primeira versão do painel.
+ */
+type DadosDashboard = DadosPainel["dashboardData"];
 
 interface DashboardViewProps {
-  eventosRaw: any[];
-  interessesRaw: any[];
+  eventosRaw: DadosDashboard["eventosRaw"];
+  interessesRaw: DadosDashboard["interessesRaw"];
   totalClientes: number;
-  pecasAtivasRaw: any[];
+  pecasAtivasRaw: DadosDashboard["pecasAtivasRaw"];
 }
 
 export function DashboardView({
@@ -33,10 +42,6 @@ export function DashboardView({
   const vendasFechadas = interesses.filter((i) => i.status === "vendido");
 
   const volumePipelineCentavos = negociacoesAtivas.reduce(
-    (acc, i) => acc + (i.pecas?.preco_centavos ?? 0),
-    0
-  );
-  const volumeVendidoCentavos = vendasFechadas.reduce(
     (acc, i) => acc + (i.pecas?.preco_centavos ?? 0),
     0
   );
@@ -85,27 +90,38 @@ export function DashboardView({
     }
   });
 
-  // 3. Distribuição por Cidade
+  // 3. Distribuição por cidade — só o que foi realmente identificado.
+  // Evento sem cidade NÃO vira palpite: ele é contado à parte e aparece
+  // como "sem origem" na tela. Um padrão aqui seria dado inventado
+  // apresentado como medição (regra do CLAUDE.md).
   const contagemCidades: Record<string, number> = {};
+  let semOrigem = 0;
   eventos.forEach((ev) => {
-    const cidade = ev.cidade || "São Paulo - SP";
+    const cidade = ev.cidade;
+    if (!cidade) {
+      semOrigem += 1;
+      return;
+    }
     contagemCidades[cidade] = (contagemCidades[cidade] || 0) + 1;
   });
 
+  const totalComCidade = eventos.length - semOrigem;
   const rankingCidades = Object.entries(contagemCidades)
     .map(([cidade, total]) => ({
       cidade,
       total,
-      pct: Math.round((total / (eventos.length || 1)) * 100),
+      pct: Math.round((total / (totalComCidade || 1)) * 100),
     }))
     .sort((a, b) => b.total - a.total);
 
   // 4. Distribuição por Dispositivo
   let countMobile = 0;
   let countDesktop = 0;
+  // Registro antigo, sem dispositivo gravado, fica fora da conta em vez de
+  // engordar "desktop" por omissão.
   eventos.forEach((ev) => {
     if (ev.dispositivo === "mobile") countMobile++;
-    else countDesktop++;
+    else if (ev.dispositivo === "desktop") countDesktop++;
   });
   const totalDisp = countMobile + countDesktop || 1;
   const pctMobile = Math.round((countMobile / totalDisp) * 100);
@@ -113,12 +129,15 @@ export function DashboardView({
 
   // 5. Marcas Mais Desejadas
   const contagemMarcas: Record<string, number> = {};
-  eventos
-    .filter((e) => e.tipo === "viu_peca" && e.pecas?.marca)
-    .forEach((e) => {
-      const marca = e.pecas.marca;
-      contagemMarcas[marca] = (contagemMarcas[marca] || 0) + 1;
-    });
+  // A peça pode ter sido excluída depois do evento: o `peca_id` fica nulo e a
+  // junção volta vazia. Sem esta checagem, o painel quebrava na visita à
+  // primeira peça apagada — antes o `any` deixava o erro passar em silêncio.
+  eventos.forEach((e) => {
+    if (e.tipo !== "viu_peca") return;
+    const marca = e.pecas?.marca;
+    if (!marca) return;
+    contagemMarcas[marca] = (contagemMarcas[marca] || 0) + 1;
+  });
 
   const rankingMarcas = Object.entries(contagemMarcas)
     .map(([marca, total]) => ({
@@ -313,7 +332,9 @@ export function DashboardView({
 
           <div className="flex flex-col gap-3.5">
             {rankingCidades.length === 0 ? (
-              <p className="meta text-xs py-4">Nenhum dado geográfico registrado ainda.</p>
+              <p className="meta text-xs py-4">
+                Nenhuma origem identificada ainda.
+              </p>
             ) : (
               rankingCidades.slice(0, 6).map((item) => (
                 <div key={item.cidade} className="flex flex-col gap-1.5">
@@ -340,6 +361,13 @@ export function DashboardView({
                   </div>
                 </div>
               ))
+            )}
+
+            {semOrigem > 0 && (
+              <p className="meta text-xs pt-1">
+                {semOrigem} {semOrigem === 1 ? "interação" : "interações"} sem
+                origem identificada — fora da conta acima.
+              </p>
             )}
           </div>
         </section>

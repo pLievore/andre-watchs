@@ -23,6 +23,7 @@ export async function carregarDadosPainel() {
     { count: totalAcessos },
     { count: totalViuPeca },
     { count: totalWhatsApp },
+    { data: propostasRaw },
     { data: pecasRaw },
   ] = await Promise.all([
     // 1. Clientes
@@ -74,8 +75,19 @@ export async function carregarDadosPainel() {
     // 7. Contagem total de clientes
     dbAdmin.from("clientes").select("id", { count: "exact", head: true }),
 
-    // 8. Peças ativas para cálculo de valor em estoque
-    dbAdmin.from("pecas").select("id, preco_centavos").eq("publicado", true),
+    /*
+     * 8. Peças ainda na casa, para o valor em estoque.
+     *
+     * Isto filtrava por `publicado`, coluna que **não existe** na tabela: a
+     * consulta voltava erro e o estoque aparecia zerado no painel. O bug só
+     * ficou visível quando os tipos do banco entraram (fase 15). O critério
+     * certo é o estado comercial — vendida saiu do estoque, disponível e em
+     * negociação continuam sendo patrimônio da casa.
+     */
+    dbAdmin
+      .from("pecas")
+      .select("id, preco_centavos")
+      .neq("estado", "vendida"),
 
     // 9. Métricas de funil
     dbAdmin
@@ -96,7 +108,16 @@ export async function carregarDadosPainel() {
       .eq("tipo", "foi_whatsapp")
       .gte("criado_em", trintaDiasAtras),
 
-    // 10. Catálogo completo de peças (Peças)
+    // 10. Propostas de venda vindas da vitrine (Negociações)
+    dbAdmin
+      .from("propostas")
+      .select(
+        "id, nome, contato, intencao, marca, modelo, referencia, ano, integralidade, observacao, status, criado_em",
+      )
+      .order("criado_em", { ascending: false })
+      .limit(50),
+
+    // 11. Catálogo completo de peças (Peças)
     dbAdmin
       .from("pecas")
       .select(
@@ -125,6 +146,7 @@ export async function carregarDadosPainel() {
       totalViuPeca: totalViuPeca ?? 0,
       totalWhatsApp: totalWhatsApp ?? 0,
       interessesRaw: interessesRaw ?? [],
+      propostas: propostasRaw ?? [],
     },
     pecasData: {
       pecas: pecasRaw ?? [],

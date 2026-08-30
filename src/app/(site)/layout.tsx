@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { NavigationProgressBar } from "@/components/layout/NavigationProgressBar";
+import { GatilhoTatil } from "@/components/layout/GatilhoTatil";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { usuarioAdmin } from "@/lib/db/admin-auth";
 import { clienteAtual } from "@/lib/db/server";
@@ -65,27 +66,7 @@ export default async function RootLayout({
             <Footer />
           </div>
         </SmoothScroll>
-        <div
-          aria-hidden="true"
-          style={{
-            position: "fixed",
-            bottom: 0,
-            right: 0,
-            width: 1,
-            height: 1,
-            opacity: 0.001,
-            pointerEvents: "auto",
-            overflow: "hidden",
-            zIndex: -1,
-          }}
-        >
-          <input
-            type="checkbox"
-            id="ios-haptic-switch"
-            {...({ switch: "" } as any)}
-          />
-          <label htmlFor="ios-haptic-switch" id="ios-haptic-label" style={{ display: "block", width: "100%", height: "100%", cursor: "pointer" }} />
-        </div>
+        <GatilhoTatil />
         <Analytics />
       </body>
     </html>

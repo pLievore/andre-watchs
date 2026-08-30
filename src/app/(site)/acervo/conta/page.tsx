@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: "Minha conta",
   description: "Dados de acesso e contato na Andre Watches.",
   robots: { index: false, follow: false },
+  // O acervo é fechado: nada de imagem de compartilhamento.
+  openGraph: { images: [] },
 };
 
 export default async function ContaPage() {

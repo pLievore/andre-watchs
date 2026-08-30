@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { PdpWhatsappCta } from "./PdpWhatsappCta";
+import { BotaoGuardar } from "./BotaoGuardar";
+import { PecaVisitada } from "./PecaVisitada";
 import { WatchViewRecorder } from "./WatchViewRecorder";
 import { WatchCard } from "@/components/watch/WatchCard";
 import { WatchGallery } from "@/components/watch/WatchGallery";
@@ -12,6 +14,7 @@ import {
   buscarPecaDoCliente,
   listarPecasDoCliente,
 } from "@/lib/db/pecas-sessao";
+import { pecasGuardadas } from "../guardadas-actions";
 import {
   formatBracelet,
   formatCompleteness,
@@ -44,7 +47,9 @@ export async function generateMetadata({
     description:
       watch.story ??
       `${name} — ${formatCondition(watch.condition)}, ${formatCompleteness(watch.completeness)}. Disponível na Andre Watches.`,
-    openGraph: { title: name, type: "website" },
+    // Sem imagem de compartilhamento: a foto da peça não pode viajar com o
+    // link para fora do clube (ver (site)/opengraph-image.tsx).
+    openGraph: { title: name, type: "website", images: [] },
     robots: { index: false, follow: false },
   };
 }
@@ -60,6 +65,8 @@ export default async function WatchPage({
 
   const admin = await usuarioAdmin();
   const name = watchFullName(watch);
+  // Só o cliente guarda peça — o dono não é cliente da própria casa.
+  const guardadas = admin ? [] : await pecasGuardadas();
   const related = (await listarPecasDoCliente())
     .filter((w) => w.slug !== watch.slug && w.available)
     .slice(0, 3);
@@ -110,6 +117,9 @@ export default async function WatchPage({
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
+
+      {/* Avisa a lista que a volta deve cair onde o cliente estava. */}
+      <PecaVisitada />
 
       {admin && <BarraPrevia />}
       {watch.id && !admin && <WatchViewRecorder pecaId={watch.id} />}
@@ -201,10 +211,22 @@ export default async function WatchPage({
                   label="Tenho um relógio para trocar"
                   context={`Olá! Tenho interesse em trocar meu relógio por: ${name}.`}
                 />
+
+                {/*
+                  Guardar fica DEPOIS das duas conversas, não antes: quem já
+                  decidiu falar não deve tropeçar num botão de "depois eu vejo".
+                  Para quem ainda não decidiu, é a saída que não custa nada.
+                */}
+                {!admin && watch.id && (
+                  <BotaoGuardar
+                    pecaId={watch.id}
+                    inicial={guardadas.includes(watch.id)}
+                  />
+                )}
                 <Link
                   href={`/acervo/${watch.slug}/dossie`}
                   target="_blank"
-                  className="link-quiet text-xs flex items-center justify-center gap-1.5 py-2.5 border transition-colors hover:border-white"
+                  className="link-quiet text-xs flex items-center justify-center gap-1.5 py-2.5 border transition-colors hover:border-[var(--color-foreground)]"
                   style={{ borderColor: "var(--color-border)", background: "var(--color-surface)" }}
                 >
                   <svg

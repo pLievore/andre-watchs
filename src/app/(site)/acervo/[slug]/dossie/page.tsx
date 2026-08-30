@@ -324,8 +324,8 @@ export default async function DossiePage({
         <div className="dossie-footer pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
           <div className="max-w-md">
             <p className="text-xs font-serif italic" style={{ color: "var(--color-muted)" }}>
-              "Cada peça é autenticada e conferida em bancada antes de qualquer oferta.
-              A procedência é a primeira e última palavra da nossa casa."
+              &ldquo;Cada peça é autenticada e conferida em bancada antes de qualquer oferta.
+              A procedência é a primeira e última palavra da nossa casa.&rdquo;
             </p>
             <p className="meta text-[11px] mt-1.5">
               Andre Watches · Desde 2012 · São Paulo, SP · Brasil

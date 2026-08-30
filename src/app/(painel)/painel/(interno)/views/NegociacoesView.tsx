@@ -4,6 +4,7 @@ import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import { SeletorStatusInteresse } from "../negociacoes/SeletorStatusInteresse";
 import type { StatusInteresse } from "../negociacoes/actions";
+import type { DadosPainel } from "../dados-painel";
 
 export interface LinhaInteresse {
   id: string;
@@ -28,11 +29,27 @@ export interface LinhaInteresse {
   } | null;
 }
 
+export interface LinhaProposta {
+  id: string;
+  nome: string;
+  contato: string;
+  intencao: string;
+  marca: string;
+  modelo: string | null;
+  referencia: string | null;
+  ano: string | null;
+  integralidade: string | null;
+  observacao: string | null;
+  status: string;
+  criado_em: string;
+}
+
 interface NegociacoesViewProps {
   totalAcessos: number;
   totalViuPeca: number;
   totalWhatsApp: number;
-  interessesRaw: any[];
+  interessesRaw: DadosPainel["negociacoesData"]["interessesRaw"];
+  propostas: LinhaProposta[];
 }
 
 function formatarData(iso: string): string {
@@ -54,6 +71,7 @@ export function NegociacoesView({
   totalViuPeca,
   totalWhatsApp,
   interessesRaw,
+  propostas,
 }: NegociacoesViewProps) {
   const interesses = (interessesRaw ?? []) as unknown as LinhaInteresse[];
 
@@ -225,6 +243,91 @@ export function NegociacoesView({
                 </li>
               );
             })}
+          </ul>
+        )}
+      </section>
+
+      {/*
+        Propostas de venda.
+
+        Entram por fora do acervo — é gente oferecendo peça à casa, não gente
+        querendo comprar — mas moram na mesma tela porque a decisão é a mesma:
+        responder ou não, e quando. Ficam depois do pipeline, que é o dinheiro
+        já em movimento.
+      */}
+      <section className="flex flex-col gap-6" aria-labelledby="propostas-title">
+        <div>
+          <h2 id="propostas-title" className="label">
+            Propostas de venda ({propostas.length})
+          </h2>
+          <p className="meta mt-0.5">
+            Quem ofereceu um relógio pelo formulário de “Vender”. Chega aqui
+            mesmo quando a pessoa não abre a conversa no WhatsApp.
+          </p>
+        </div>
+
+        {propostas.length === 0 ? (
+          <div
+            className="border p-10 text-center"
+            style={{ borderColor: "var(--color-border)" }}
+          >
+            <p style={{ color: "var(--color-foreground)" }}>
+              Nenhuma proposta recebida ainda.
+            </p>
+            <p className="meta mt-2 max-w-md mx-auto text-xs">
+              O formulário da página “Vender” registra aqui antes de abrir
+              qualquer conversa.
+            </p>
+          </div>
+        ) : (
+          <ul className="grid grid-cols-1 gap-3 sm:gap-3.5">
+            {propostas.map((p) => (
+              <li
+                key={p.id}
+                className="flex flex-col gap-3 border p-4 sm:p-5"
+                style={{
+                  borderColor: "var(--color-border)",
+                  background: "var(--color-surface)",
+                }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col min-w-0">
+                    <span className="meta text-[11px] uppercase tracking-wider">
+                      {p.intencao}
+                    </span>
+                    <span
+                      className="font-medium text-base"
+                      style={{ color: "var(--color-foreground)" }}
+                    >
+                      {p.marca}
+                      {p.modelo ? ` ${p.modelo}` : ""}
+                    </span>
+                    <span className="meta text-xs">
+                      {p.referencia ? `Ref. ${p.referencia}` : "Sem referência"}
+                      {p.ano ? ` · ${p.ano}` : ""}
+                      {p.integralidade ? ` · ${p.integralidade}` : ""}
+                    </span>
+                  </div>
+                  <span className="meta text-xs shrink-0">
+                    {formatarData(p.criado_em)}
+                  </span>
+                </div>
+
+                <div
+                  className="flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs"
+                  style={{ borderColor: "var(--color-border)" }}
+                >
+                  <span style={{ color: "var(--color-foreground)" }}>
+                    {p.nome}
+                  </span>
+                  <span className="meta font-mono">{p.contato}</span>
+                </div>
+
+                {p.observacao && (
+                  <p className="meta text-xs leading-relaxed">{p.observacao}</p>
+                )}
+              </li>
+            ))}
           </ul>
         )}
       </section>

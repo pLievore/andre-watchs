@@ -41,7 +41,9 @@ export async function gerarNovoConvite(
     .insert({
       token,
       nome_sugerido: nomeSugerido,
-      criado_por: admin.email,
+      // O e-mail do admin vem do Auth e é opcional no tipo; na prática sempre
+      // existe, mas a coluna é `not null` e não aceita palpite.
+      criado_por: admin.email ?? "admin",
       expira_em: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     })
     .select("token")

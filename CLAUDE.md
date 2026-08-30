@@ -115,6 +115,14 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
 - Os bytes de upload **não passam por Server Action** (limite padrão de 1 MB do
   Next). Cadastro e edição usam o mesmo fluxo: ação autenticada assina os
   caminhos, o navegador envia ao bucket e outra ação confirma e registra.
+- **Toda foto tem três formas** desde a fase 13: original (visualizador),
+  miniatura de 1000px em `url_thumb` (card, lista, quadro da PDP) e um
+  desfoque de 20px embutido em `blur`. As três nascem no navegador, antes do
+  envio — o servidor continua sem receber imagem. Foto antiga sem miniatura
+  cai na original sozinha; não espalhe condicional pelos componentes.
+- Quem apaga foto ou peça remove **os dois** objetos do bucket (original e
+  miniatura), e a faxina de órfãos conta `url_thumb` como registrado — senão
+  ela apaga toda miniatura com mais de duas horas.
 
 ## Stack (travada — ver SPEC §2.1)
 
@@ -191,9 +199,48 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
   falta de estoque, não a curadoria, e tira credibilidade. Prefira "a casa só
   anuncia o que conhece" / "escolhido a dedo".
 
+## Retorno tátil (haptics)
+
+- `src/lib/haptics.ts` é o ponto único de disparo. Android usa
+  `navigator.vibrate`; no iPhone **não existe API de vibração** — o caminho é
+  o switch nativo `<input type="checkbox" switch>` (Safari 17.4+).
+- **A regra muda com a versão do iOS.** Até o **26.4**, `label.click()` por
+  código alterna o switch e vibra: é o `GatilhoTatil` montado nos dois layouts
+  raiz, e é o que faz o deslize entre abas vibrar. Do **26.5** em diante a
+  Apple passou a exigir evento confiável — nenhum clique sintético vibra
+  (`isTrusted` não é forjável por script), e só o toque físico em controle
+  nativo aciona a Taptic Engine.
+- Por isso os botões da barra de navegação têm um switch transparente
+  sobreposto: ali o dedo toca o controle de verdade e vibra em qualquer versão.
+- **Arrastar também conta como manipulação física.** Medido em iOS 26.6:
+  arrastar o switch (não só tocá-lo) dispara o tique. É o que permitiu a barra
+  inferior virar superfície de arrasto — `data-swipe-nav` no `<nav>`,
+  `data-tab-index` em cada botão, e o shell deixa o gesto começar ali. Trocar
+  de aba arrastando pela barra vibra; deslizar sobre o **conteúdo** continua
+  mudo no iPhone, porque ali não existe controle nativo sob o dedo.
+- ⚠️ No gesto que começa na barra, **não** chame `preventDefault` no
+  `touchmove`: o gesto pertence ao controle nativo, e cancelá-lo tira o tique.
+- ⚠️ **Switch desligado só vibra indo para a direita.** Ele só tem um
+  movimento possível — ligar. Para a esquerda não muda de estado, e sem
+  mudança de estado não há tique. Por isso o shell arma o `.checked` do switch
+  sob o dedo no primeiro movimento, quando a direção já é conhecida (escrever
+  `.checked` por código não dispara evento, então não mexe na navegação).
+- O clique tem de passar pelo **label**. Clicar o input por código não dispara
+  o tique nem nas versões antigas.
+- Regra prática para qualquer ideia nova de haptics no iPhone: só vibra o que
+  tem dedo em cima de controle nativo. Se a ideia depende de evento sintético,
+  já foi testada e não funciona.
+- Quem vibra na troca de aba é o handler de travessia do shell
+  (`SiteTabShell`/`PainelTabShell`), um ponto só. Não acrescente vibração
+  também no clique do menu — dá buzz duplo no mesmo gesto.
+
 ## Comandos
 
-- Dev: `npm run dev` · Typecheck: `npx tsc --noEmit`
+- Dev: `npm run dev` · Typecheck: `npx tsc --noEmit` · Lint: `npm run lint`
+- Migração nova: aplique com `node scripts/aplicar-sql.mjs` e **regenere os
+  tipos** com `node scripts/gerar-tipos-banco.mjs`. Os três clientes do
+  Supabase carregam esse tipo, e `any` é erro de lint — foi o `any` que
+  escondeu um filtro por coluna inexistente no painel.
 - ⚠️ `next build` **falha localmente no Node 25** (`/_not-found` prerender). A Vercel
   builda no Node 22 e passa. Use `npx tsc --noEmit` pra validar localmente.
 - Deploy: `npx vercel --prod` (projeto já linkado).

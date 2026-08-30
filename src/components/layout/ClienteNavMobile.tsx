@@ -83,14 +83,15 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
   const progressoPadrao = tabIndexAtual !== -1 ? tabIndexAtual : 0;
 
   const handleNavegar = (e: React.MouseEvent, href: string) => {
-    dispararVibracao(10);
-
     if (href === "/painel") {
+      dispararVibracao(10);
       setOtimista(href);
       return;
     }
 
     if (estaNoShell && SITE_ROTAS_SHELL.includes(href)) {
+      // Sem vibrar aqui: quem vibra é o shell, no instante em que a aba vira.
+      // Vibrar nos dois lugares dá buzz duplo no mesmo toque.
       e.preventDefault();
       setOtimista(href);
       if (typeof window !== "undefined") {
@@ -99,6 +100,7 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
         );
       }
     } else {
+      dispararVibracao(10);
       setOtimista(href);
     }
   };
@@ -106,6 +108,12 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
   return (
     <nav
       aria-label="Navegação móvel"
+      // Arrastar o dedo pela barra troca de aba, e no iPhone é o único gesto
+      // que vibra: os switches nativos dos botões estão sob o dedo, e desde o
+      // iOS 26.5 só a manipulação física deles aciona a Taptic Engine. O
+      // `SiteTabShell` procura este atributo para não descartar o gesto, e usa
+      // a largura da barra para saber sobre qual aba o dedo está.
+      data-swipe-nav
       className="fixed inset-x-0 bottom-0 z-50 flex border-t md:hidden print:hidden"
       style={{
         borderColor: "var(--color-border)",
@@ -166,7 +174,7 @@ export function ClienteNavMobile({ isAdmin = false }: { isAdmin?: boolean }) {
                 id={`cliente-tab-input-${index}`}
                 aria-hidden="true"
                 tabIndex={-1}
-                {...({ switch: "" } as any)}
+                switch=""
                 className="absolute inset-0 h-full w-full opacity-0 cursor-pointer pointer-events-auto"
                 style={{
                   WebkitTapHighlightColor: "transparent",

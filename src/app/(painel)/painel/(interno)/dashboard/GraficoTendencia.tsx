@@ -211,17 +211,17 @@ export function GraficoTendencia({ dias }: GraficoTendenciaProps) {
       <div className="relative pt-2 pb-1">
         {/* Linhas-Guia Horizontais com valores do Eixo Y */}
         <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-7 z-0">
-          <div className="w-full flex items-center gap-2 border-b border-dashed border-white/5">
-            <span className="font-mono text-[9px] text-white/30 w-5 text-right">{tetoEscala}</span>
-            <div className="flex-1 h-px bg-white/5" />
+          <div className="w-full flex items-center gap-2 border-b border-dashed border-[var(--color-surface-2)]">
+            <span className="font-mono text-[9px] text-[var(--color-muted)] w-5 text-right">{tetoEscala}</span>
+            <div className="flex-1 h-px bg-[var(--color-surface-2)]" />
           </div>
-          <div className="w-full flex items-center gap-2 border-b border-dashed border-white/5">
-            <span className="font-mono text-[9px] text-white/30 w-5 text-right">{meioEscala}</span>
-            <div className="flex-1 h-px bg-white/5" />
+          <div className="w-full flex items-center gap-2 border-b border-dashed border-[var(--color-surface-2)]">
+            <span className="font-mono text-[9px] text-[var(--color-muted)] w-5 text-right">{meioEscala}</span>
+            <div className="flex-1 h-px bg-[var(--color-surface-2)]" />
           </div>
-          <div className="w-full flex items-center gap-2 border-b border-white/10">
-            <span className="font-mono text-[9px] text-white/30 w-5 text-right">0</span>
-            <div className="flex-1 h-px bg-white/10" />
+          <div className="w-full flex items-center gap-2 border-b border-[var(--color-border)]">
+            <span className="font-mono text-[9px] text-[var(--color-muted)] w-5 text-right">0</span>
+            <div className="flex-1 h-px bg-[var(--color-border)]" />
           </div>
         </div>
 
@@ -279,7 +279,7 @@ export function GraficoTendencia({ dias }: GraficoTendenciaProps) {
                       title={`${dia.rotulo}: ${dia.acessos} acessos`}
                     />
                   ) : (
-                    <div className="w-1.5 sm:w-2.5 h-0.5 rounded-full bg-white/10" />
+                    <div className="w-1.5 sm:w-2.5 h-0.5 rounded-full bg-[var(--color-border)]" />
                   )}
 
                   {/* Barra 2: Fichas Vistas */}
@@ -293,7 +293,7 @@ export function GraficoTendencia({ dias }: GraficoTendenciaProps) {
                       title={`${dia.rotulo}: ${dia.visualizacoes} fichas`}
                     />
                   ) : (
-                    <div className="w-1.5 sm:w-2.5 h-0.5 rounded-full bg-white/10" />
+                    <div className="w-1.5 sm:w-2.5 h-0.5 rounded-full bg-[var(--color-border)]" />
                   )}
 
                   {/* Barra 3: WhatsApp */}
@@ -310,7 +310,7 @@ export function GraficoTendencia({ dias }: GraficoTendenciaProps) {
                       title={`${dia.rotulo}: ${dia.whatsapps} whatsapp`}
                     />
                   ) : (
-                    <div className="w-1.5 sm:w-2.5 h-0.5 rounded-full bg-white/10" />
+                    <div className="w-1.5 sm:w-2.5 h-0.5 rounded-full bg-[var(--color-border)]" />
                   )}
                 </div>
 
@@ -321,8 +321,8 @@ export function GraficoTendencia({ dias }: GraficoTendenciaProps) {
                       ehSelecionado
                         ? "font-semibold text-[var(--color-accent)]"
                         : temAlgumEvento
-                        ? "text-white/80"
-                        : "text-white/35"
+                        ? "text-[var(--color-foreground)]"
+                        : "text-[var(--color-muted)]"
                     }`}
                   >
                     {dia.rotulo.split("/")[0]}
@@ -331,7 +331,7 @@ export function GraficoTendencia({ dias }: GraficoTendenciaProps) {
                     className={`font-mono text-[9px] uppercase leading-none mt-0.5 ${
                       ehSelecionado
                         ? "text-[var(--color-accent)]"
-                        : "text-white/35"
+                        : "text-[var(--color-muted)]"
                     }`}
                   >
                     {dia.diaSemana}

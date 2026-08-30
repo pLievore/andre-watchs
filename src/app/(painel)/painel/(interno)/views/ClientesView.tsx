@@ -6,6 +6,7 @@ import { useState, useMemo } from "react";
 import { PainelAcoesSuspensas } from "../clientes/PainelAcoesSuspensas";
 import { SeletorStatus } from "../clientes/SeletorStatus";
 import type { Status } from "../clientes/status";
+import type { DadosPainel } from "../dados-painel";
 
 export interface LinhaCliente {
   id: string;
@@ -17,11 +18,19 @@ export interface LinhaCliente {
   ultimo_acesso: string | null;
 }
 
+/**
+ * As listas vêm do carregador do painel, já com a forma do banco (os tipos
+ * gerados em `src/lib/db/tipos-banco.ts`). Derivar daqui em vez de escrever
+ * `any[]` é o que faz uma coluna renomeada quebrar a compilação em vez de
+ * quebrar a tela na frente do dono.
+ */
+type DadosClientes = DadosPainel["clientesData"];
+
 interface ClientesViewProps {
   clientes: LinhaCliente[];
-  pendentes: any[];
-  recusadas: any[];
-  convites: any[];
+  pendentes: DadosClientes["pendentes"];
+  recusadas: DadosClientes["recusadas"];
+  convites: DadosClientes["convites"];
 }
 
 function desdeQuando(iso: string | null): string {
@@ -236,7 +245,7 @@ export function ClientesView({
                               <span aria-hidden>·</span>
                               <a
                                 href={`tel:${cliente.telefone?.replace(/\D/g, "")}`}
-                                className="hover:text-white transition-colors"
+                                className="hover:text-[var(--color-foreground)] transition-colors"
                               >
                                 {telFormatado}
                               </a>

@@ -6,11 +6,12 @@ import { BarraPrevia } from "@/components/layout/BarraPrevia";
 import { AccessVisitRecorder } from "../acervo/AccessVisitRecorder";
 import { AcervoScrollTop } from "../acervo/AcervoScrollTop";
 import { ModalBoasVindas } from "../acervo/ModalBoasVindas";
+import type { Watch } from "@/lib/types";
 
 interface AcervoViewProps {
   isAdmin: boolean;
   cliente: { nome: string; email: string; telefone: string } | null;
-  pecas: any[];
+  pecas: Watch[];
   saudacao: string;
   boasVindas: boolean;
 }

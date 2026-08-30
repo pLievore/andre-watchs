@@ -16,6 +16,7 @@ import type {
   Watch,
   WatchCompleteness,
   WatchCondition,
+  WatchImage,
   WatchState,
 } from "@/lib/types";
 
@@ -24,11 +25,15 @@ export const CAMPOS = `
   id, slug, marca, modelo, condicao, integralidade,
   referencia, calibre, diametro_mm, material_caixa, pulseira, mostrador, ano_cartao,
   preco_centavos, estado, disponivel, consignada, historia, notas_estado,
-  fotos ( url, alt, ordem )
+  fotos ( url, url_thumb, blur, alt, ordem )
 `;
 
 interface LinhaFoto {
   url: string;
+  /** Versão reduzida, criada no envio. Nula nas fotos anteriores à fase 13. */
+  url_thumb: string | null;
+  /** Miniatura embutida que ocupa o lugar enquanto a foto desce. */
+  blur: string | null;
   alt: string;
   ordem: number;
 }
@@ -54,6 +59,22 @@ export interface LinhaPeca {
   historia: string | null;
   notas_estado: string | null;
   fotos: LinhaFoto[] | null;
+}
+
+/**
+ * Uma linha de foto vira `WatchImage`.
+ *
+ * Miniatura e desfoque são opcionais de propósito: as 18 fotos de semente e
+ * tudo que foi enviado antes da fase 13 não os têm, e a tela cai na foto
+ * original sozinha, sem condicional espalhada pelos componentes.
+ */
+function paraImagem(f: LinhaFoto): WatchImage {
+  return {
+    url: f.url,
+    alt: f.alt,
+    ...(f.url_thumb ? { thumbUrl: f.url_thumb } : {}),
+    ...(f.blur ? { blur: f.blur } : {}),
+  };
 }
 
 /** `null` do banco vira `undefined` — é o que o tipo `Watch` espera. */
@@ -90,9 +111,11 @@ export function paraWatch(l: LinhaPeca): Watch {
     images: {
       // Peça sem foto ainda renderiza: o card e a galeria já tratam url vazia
       // mostrando a placa de placeholder. Ver WatchGallery.
-      primary: primeira ?? { url: "", alt: `${l.marca} ${l.modelo}` },
-      ...(segunda ? { secondary: segunda } : {}),
-      ...(resto.length ? { gallery: resto } : {}),
+      primary: primeira
+        ? paraImagem(primeira)
+        : { url: "", alt: `${l.marca} ${l.modelo}` },
+      ...(segunda ? { secondary: paraImagem(segunda) } : {}),
+      ...(resto.length ? { gallery: resto.map(paraImagem) } : {}),
     },
   };
 }

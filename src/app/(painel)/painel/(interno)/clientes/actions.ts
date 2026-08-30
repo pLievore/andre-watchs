@@ -247,8 +247,17 @@ export async function redefinirSenhaCliente(
   if (!cliente) return { erro: "Cliente não encontrado." };
 
   const usarTelefone = form.get("modo") === "telefone";
+
+  // Cliente sem telefone cadastrado não tem "senha do telefone" — antes isto
+  // estourava em tempo de execução e devolvia erro 500 na cara do dono.
+  if (usarTelefone && !cliente.telefone) {
+    return {
+      erro: "Este cliente não tem telefone cadastrado. Defina uma senha manual.",
+    };
+  }
+
   const senha = usarTelefone
-    ? cliente.telefone.replace(/\D/g, "")
+    ? (cliente.telefone ?? "").replace(/\D/g, "")
     : String(form.get("senha") ?? "");
 
   if (senha.length < 6) {

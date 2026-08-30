@@ -17,7 +17,7 @@ export default function PainelTemplate({
   const reduceMotion = useReducedMotion();
 
   // Nas abas primárias do painel, o PainelTabShell gerencia o ViewPager contínuo com todas as telas em memória
-  const isPrimaryTab = PAINEL_TABS.includes(pathname as any);
+  const isPrimaryTab = (PAINEL_TABS as readonly string[]).includes(pathname);
 
   const [direction] = useState(() => {
     const dir = getTabDirection(PAINEL_TABS, lastPainelPath, pathname);

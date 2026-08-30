@@ -11,7 +11,8 @@
  * proposital: melhor um vazio declarado do que uma imagem que não é da peça.
  */
 
-import { useEffect, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import type { Watch } from "@/lib/types";
@@ -37,6 +38,7 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
     ...(watch.images.gallery ?? []),
   ].filter((img) => img.url !== "");
 
+  const reduzirMovimento = useReducedMotion();
   const [active, setActive] = useState(0);
   const [lightboxAberto, setLightboxAberto] = useState(false);
   const [zoom, setZoom] = useState(false);
@@ -49,6 +51,50 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
   const gradient = watch.placeholderGradient ?? ["#eeebe4", "#f7f5f0"];
 
   const current = images[active] ?? images[0]!;
+
+  const irPara = (passo: number) => {
+    setActive((prev) => {
+      const total = images.length;
+      return (prev + passo + total) % total;
+    });
+    setZoom(false);
+  };
+
+  /*
+   * Deslizar troca de foto dentro do visualizador.
+   *
+   * Antes só havia seta e teclado — num celular, onde a foto ocupa a tela
+   * inteira, o dedo é o caminho óbvio. Com o zoom ligado o gesto é do
+   * navegador (arrastar a foto ampliada), então aqui ele não interfere.
+   */
+  const toqueRef = useRef<{ x: number; y: number } | null>(null);
+
+  const aoTocarInicio = (e: React.TouchEvent) => {
+    if (zoom || images.length < 2 || e.touches.length !== 1) {
+      toqueRef.current = null;
+      return;
+    }
+    const toque = e.touches[0]!;
+    toqueRef.current = { x: toque.clientX, y: toque.clientY };
+  };
+
+  const aoTocarFim = (e: React.TouchEvent) => {
+    const inicio = toqueRef.current;
+    toqueRef.current = null;
+    if (!inicio) return;
+
+    const toque = e.changedTouches[0];
+    if (!toque) return;
+
+    const deltaX = toque.clientX - inicio.x;
+    const deltaY = toque.clientY - inicio.y;
+
+    // Só conta como troca de foto o gesto claramente horizontal: subir ou
+    // descer o dedo é intenção de fechar ou de nada, não de navegar.
+    if (Math.abs(deltaX) < 48 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
+
+    irPara(deltaX < 0 ? 1 : -1);
+  };
 
   // Efeito de teclado e trava de scroll no lightbox
   useEffect(() => {
@@ -101,16 +147,39 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
           style={{
             borderColor: "var(--color-border)",
             background: "var(--color-surface)",
+            // Desfoque atrás da foto: o quadro nunca fica vazio enquanto ela
+            // desce, e some sozinho quando a real cobre.
+            ...(current.blur
+              ? {
+                  backgroundImage: `url("${current.blur}")`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }
+              : {}),
           }}
           onClick={() => setLightboxAberto(true)}
           title="Clique para ver em tela cheia com zoom macro"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={current.url}
+          {/*
+            A miniatura de 1000px basta para este quadro e chega muito antes.
+            A original fica para o visualizador em tela cheia, que é onde a
+            pessoa amplia de verdade.
+          */}
+          {/*
+            A foto assenta ao chegar: entra 2% maior e desfocada e resolve no
+            lugar, em vez de aparecer de uma vez sobre o desfoque. É a
+            continuidade que se pode prometer sem depender da velocidade da
+            rede — quem tem `prefers-reduced-motion` recebe a foto pronta.
+          */}
+          <motion.img
+            key={current.url}
+            src={current.thumbUrl || current.url}
             alt={current.alt}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             decoding="async"
+            initial={reduzirMovimento ? false : { opacity: 0, scale: 1.02 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           />
 
           <span
@@ -144,7 +213,7 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={img.url}
+                    src={img.thumbUrl || img.url}
                     alt=""
                     loading="lazy"
                     decoding="async"
@@ -163,6 +232,15 @@ export function WatchGallery({ watch }: WatchGalleryProps) {
           role="dialog"
           aria-modal="true"
           aria-label={`Visualizador macro: ${watch.brand} ${watch.model}`}
+          /*
+           * `data-no-swipe`: o shell de abas escuta o toque na janela inteira,
+           * e sem esta marca um deslize sobre a foto ampliada arrastava a aba
+           * atrás do visualizador. Aqui dentro o gesto é outro — trocar de
+           * foto (`aoTocar*`, abaixo).
+           */
+          data-no-swipe
+          onTouchStart={aoTocarInicio}
+          onTouchEnd={aoTocarFim}
           className="fixed inset-0 z-[999999] flex flex-col justify-between p-4 sm:p-8 select-none animate-in fade-in duration-200"
           style={{
             background: "rgba(6, 7, 8, 0.98)",

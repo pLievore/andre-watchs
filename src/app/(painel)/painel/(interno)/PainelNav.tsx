@@ -83,8 +83,6 @@ export function PainelNav({ email }: { email: string }) {
   const progressoPadrao = getTabIndex(rotaAtiva);
 
   const handleNavegar = (e: React.MouseEvent, href: string) => {
-    dispararVibracao(10);
-
     if (
       estaNoShell &&
       [
@@ -96,6 +94,8 @@ export function PainelNav({ email }: { email: string }) {
         "/painel/conta",
       ].includes(href)
     ) {
+      // Sem vibrar aqui: quem vibra é o shell, no instante em que a aba vira.
+      // Vibrar nos dois lugares dá buzz duplo no mesmo toque.
       e.preventDefault();
       setOtimista(href);
       if (typeof window !== "undefined") {
@@ -104,6 +104,7 @@ export function PainelNav({ email }: { email: string }) {
         );
       }
     } else {
+      dispararVibracao(10);
       setOtimista(href);
     }
   };
@@ -219,6 +220,11 @@ export function PainelNav({ email }: { email: string }) {
       {/* ── Celular: barra inferior ──────────────────────────────────────── */}
       <nav
         aria-label="Seções do painel"
+        // Arrastar o dedo pela barra troca de aba, e no iPhone é o único gesto
+        // que vibra: o switch nativo de cada botão fica sob o dedo. O
+        // `PainelTabShell` procura este atributo para não descartar o gesto, e
+        // usa a largura da barra para saber sobre qual aba o dedo está.
+        data-swipe-nav
         className="fixed inset-x-0 bottom-0 z-40 flex border-t md:hidden"
         style={{
           borderColor: "var(--color-border)",
@@ -280,7 +286,7 @@ export function PainelNav({ email }: { email: string }) {
                     id={`painel-tab-input-${index}`}
                     aria-hidden="true"
                     tabIndex={-1}
-                    {...({ switch: "" } as any)}
+                    switch=""
                     className="absolute inset-0 h-full w-full opacity-0 cursor-pointer pointer-events-auto"
                     style={{
                       WebkitTapHighlightColor: "transparent",
@@ -419,24 +425,6 @@ function IconeConta() {
     <svg {...svg}>
       <circle cx="12" cy="8" r="3.4" />
       <path d="M5.5 19.5a6.5 6.5 0 0 1 13 0" />
-    </svg>
-  );
-}
-
-function Monograma() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-5 w-5"
-      fill="none"
-      stroke="var(--color-accent)"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="M4.96 16.7 8.22 7.9l3.26 8.8 2.15-5.8 2.15 5.8 3.26-8.8" />
-      <path d="M6.11 13.6h4.22" />
     </svg>
   );
 }

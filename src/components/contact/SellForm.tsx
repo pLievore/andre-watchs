@@ -1,18 +1,20 @@
 "use client";
 
 /**
- * SPEC §7 — formulário de avaliação SEM backend.
+ * SPEC §7 — avaliação de peça para vender, trocar ou consignar.
  *
- * Nesta fase o formulário não envia nada: ele monta uma mensagem estruturada e
- * abre a conversa no canal da casa. Isso mantém a promessa do §7 (conversão é
- * conversa) e evita prometer um "enviamos seu formulário" que ninguém recebe.
+ * A proposta é **registrada primeiro** e a conversa abre depois.
  *
- * Quando houver backend (fase E), este componente troca o `contactHref` por uma
- * Server Action e ganha RHF + Zod — a forma dos campos já está pronta pra isso.
+ * Antes o formulário só montava a mensagem e pulava para o WhatsApp: quem não
+ * completasse o pulo sumia sem deixar rastro, e com o número da casa ainda não
+ * configurado o CTA caía no Instagram — proposta nenhuma chegava. Agora a
+ * pessoa deixa nome e contato, a casa recebe a ficha no painel, e o botão da
+ * conversa continua ali para quem quiser falar na hora.
  */
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 
+import { registrarProposta } from "@/app/(site)/vender/actions";
 import { CONTACT_CHANNEL, contactHref } from "@/components/contact/WhatsappCta";
 
 type Intent = "vender" | "trocar" | "consignar";
@@ -31,6 +33,8 @@ const COMPLETENESS_OPTIONS = [
 ] as const;
 
 const INITIAL = {
+  nome: "",
+  contato: "",
   brand: "",
   model: "",
   reference: "",
@@ -42,6 +46,7 @@ const INITIAL = {
 export function SellForm() {
   const [intent, setIntent] = useState<Intent>("vender");
   const [form, setForm] = useState(INITIAL);
+  const [estado, enviar, enviando] = useActionState(registrarProposta, {});
 
   const intentLabel =
     intent === "vender"
@@ -66,7 +71,10 @@ export function SellForm() {
     .filter((line) => line !== "")
     .join("\n");
 
-  const canSubmit = form.brand.trim() !== "" && form.model.trim() !== "";
+  const canSubmit =
+    form.nome.trim() !== "" &&
+    form.contato.trim() !== "" &&
+    form.brand.trim() !== "";
 
   const update =
     (field: keyof typeof INITIAL) =>
@@ -78,13 +86,33 @@ export function SellForm() {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   return (
-    <form
-      className="flex flex-col gap-8"
-      onSubmit={(e) => {
-        e.preventDefault();
-        window.open(contactHref(message), "_blank", "noopener,noreferrer");
-      }}
-    >
+    <form className="flex flex-col gap-8" action={enviar}>
+      {/* A intenção e o "o que acompanha" viajam como campo escondido: os
+          controles visíveis são botões e select controlados por estado. */}
+      <input type="hidden" name="intencao" value={intent} />
+      <input type="hidden" name="integralidade" value={form.completeness} />
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <Field
+          id="nome"
+          name="nome"
+          label="Seu nome"
+          placeholder="Como a casa deve chamar você"
+          value={form.nome}
+          onChange={update("nome")}
+          required
+        />
+        <Field
+          id="contato"
+          name="contato"
+          label="Telefone ou e-mail"
+          placeholder="(11) 90000-0000"
+          value={form.contato}
+          onChange={update("contato")}
+          required
+        />
+      </div>
+
       <fieldset className="flex flex-col gap-4">
         <legend
           className="label"
@@ -121,6 +149,7 @@ export function SellForm() {
       <div className="grid gap-6 sm:grid-cols-2">
         <Field
           id="brand"
+          name="marca"
           label="Marca"
           placeholder="Rolex"
           value={form.brand}
@@ -129,6 +158,7 @@ export function SellForm() {
         />
         <Field
           id="model"
+          name="modelo"
           label="Modelo"
           placeholder="Submariner Date"
           value={form.model}
@@ -137,6 +167,7 @@ export function SellForm() {
         />
         <Field
           id="reference"
+          name="referencia"
           label="Referência (se souber)"
           placeholder="126610LN"
           value={form.reference}
@@ -144,6 +175,7 @@ export function SellForm() {
         />
         <Field
           id="year"
+          name="ano"
           label="Ano do cartão (se houver)"
           placeholder="2023"
           inputMode="numeric"
@@ -190,6 +222,7 @@ export function SellForm() {
         </label>
         <textarea
           id="notes"
+          name="observacao"
           rows={4}
           value={form.notes}
           onChange={update("notes")}
@@ -203,18 +236,67 @@ export function SellForm() {
       </div>
 
       <div className="flex flex-col gap-3">
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="btn btn-primary justify-center"
-        >
-          Abrir conversa com a casa
-          <span aria-hidden>→</span>
-        </button>
-        <p className="text-xs" style={{ color: "var(--color-muted)" }}>
-          Nada é enviado por este site: o botão abre o {CONTACT_CHANNEL} com
-          estes dados já escritos, e as fotos você manda na conversa.
-        </p>
+        {estado.sucesso ? (
+          /*
+            Depois de registrada, a conversa deixa de ser o único caminho e
+            passa a ser atalho: quem quiser falar agora fala, quem não quiser
+            já está na fila da casa de qualquer forma.
+          */
+          <div
+            className="flex flex-col gap-4 border px-5 py-5"
+            style={{ borderColor: "var(--color-foreground)" }}
+          >
+            <p className="label">Proposta recebida</p>
+            <p className="text-sm leading-relaxed">{estado.sucesso}</p>
+            <button
+              type="button"
+              onClick={() =>
+                window.open(contactHref(message), "_blank", "noopener,noreferrer")
+              }
+              className="btn btn-ghost justify-center"
+            >
+              Falar agora no {CONTACT_CHANNEL}
+              <span aria-hidden>→</span>
+            </button>
+          </div>
+        ) : (
+          <>
+            <button
+              type="submit"
+              disabled={!canSubmit || enviando}
+              className="btn btn-primary justify-center"
+            >
+              {enviando ? "Enviando…" : "Enviar para avaliação"}
+              <span aria-hidden>→</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={!canSubmit}
+              onClick={() =>
+                window.open(contactHref(message), "_blank", "noopener,noreferrer")
+              }
+              className="btn btn-ghost justify-center"
+            >
+              Prefiro falar no {CONTACT_CHANNEL}
+            </button>
+
+            {estado.erro && (
+              <p
+                className="text-sm"
+                role="status"
+                style={{ color: "var(--color-foreground)" }}
+              >
+                {estado.erro}
+              </p>
+            )}
+
+            <p className="text-xs" style={{ color: "var(--color-muted)" }}>
+              A casa recebe estes dados e responde no contato que você deixar.
+              As fotos da peça vão na conversa.
+            </p>
+          </>
+        )}
       </div>
     </form>
   );

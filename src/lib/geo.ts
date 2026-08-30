@@ -37,11 +37,22 @@ const DDD_CIDADES: Record<string, string> = {
   "92": "Manaus - AM",
 };
 
+/**
+ * De onde veio o acesso — quando dá para saber.
+ *
+ * Ordem: header de geo da CDN (medido), depois o DDD do telefone que o
+ * próprio cliente cadastrou (inferido, mas dele). Se nenhum dos dois
+ * responde, devolve `null`.
+ *
+ * ⚠️ Não invente uma cidade padrão. Isto alimenta o ranking de praças do
+ * painel, e um palpite ali vira "fato medido" na tela — é a regra do
+ * CLAUDE.md (sem dado confirmado, a UI mostra que não sabe).
+ */
 export async function detectarOrigem(telefone?: string | null): Promise<{
-  cidade: string;
+  cidade: string | null;
   dispositivo: "mobile" | "desktop";
 }> {
-  let cidade = "São Paulo - SP";
+  let cidade: string | null = null;
   let dispositivo: "mobile" | "desktop" = "desktop";
 
   try {
@@ -63,7 +74,8 @@ export async function detectarOrigem(telefone?: string | null): Promise<{
     // Fallback silencioso
   }
 
-  // Se não tem header da CDN, deriva do DDD do telefone
+  // Sem header da CDN: deriva do DDD do telefone cadastrado. DDD desconhecido
+  // continua sendo `null` — melhor vazio do que errado.
   if (telefone) {
     const limpo = telefone.replace(/\D/g, "");
     // Remove 55 se vier com DDI

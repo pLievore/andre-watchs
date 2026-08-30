@@ -16,6 +16,8 @@ import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
 
+import type { Database } from "./tipos-banco";
+
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceKey = process.env.SUPABASE_SECRET_KEY;
 
@@ -26,6 +28,6 @@ if (!url || !serviceKey) {
   );
 }
 
-export const dbAdmin = createClient(url, serviceKey, {
+export const dbAdmin = createClient<Database>(url, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false },
 });

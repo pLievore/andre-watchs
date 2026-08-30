@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: "Acervo",
   description: "Acervo reservado aos clientes da Andre Watches.",
   robots: { index: false, follow: false },
+  // O acervo é fechado: nada de imagem de compartilhamento.
+  openGraph: { images: [] },
 };
 
 export default async function AcervoPage({

@@ -120,7 +120,7 @@ export function PainelAcoesSuspensas({
                 totalPendentes > 0
                   ? "var(--color-accent)"
                   : "var(--color-surface-2)",
-              color: totalPendentes > 0 ? "#000" : "var(--color-muted)",
+              color: totalPendentes > 0 ? "var(--color-background)" : "var(--color-muted)",
               fontWeight: totalPendentes > 0 ? 600 : 400,
             }}
           >
@@ -211,7 +211,7 @@ export function PainelAcoesSuspensas({
             <button
               type="button"
               onClick={() => setAberto(null)}
-              className="meta hover:text-white p-1 text-sm leading-none cursor-pointer"
+              className="meta hover:text-[var(--color-foreground)] p-1 text-sm leading-none cursor-pointer"
               title="Fechar painel"
             >
               ✕
@@ -312,7 +312,7 @@ export function PainelAcoesSuspensas({
             <button
               type="button"
               onClick={() => setAberto(null)}
-              className="meta hover:text-white p-1 text-sm leading-none cursor-pointer"
+              className="meta hover:text-[var(--color-foreground)] p-1 text-sm leading-none cursor-pointer"
               title="Fechar painel"
             >
               ✕
