@@ -26,24 +26,27 @@ acabamento de 2026-08-30 foi publicada e conferida no ar (home, `/sobre`,
 `/vender` e `/acesso` em 200; `/acervo` e `/painel` redirecionando; manifesto,
 ícones e cartão de compartilhamento respondendo).
 
-### Domínio próprio, em transição
+### Domínio próprio, no ar
 
-`andrewatches.com.br` foi comprado na Hostinger e **já está registrado no
-projeto da Vercel** (raiz e `www`), com `NEXT_PUBLIC_SITE_URL` apontando para
-ele. Falta o que só se faz no painel da Hostinger: apontar o DNS.
+**https://andrewatches.com.br** — registrado na Hostinger, DNS apontado para a
+Vercel, certificado emitido. Verificado em 2026-08-30: raiz em 200 com TLS
+válido e HSTS, `www` respondendo 308 para a raiz (regra no `next.config.ts`),
+HTTP subindo para HTTPS, `/colecao` ainda redirecionando para `/acervo` e
+`/acervo` barrando quem não tem sessão.
 
 | Onde | Tipo | Nome | Valor |
 |---|---|---|---|
 | Hostinger → DNS | `A` | `@` | `76.76.21.21` |
 | Hostinger → DNS | `CNAME` | `www` | `cname.vercel-dns.com` |
 
-O raiz é o endereço canônico — é o que o `metadataBase` assina, o que vai no
-cartão de compartilhamento e o que sai no convite por WhatsApp. O `www`
-redireciona para ele por regra no `next.config.ts`.
+A raiz é o endereço canônico — é o que o `metadataBase` assina, o que vai no
+cartão de compartilhamento e o que sai no convite por WhatsApp
+(`NEXT_PUBLIC_SITE_URL`, configurada em produção). O endereço
+`andre-watches.vercel.app` continua válido e serve o mesmo deploy.
 
-⚠️ Enquanto o DNS não propagar, **a prévia de link fica quebrada**: o endereço
-da imagem de compartilhamento aponta para `andrewatches.com.br`, que ainda não
-resolve.
+⚠️ O certificado não sai sozinho no minuto seguinte ao DNS: se um domínio novo
+ficar servindo só HTTP, é sinal de certificado pendente — `npx vercel certs
+issue <domínio> www.<domínio>` força a emissão.
 
 **Vitrine pública**
 
