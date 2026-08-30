@@ -321,10 +321,15 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
 - Frames passam por `await img.decode()` antes de entrar em memória. Com só
   `onload`, a decodificação cai dentro do primeiro `drawImage`, na main thread,
   durante o scroll — é a causa do engasgo tipo "lag de jogo".
-- Cada lote de download é reordenado pela distância ao frame ATUAL **e pelo
-  sentido do scroll**: quadro que ficou para trás custa o triplo. O download
-  persegue o usuário em vez de seguir a ordem dos arquivos, e não gasta banda
-  com o que ele acabou de passar.
+- **O download é uma fila com reposição vaga a vaga, não lotes.** Cada quadro
+  concluído libera uma vaga preenchida na hora com o melhor candidato daquele
+  instante — distância até a posição atual, pesada pelo sentido do scroll (o
+  que ficou para trás custa o triplo). Com lotes travados, a decisão de "o que
+  baixar agora" congelava por N downloads, e aumentar o paralelismo só tornava
+  a perseguição mais grossa. `LOAD_CONCURRENCY` é 10: os 6 antigos eram
+  herança do limite por origem do HTTP/1.1, e a Vercel serve em HTTP/2. Subir
+  muito além disso é contraproducente — os fluxos dividem a mesma banda, e o
+  que importa é o quadro de agora, não a vazão média.
 - **O canvas dissolve entre os quadros CARREGADOS que cercam a posição, nunca
   segura um.** O hero consome ~1620px de scroll para 361 frames: ~4,5px por
   frame. Escolher um índice inteiro faz o scroll lento atravessar vários pixels
