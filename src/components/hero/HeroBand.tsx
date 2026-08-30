@@ -103,8 +103,21 @@ const ARRANQUE = 8;
  */
 const DENSITY_PASSES = [12, 6, 3, 2, 1] as const;
 
-/** Downloads simultâneos — o browser dá ~6 por origem. */
-const LOAD_CONCURRENCY = 6;
+/**
+ * Downloads simultâneos.
+ *
+ * Eram 6, herança do limite de conexões por origem do HTTP/1.1. A Vercel serve
+ * em HTTP/2, onde uma conexão só multiplexa dezenas de fluxos e esse teto não
+ * existe — 6 estava deixando banda parada na primeira descida.
+ *
+ * Não é "quanto mais melhor": os fluxos dividem a mesma banda, então subir
+ * demais faz cada quadro chegar mais tarde individualmente, e o que importa
+ * aqui é o quadro de agora, não a média. 10 é o meio-termo para arquivos de
+ * 22 a 136 kB, e só funciona porque a fila repõe vaga a vaga (ver
+ * `loadBatch`): com lotes travados, mais paralelismo grossava a perseguição
+ * ao scroll em vez de acelerá-la.
+ */
+const LOAD_CONCURRENCY = 10;
 const MOBILE_BREAKPOINT_PX = 768;
 
 /**
@@ -254,40 +267,70 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
       Math.round(progress.get() * (FRAME_COUNT - 1));
 
     /**
-     * Carrega uma lista de índices em lotes, pulando o que já está em memória.
+     * Carrega uma lista de índices, pulando o que já está em memória.
      *
-     * A ordem é recalculada a cada lote pela distância ao frame ATUAL. Sem
-     * isso, quem rola até o fim fica esperando o carregamento chegar lá pela
-     * ordem dos arquivos. Assim o download persegue o usuário.
+     * **Fila com reposição, não lotes.** A versão anterior escolhia N quadros,
+     * esperava os N terminarem e só então reordenava — ou seja, a decisão de
+     * "o que baixar agora" congelava por N downloads. Com o scroll em
+     * movimento, isso significa gastar vagas em quadros que a pessoa já
+     * passou, e é o que limitava o ganho de aumentar o paralelismo: mais vagas
+     * deixavam a perseguição mais grossa, não mais rápida.
+     *
+     * Aqui cada vaga que abre é preenchida na hora com o melhor candidato
+     * daquele instante. A prioridade é recalculada a cada quadro concluído, e
+     * o download persegue o scroll de verdade.
      */
-    const loadBatch = async (indices: number[]) => {
-      const pending = new Set(indices.filter((i) => !images[i]));
-      while (pending.size > 0) {
-        if (cancelled) return;
-        const here = currentIndex();
+    const loadBatch = (indices: number[]) =>
+      new Promise<void>((resolve) => {
+        const pending = new Set(indices.filter((i) => !images[i]));
+        let ativos = 0;
 
-        /*
-         * Distância pesada pelo sentido do scroll.
-         *
-         * Distância pura trata igualmente o quadro que vem e o que ficou para
-         * trás — e, na primeira descida, metade da banda ia para quadros que a
-         * pessoa acabou de passar. O que está à frente é o próximo a entrar na
-         * tela; o de trás só importa se ela voltar.
+        /**
+         * Custo de um quadro: distância até a posição atual, pesada pelo
+         * sentido do scroll. O que ficou para trás custa o triplo — só será
+         * visto se a pessoa voltar; o da frente é o próximo a entrar na tela.
          */
-        const descendo = progress.getVelocity() >= 0;
-        const custo = (i: number) => {
-          const distancia = Math.abs(i - here);
-          const aFrente = descendo ? i >= here : i <= here;
-          return aFrente ? distancia : distancia * 3;
+        const melhorCandidato = () => {
+          const here = currentIndex();
+          const descendo = progress.getVelocity() >= 0;
+
+          let escolhido = -1;
+          let menor = Infinity;
+
+          for (const i of pending) {
+            const distancia = Math.abs(i - here);
+            const aFrente = descendo ? i >= here : i <= here;
+            const custo = aFrente ? distancia : distancia * 3;
+            if (custo < menor) {
+              menor = custo;
+              escolhido = i;
+            }
+          }
+
+          return escolhido;
         };
 
-        const next = [...pending]
-          .sort((a, b) => custo(a) - custo(b))
-          .slice(0, LOAD_CONCURRENCY);
-        next.forEach((i) => pending.delete(i));
-        await Promise.all(next.map(load));
-      }
-    };
+        const bombear = () => {
+          if (cancelled) return resolve();
+          if (pending.size === 0 && ativos === 0) return resolve();
+
+          while (ativos < LOAD_CONCURRENCY && pending.size > 0) {
+            const i = melhorCandidato();
+            if (i < 0) break;
+            pending.delete(i);
+            ativos += 1;
+            // `finally`, não `then`: um quadro que falhe não pode deixar a
+            // vaga presa. Uma vaga travada por gesto errado vira uma fila que
+            // desce cada vez mais devagar até parar.
+            void load(i).finally(() => {
+              ativos -= 1;
+              bombear();
+            });
+          }
+        };
+
+        bombear();
+      });
 
     // Densidade progressiva sobre a sequência inteira.
     (async () => {
