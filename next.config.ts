@@ -17,6 +17,21 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      /*
+       * Um endereço só para a casa: `www` cai no domínio raiz.
+       *
+       * O raiz é o canônico porque é o que o `metadataBase` assina, o que vai
+       * no cartão de compartilhamento e o que sai no convite por WhatsApp.
+       * Dois endereços vivos dividiriam link, histórico e sessão — e sessão
+       * dividida em domínio de clube fechado é gente pedindo senha de novo
+       * sem entender por quê.
+       */
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.andrewatches.com.br" }],
+        destination: "https://andrewatches.com.br/:path*",
+        permanent: true,
+      },
       {
         source: "/colecao",
         destination: "/acervo",

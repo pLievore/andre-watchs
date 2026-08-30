@@ -21,9 +21,29 @@ login, o dono tem painel, e a venda fecha no WhatsApp.
 ## O que está no ar
 
 **https://andre-watches.vercel.app** — projeto `andre-watches` na conta
-`plievores-projects`. A produção roda o código atual do `main`: conferido em
-2026-08-29, `/colecao` responde 308 para `/acervo`, redirect que só existe no
-código da Fase 2 em diante.
+`plievores-projects`. A produção roda o código atual do `main`: a rodada de
+acabamento de 2026-08-30 foi publicada e conferida no ar (home, `/sobre`,
+`/vender` e `/acesso` em 200; `/acervo` e `/painel` redirecionando; manifesto,
+ícones e cartão de compartilhamento respondendo).
+
+### Domínio próprio, em transição
+
+`andrewatches.com.br` foi comprado na Hostinger e **já está registrado no
+projeto da Vercel** (raiz e `www`), com `NEXT_PUBLIC_SITE_URL` apontando para
+ele. Falta o que só se faz no painel da Hostinger: apontar o DNS.
+
+| Onde | Tipo | Nome | Valor |
+|---|---|---|---|
+| Hostinger → DNS | `A` | `@` | `76.76.21.21` |
+| Hostinger → DNS | `CNAME` | `www` | `cname.vercel-dns.com` |
+
+O raiz é o endereço canônico — é o que o `metadataBase` assina, o que vai no
+cartão de compartilhamento e o que sai no convite por WhatsApp. O `www`
+redireciona para ele por regra no `next.config.ts`.
+
+⚠️ Enquanto o DNS não propagar, **a prévia de link fica quebrada**: o endereço
+da imagem de compartilhamento aponta para `andrewatches.com.br`, que ainda não
+resolve.
 
 **Vitrine pública**
 

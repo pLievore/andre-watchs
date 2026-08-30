@@ -56,7 +56,15 @@ export async function gerarNovoConvite(
 
   revalidatePath("/painel");
 
-  const host = process.env.NEXT_PUBLIC_SITE_URL || "https://andre-watches.vercel.app";
+  /*
+   * O endereço da casa, não o da hospedagem.
+   *
+   * Este link vai no WhatsApp de um cliente convidado — é a primeira coisa
+   * que ele vê da Andre Watches. Um `*.vercel.app` ali parece link de teste, e
+   * convite de clube fechado não pode parecer link de teste. A variável manda;
+   * o padrão existe para o link nunca sair quebrado se ela faltar.
+   */
+  const host = process.env.NEXT_PUBLIC_SITE_URL || "https://andrewatches.com.br";
   const url = `${host}/convite/${token}`;
 
   const saudacaoNome = nomeSugerido ? `Olá, ${nomeSugerido}. ` : "Olá. ";
