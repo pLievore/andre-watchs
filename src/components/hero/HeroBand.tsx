@@ -77,23 +77,31 @@ const POSTER_MOBILE = "/hero-poster-mobile.jpg";
 const MOBILE_LUMA_FPS = 15;
 
 /**
- * Frames do arranque, carregados em densidade total antes de qualquer outra
- * coisa (~1,6 MB). Com poucos, o começo do scroll cai no fallback de "segurar
- * o quadro anterior", que na tela é indistinguível de FPS baixo.
+ * Cabeça densa mínima, só para o primeiro palmo de scroll não pular enquanto
+ * o esqueleto ainda está descendo. Deliberadamente pequena: é ela que segura
+ * o poster na tela, e cada frame a mais aqui é tempo a mais de espera.
  */
-const EAGER_COUNT = 28;
+const ARRANQUE = 8;
 
 /**
- * Passadas de densidade progressiva. Com 361 frames, carregar em ordem
- * deixaria a segunda metade do scroll vazia por dezenas de segundos — quem
- * rolasse rápido cairia num buraco enorme.
+ * Passadas de densidade progressiva — **cobertura antes de densidade**.
  *
- * Em vez disso: primeiro um esqueleto ralo cobrindo a sequência INTEIRA (a
- * cada 6º frame ≈ 5fps, 2,8 MB), depois passadas que vão preenchendo os
- * vãos. Assim qualquer posição de scroll sempre tem um frame próximo, e a
- * fluidez cresce com o tempo em vez de a cobertura crescer com a distância.
+ * A primeira passada é rala e cobre a sequência INTEIRA. Isso é o que impede
+ * o sintoma clássico de primeiro acesso: o scroll passa do trecho carregado,
+ * `nearest()` não acha nada adiante e segura o último quadro disponível — a
+ * tela congela enquanto a página continua rolando, e parece travamento.
+ *
+ * Antes daqui saíam 28 quadros seguidos antes de qualquer cobertura, o que
+ * dava densidade perfeita em 7% da sequência e nada nos outros 93%. Agora o
+ * primeiro passe põe um quadro a cada 12 (~31 arquivos) do começo ao fim: no
+ * pior caso o scrubbing fica granulado, nunca parado. As passadas seguintes
+ * dobram a densidade, e a fluidez cresce com o tempo em vez de a cobertura
+ * crescer com a distância.
+ *
+ * Cada lote é reordenado pela distância ao quadro ATUAL (ver `loadBatch`),
+ * então o download persegue o dedo de quem está rolando.
  */
-const DENSITY_PASSES = [6, 3, 2, 1] as const;
+const DENSITY_PASSES = [12, 6, 3, 2, 1] as const;
 
 /** Downloads simultâneos — o browser dá ~6 por origem. */
 const LOAD_CONCURRENCY = 6;
@@ -251,13 +259,15 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
 
     // Densidade progressiva sobre a sequência inteira.
     (async () => {
-      // 1. Arranque: densidade total no trecho que o usuário vê primeiro.
-      await loadBatch(Array.from({ length: EAGER_COUNT }, (_, i) => i));
+      // 1. Arranque curto: o suficiente para trocar o poster pelo canvas sem
+      //    que o primeiro palmo de scroll pule.
+      await loadBatch(Array.from({ length: ARRANQUE }, (_, i) => i));
       if (cancelled) return;
       setReady(true);
 
-      // 2. Esqueleto e refinamentos: cada passada dobra a densidade sobre a
-      //    sequência inteira, então nunca existe um trecho descoberto.
+      // 2. Esqueleto e refinamentos: a primeira passada cobre a sequência
+      //    inteira antes de qualquer adensamento, então nunca existe um trecho
+      //    descoberto — só um trecho granulado, que ainda se move.
       for (const step of DENSITY_PASSES) {
         if (cancelled) return;
         const indices: number[] = [];
@@ -559,6 +569,11 @@ export function HeroBand({ podeAbrirAcervo }: { podeAbrirAcervo: boolean }) {
                   src={POSTER}
                   alt=""
                   aria-hidden="true"
+                  // É a maior imagem da primeira tela — na prática, o que o
+                  // navegador mede como carregamento da página. Sem a
+                  // prioridade explícita ele a trata como imagem comum e a
+                  // deixa atrás dos primeiros quadros da sequência.
+                  fetchPriority="high"
                   className="absolute inset-0 h-full w-full object-cover"
                 />
               )}

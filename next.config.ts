@@ -15,6 +15,32 @@ const nextConfig: NextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
   },
+  /*
+   * Os quadros do hero são imutáveis — o nome do arquivo é o conteúdo.
+   *
+   * O padrão da Vercel para `/public` é `max-age=0, must-revalidate`: na
+   * segunda visita o navegador tem os 361 arquivos em cache e mesmo assim
+   * pergunta ao servidor sobre cada um antes de usar. São 361 idas de rede
+   * para não baixar nada — e é isso que faz o hero engasgar de novo em quem
+   * já visitou o site.
+   *
+   * Trocar a sequência exige trocar os nomes (ou o diretório), que é a regra
+   * que este cabeçalho assume.
+   */
+  async headers() {
+    return [
+      {
+        source: "/hero-sequence/:arquivo*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
+  },
+
   async redirects() {
     return [
       /*
