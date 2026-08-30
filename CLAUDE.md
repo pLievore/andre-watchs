@@ -307,22 +307,39 @@ em `src/components/contact/WhatsappCta.tsx`, **ponto único de verdade** do cana
   tabela do mobile é medida a partir do vídeo JÁ RECORTADO, porque o scrim
   precisa descrever o que está na tela: medir a fonte 16:9 deu 11–207, o
   recorte real dá 13–239.
-- **Carga em densidade progressiva** (`DENSITY_PASSES` no HeroBand): arranque
-  denso, depois um esqueleto ralo cobrindo a sequência INTEIRA, depois passadas
-  que dobram a densidade. Carregar em ordem sequencial deixa a segunda metade
-  do scroll vazia por dezenas de segundos — não faça isso.
+- **Cobertura antes de densidade** (`ARRANQUE` + `DENSITY_PASSES` no HeroBand):
+  8 quadros densos só para trocar o poster pelo canvas, e então uma passada
+  rala cobrindo a sequência INTEIRA (1 a cada 12) antes de qualquer
+  adensamento. Carregar um bloco contíguo primeiro dá densidade perfeita em 7%
+  e nada nos outros 93% — foi o que fez o primeiro acesso parecer travado.
+  Medido: 3 MB compravam 7,7% de cobertura; hoje 3,5 MB compram 100%.
+- **`/hero-sequence` é servido como imutável** (`headers()` no `next.config`).
+  O padrão da Vercel para `/public` é revalidar, e isso são 361 idas de rede
+  por visita repetida. ⚠️ Consequência: **trocar a sequência exige trocar os
+  nomes dos arquivos**, senão quem já visitou fica com os quadros velhos por um
+  ano.
 - Frames passam por `await img.decode()` antes de entrar em memória. Com só
   `onload`, a decodificação cai dentro do primeiro `drawImage`, na main thread,
   durante o scroll — é a causa do engasgo tipo "lag de jogo".
-- Cada lote de download é reordenado pela distância ao frame ATUAL: o download
-  persegue o usuário em vez de seguir a ordem dos arquivos. Sem isso, quem rola
-  até o fim espera o carregamento chegar lá.
-- **O canvas dissolve entre frames vizinhos, não escolha um.** O hero consome
-  ~1620px de scroll para 361 frames: ~4,5px por frame. Arredondar o índice faz
-  o scroll lento atravessar vários pixels sem mudar nada e depois saltar — o
-  degrau lê como travamento. O `paint` usa índice fracionário e mistura o
-  vizinho com `globalAlpha`, só quando está entre frames E devagar
-  (`BLEND_SPEED_LIMIT`); em scroll rápido o segundo `drawImage` seria desperdício.
+- Cada lote de download é reordenado pela distância ao frame ATUAL **e pelo
+  sentido do scroll**: quadro que ficou para trás custa o triplo. O download
+  persegue o usuário em vez de seguir a ordem dos arquivos, e não gasta banda
+  com o que ele acabou de passar.
+- **O canvas dissolve entre os quadros CARREGADOS que cercam a posição, nunca
+  segura um.** O hero consome ~1620px de scroll para 361 frames: ~4,5px por
+  frame. Escolher um índice inteiro faz o scroll lento atravessar vários pixels
+  sem mudar nada e depois saltar. Pior: enquanto a sequência está esparsa,
+  segurar o vizinho mais próximo congela a imagem por todo o vão — página
+  rolando com imagem parada é o que se lê como travamento.
+  - vão maior que 1 (sequência ainda carregando): dissolve em **qualquer**
+    velocidade — a mistura é o que substitui o que não chegou;
+  - vizinhos adjacentes (sequência completa): dissolve só devagar
+    (`BLEND_SPEED_LIMIT`), porque em scroll rápido o segundo `drawImage` é
+    desperdício.
+- **Quadro que chega depois do repouso precisa ser redesenhado.** O laço de
+  pintura morre quando o scroll para; sem o pedido de redesenho
+  (`repintarRef`), o quadro certo fica em memória sem aparecer até o próximo
+  movimento, e a tela segue mostrando um vizinho aproximado.
 - **A faixa abre por `translateY` de duas barras sólidas, não por `clip-path`.**
   `inset()` animado repinta a camada recortada a cada quadro, e isso rodava
   exatamente no trecho 0–45% do scroll — era a causa do travamento no início.
